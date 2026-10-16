@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Карта уровней</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+@keyframes ring{0%{transform:scale(1);opacity:.85}100%{transform:scale(1.55);opacity:0}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #071338; color: #ffffff; font-family: 'Nunito', system-ui, sans-serif">
+  <div style="position: absolute; inset: 0">
+    <dc-import name="Bg" theme="violet" hint-size="390px,844px"></dc-import>
+  </div>
+
+  <svg width="390" height="844" viewBox="0 0 390 844" aria-hidden="true" style="position: absolute; inset: 0">
+    <polyline points="{{pathAll}}" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 12"></polyline>
+    <polyline points="{{pathDone}}" fill="none" stroke="#FFC83D" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 12"></polyline>
+  </svg>
+
+  <sc-for list="{{nodes}}" as="n" hint-placeholder-count="11">
+    <div style="position: absolute; left: {{n.left}}px; top: {{n.top}}px; width: {{n.size}}px; height: {{n.size}}px">
+      <sc-if value="{{n.done}}" hint-placeholder-val="{{true}}">
+        <div style="position: absolute; left: 50%; top: -20px; transform: translateX(-50%); display: flex; gap: 1px">
+          <sc-for list="{{n.stars}}" as="s" hint-placeholder-count="3">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="{{s.fill}}" stroke="#7A3F00" stroke-width="1.5" stroke-linejoin="round"></polygon></svg>
+          </sc-for>
+        </div>
+        <button aria-label="Уровень {{n.num}}, пройден" style="width: 100%; height: 100%; border-radius: 50%; border: 3px solid #FFF1B8; background: radial-gradient(circle at 35% 30%, #FFF0A0 0%, #FFC83D 45%, #E08200 100%); box-shadow: inset 0 -4px 0 rgba(130,60,0,0.45), 0 6px 14px rgba(0,0,0,0.45); color: #5A2A00; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; cursor: pointer; padding: 0">{{n.num}}</button>
+      </sc-if>
+      <sc-if value="{{n.current}}" hint-placeholder-val="{{false}}">
+        <span style="position: absolute; inset: 0; border-radius: 50%; border: 4px solid #9BFF4F; animation: ring 1.6s ease-out infinite"></span>
+        <a href="Game.dc.html" aria-label="Играть уровень {{n.num}}" style="position: absolute; inset: 0; border-radius: 50%; border: 4px solid #ffffff; background: radial-gradient(circle at 35% 30%, #D4FF9E 0%, #5BDB33 45%, #138A1E 100%); box-shadow: 0 0 28px rgba(155,255,79,0.75), inset 0 -5px 0 rgba(0,70,10,0.45); display: flex; align-items: center; justify-content: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 30px; color: #ffffff; text-shadow: 0 2px 0 #0E6B17">{{n.num}}</a>
+        <span style="position: absolute; left: 50%; top: -42px; transform: translateX(-50%); white-space: nowrap; padding: 5px 12px; border-radius: 12px; background: #ffffff; color: #0E6B17; font-weight: 900; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); animation: bob 1.8s ease-in-out infinite">Играть!</span>
+      </sc-if>
+      <sc-if value="{{n.boss}}" hint-placeholder-val="{{false}}">
+        <button aria-label="Уровень {{n.num}}, босс, закрыт" style="width: 100%; height: 100%; border-radius: 22px; transform: rotate(45deg); border: 3px solid #E9B8FF; background: linear-gradient(135deg, #B06BFF 0%, #5A1FB0 100%); box-shadow: 0 0 22px rgba(176,107,255,0.6), inset 0 -4px 0 rgba(40,0,90,0.45); padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center">
+          <span style="transform: rotate(-45deg); display: flex; flex-direction: column; align-items: center; color: #ffffff; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 18px; line-height: 1">
+            <svg width="24" height="20" viewBox="0 0 24 20" fill="#FFD957" stroke="#7A3F00" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><polygon points="2 17 4 5 9 10 12 2 15 10 20 5 22 17 2 17"></polygon></svg>
+            {{n.num}}
+          </span>
+        </button>
+      </sc-if>
+      <sc-if value="{{n.locked}}" hint-placeholder-val="{{false}}">
+        <button aria-label="Уровень {{n.num}}, закрыт" style="width: 100%; height: 100%; border-radius: 50%; border: 2.5px solid rgba(170,200,255,0.4); background: rgba(12,28,80,0.8); box-shadow: inset 0 -4px 0 rgba(0,0,0,0.35), 0 6px 12px rgba(0,0,0,0.4); color: rgba(220,232,255,0.85); padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; line-height: 1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11" width="16" height="11" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+          {{n.num}}
+        </button>
+      </sc-if>
+      <sc-if value="{{n.isNew}}" hint-placeholder-val="{{false}}">
+        <span style="position: absolute; left: 62px; top: 4px; white-space: nowrap; padding: 6px 10px; border-radius: 12px; background: linear-gradient(180deg, #FF8BCB, #D81B60); border: 2px solid #ffffff; font-weight: 900; font-size: 12px; line-height: 1.15; box-shadow: 0 4px 10px rgba(0,0,0,0.35)">НОВАЯ ФИШКА<br>скрытые слои «?»</span>
+      </sc-if>
+    </div>
+  </sc-for>
+
+  <div style="position: absolute; top: 0; left: 0; right: 0; padding: 54px 20px 0; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <a href="Main.dc.html" aria-label="Назад" style="width: 48px; height: 48px; border-radius: 16px; border: 1.5px solid rgba(170,210,255,0.35); background: rgba(10,26,80,0.6); display: flex; align-items: center; justify-content: center">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </a>
+      <div style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; text-shadow: 0 3px 0 rgba(0,20,70,0.7)">Уровни</div>
+      <div style="height: 40px; padding: 0 12px; border-radius: 20px; border: 1.5px solid rgba(255,214,110,0.55); background: rgba(10,26,80,0.6); display: flex; align-items: center; gap: 6px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 18px">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#FFC83D" stroke="#7A3F00" stroke-width="1.5" stroke-linejoin="round"></polygon></svg>
+        61
+      </div>
+    </div>
+    <div style="border-radius: 20px; padding: 12px 16px; background: linear-gradient(135deg, rgba(18,60,135,0.85), rgba(6,27,66,0.85)); border: 1.5px solid rgba(120,200,255,0.45); display: flex; align-items: center; justify-content: space-between">
+      <div style="display: flex; flex-direction: column; line-height: 1.15">
+        <span style="font-size: 12px; font-weight: 900; color: #7FE3FF; letter-spacing: 1px">ГЛАВА 2 · УРОВНИ 21–40</span>
+        <span style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 22px">Лунная бухта</span>
+      </div>
+      <div style="width: 96px; display: flex; flex-direction: column; gap: 5px; align-items: flex-end">
+        <span style="font-size: 13px; font-weight: 900">3 / 20</span>
+        <div style="width: 96px; height: 10px; border-radius: 5px; background: rgba(0,0,0,0.4); overflow: hidden">
+          <div style="width: 15%; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #66E9FF, #35F4FF)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const pts = [
+      [19, 195, 785], [20, 292, 730], [21, 305, 660], [22, 212, 612], [23, 108, 570],
+      [24, 92, 492], [25, 190, 432], [26, 290, 392], [27, 300, 322], [28, 200, 272], [29, 92, 238]
+    ];
+    const stars = { 19: 3, 20: 3, 21: 2, 22: 3, 23: 1 };
+    const current = 24;
+    const nodes = pts.map(([num, x, y]) => {
+      const isCur = num === current;
+      const isBoss = num === 25;
+      const size = isCur ? 78 : isBoss ? 56 : 58;
+      const s = stars[num] || 0;
+      return {
+        num, size, left: x - size / 2, top: y - size / 2,
+        done: num < current, current: isCur, boss: isBoss,
+        locked: num > current && !isBoss, isNew: num === 28,
+        stars: [0, 1, 2].map((i) => ({ fill: i < s ? '#FFC83D' : 'rgba(255,255,255,0.25)' }))
+      };
+    });
+    const line = (arr) => arr.map((p) => p[1] + ',' + p[2]).join(' ');
+    return {
+      nodes,
+      pathAll: line(pts),
+      pathDone: line(pts.filter((p) => p[0] <= current))
+    };
+  }
+}
+</script>
+</body>
+</html>

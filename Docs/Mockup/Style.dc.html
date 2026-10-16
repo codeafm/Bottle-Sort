@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Модели бутылок</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+@keyframes bsWave{from{transform:translateX(0)}to{transform:translateX(-50px)}}
+@keyframes bsBub{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.95}100%{transform:translateY(-70px) scale(1.1);opacity:0}}
+</style>
+</helmet>
+<div style="width: 1000px; height: 844px; box-sizing: border-box; padding: 40px 48px; background: radial-gradient(ellipse at 50% 35%, #12306E 0%, #071338 55%, #040A22 100%); color: #ffffff; font-family: 'Nunito', system-ui, sans-serif; display: flex; flex-direction: column; gap: 22px">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between">
+    <div>
+      <div style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 36px">Модели бутылок</div>
+      <div style="font-size: 15px; font-weight: 700; color: #A9CCF2; margin-top: 4px">Обычные уровни — классические бутылки. Особые уровни (решает level-designer, например каждый 10-й) — разные формы. Уровни с большой колбой — колба на 8 слоёв в центре.</div>
+    </div>
+    <div style="padding: 8px 14px; border-radius: 12px; background: rgba(255,255,255,0.08); border: 1px solid rgba(160,200,255,0.3); font-size: 13px; font-weight: 800; color: #CFE6FF">Обычная бутылка: 4 слоя</div>
+  </div>
+
+  <div style="position: relative; padding: 26px 10px 18px; border-radius: 28px; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); border: 1px solid rgba(160,200,255,0.18); display: flex; justify-content: space-between; align-items: flex-end">
+    <sc-for list="{{models}}" as="m" hint-placeholder-count="7">
+      <div style="width: 96px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+        <dc-import name="Bottle" shape="{{m.shape}}" colors="{{m.colors}}" cap="{{m.cap}}" size="{{bigSize}}" hint-size="84px,202px"></dc-import>
+        <div style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; text-align: center; line-height: 1.1; min-height: 34px">{{m.title}}</div>
+        <div style="padding: 3px 8px; border-radius: 10px; background: {{m.tagBg}}; border: 1px solid {{m.tagLine}}; font-size: 11px; font-weight: 800; color: #ffffff; white-space: nowrap">{{m.unlock}}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; flex-grow: 1">
+    <div style="padding: 20px 22px; border-radius: 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(160,200,255,0.18)">
+      <div style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px; margin-bottom: 14px">Цвета жидкостей (12)</div>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 14px; column-gap: 6px">
+        <sc-for list="{{swatches}}" as="s" hint-placeholder-count="12">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 5px">
+            <div style="width: 46px; height: 46px; border-radius: 50%; background: {{s.bg}}; border: 2px solid rgba(255,255,255,0.55); box-shadow: inset 0 6px 0 rgba(255,255,255,0.25), 0 4px 10px rgba(0,0,0,0.4)"></div>
+            <div style="font-size: 12px; font-weight: 800">{{s.name}}</div>
+            <div style="font-size: 11px; font-weight: 700; color: #A9CCF2">{{s.hex}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="padding: 20px 22px; border-radius: 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(160,200,255,0.18)">
+      <div style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px; margin-bottom: 8px">Состояния</div>
+      <div style="display: flex; justify-content: space-around; align-items: flex-end">
+        <sc-for list="{{states}}" as="st" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+            <div style="transform: {{st.lift}}">
+              <dc-import name="Bottle" shape="{{st.shape}}" colors="{{st.colors}}" glow="{{st.glow}}" size="{{smallSize}}" hint-size="58px,139px"></dc-import>
+            </div>
+            <div style="font-size: 13px; font-weight: 900">{{st.label}}</div>
+            <div style="font-size: 11px; font-weight: 700; color: #A9CCF2; text-align: center; width: 96px; line-height: 1.25">{{st.note}}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sw = [
+      ['R', 'Красный', '#C9283A', '#D86471', '#7D1924'], ['B', 'Синий', '#2D5FC4', '#688CD5', '#1C3B7A'],
+      ['Y', 'Жёлтый', '#E3B21E', '#EBC85D', '#8D6E13'], ['G', 'Зелёный', '#2A9E4A', '#66B97D', '#1A622E'],
+      ['P', 'Фиолетовый', '#6E3BB0', '#9772C6', '#44256D'], ['C', 'Бирюзовый', '#1495AA', '#56B3C2', '#0C5C69'],
+      ['O', 'Оранжевый', '#D9772A', '#E49D66', '#874A1A'], ['K', 'Розовый', '#C73278', '#D76B9E', '#7B1F4A'],
+      ['L', 'Лайм', '#85B524', '#A7CA61', '#527016'], ['N', 'Коричневый', '#8A5530', '#AB856A', '#56351E'],
+      ['W', 'Белый', '#D5D9E6', '#E1E4ED', '#84878F'], ['D', 'Тёмно-синий', '#2A2D57', '#666886', '#1A1C36']
+    ];
+    return {
+      bigSize: 84,
+      smallSize: 58,
+      models: [
+        { shape: 'classic', title: 'Классическая', unlock: 'обычные уровни', colors: ['R', 'Y', 'B', 'G'], cap: 4, kind: 'n' },
+        { shape: 'cylinder', title: 'Большая колба', unlock: '8 слоёв, центр', colors: ['B', 'B', 'C', 'C', 'G', 'G', 'Y', 'Y'], cap: 8, kind: 'b' },
+        { shape: 'wine', title: 'Длинная бутылка', unlock: 'особые уровни', colors: ['B', 'C', 'K', 'Y'], cap: 4, kind: 's' },
+        { shape: 'glass', title: 'Стакан', unlock: 'особые уровни', colors: ['R', 'O', 'Y', 'L'], cap: 4, kind: 's' },
+        { shape: 'flask', title: 'Колба', unlock: 'особые уровни', colors: ['C', 'B', 'P', 'K'], cap: 4, kind: 's' },
+        { shape: 'jug', title: 'Кувшин', unlock: 'особые уровни', colors: ['P', 'K', 'O', 'Y'], cap: 4, kind: 's' },
+        { shape: 'teapot', title: 'Чайник', unlock: 'особые уровни', colors: ['G', 'L', 'Y', 'O'], cap: 4, kind: 's' },
+        { shape: 'potion', title: 'Зелье', unlock: 'особые уровни', colors: ['P', 'K', 'R', 'O'], cap: 4, kind: 's' },
+        { shape: 'jar', title: 'Банка', unlock: 'особые уровни', colors: ['N', 'O', 'Y', 'L'], cap: 4, kind: 's' }
+      ].map((m) => Object.assign(m, {
+        tagBg: m.kind === 'n' ? 'rgba(23,165,35,0.35)' : m.kind === 'b' ? 'rgba(8,112,232,0.4)' : 'rgba(216,27,96,0.4)',
+        tagLine: m.kind === 'n' ? 'rgba(155,255,79,0.6)' : m.kind === 'b' ? 'rgba(102,233,255,0.6)' : 'rgba(255,139,203,0.6)'
+      })),
+      swatches: sw.map(([k, name, m, l, d]) => ({
+        name, hex: m,
+        bg: 'radial-gradient(circle at 35% 30%, ' + l + ' 0%, ' + m + ' 45%, ' + d + ' 100%)'
+      })),
+      states: [
+        { label: 'Обычная', note: 'Ждёт хода', shape: 'wine', colors: ['R', 'B', 'G'], glow: 'none', lift: 'none' },
+        { label: 'Выбрана', note: 'Поднята, голубое свечение', shape: 'wine', colors: ['R', 'B', 'G'], glow: 'drop-shadow(0 0 6px rgba(53,244,255,1)) drop-shadow(0 0 14px rgba(53,244,255,0.8))', lift: 'translateY(-18px)' },
+        { label: 'Подсказка', note: 'Куда лить — золотое свечение', shape: 'jug', colors: ['G'], glow: 'drop-shadow(0 0 6px rgba(255,200,61,1)) drop-shadow(0 0 14px rgba(255,200,61,0.8))', lift: 'none' },
+        { label: 'Собрана', note: '4 одного цвета, искры и звук', shape: 'flask', colors: ['C', 'C', 'C', 'C'], glow: 'drop-shadow(0 0 10px rgba(255,236,150,0.9))', lift: 'none' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Заставка</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+@keyframes logoIn{0%{transform:scale(.55) translateY(20px);opacity:0}60%{transform:scale(1.06) translateY(0);opacity:1}100%{transform:scale(1) translateY(0);opacity:1}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes halo{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(1)}50%{opacity:.85;transform:translate(-50%,-50%) scale(1.1)}}
+@keyframes streamIn{0%{transform:scaleY(0)}100%{transform:scaleY(1)}}
+@keyframes streamFlow{0%{background-position:0 0}100%{background-position:0 24px}}
+@keyframes ripple{0%{transform:scale(.35);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+@keyframes burst{0%{transform:translate(0,0) scale(.3);opacity:0}25%{opacity:1}100%{transform:translate(var(--bx),var(--by)) scale(1);opacity:0}}
+@keyframes shine{0%{transform:translateX(-60px) skewX(-20deg)}100%{transform:translateX(320px) skewX(-20deg)}}
+@keyframes dots{0%,20%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
+@keyframes bsWave{from{transform:translateX(0)}to{transform:translateX(-50px)}}
+@keyframes bsBub{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.95}100%{transform:translateY(-70px) scale(1.1);opacity:0}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #071338; color: #ffffff; font-family: 'Nunito', system-ui, sans-serif">
+  <div style="position: absolute; inset: 0">
+    <dc-import name="Bg" theme="violet" hint-size="390px,844px"></dc-import>
+  </div>
+
+  <div style="position: absolute; left: 50%; top: 470px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(155,120,255,0.35) 0%, rgba(155,120,255,0) 65%); animation: halo 4s ease-in-out infinite"></div>
+
+  <div style="position: absolute; left: 0; right: 0; top: 96px; display: flex; justify-content: center; animation: logoIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both">
+    <img src="/_blob/98dff3061aa392510e11975b90595be5" alt="Sort Bottle" style="width: 300px; height: auto; filter: drop-shadow(0 14px 26px rgba(0,0,0,0.55)); animation: floaty 3.4s ease-in-out 0.9s infinite">
+  </div>
+
+  <div style="position: absolute; left: 114px; top: 289px; width: 58px; height: 138px; transform: rotate(62deg); display: flex; justify-content: center; align-items: flex-end">
+    <dc-import name="Bottle" shape="classic" colors="{{pourColors}}" size="{{pourSize}}" hint-size="56px,134px"></dc-import>
+  </div>
+
+  <div aria-hidden="true" style="position: absolute; left: 190.5px; top: 330px; width: 9px; height: {{streamH}}px; z-index: 5; transform-origin: 50% 0; filter: drop-shadow(0 0 5px {{tone0}}); transition: height 0.5s ease">
+    <div style="position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, 74% 100%, 26% 100%); background: {{streamBg}}"></div>
+    <div style="position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, 74% 100%, 26% 100%); background: repeating-linear-gradient(180deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0.5) 5px, rgba(255,255,255,0) 12px); background-size: 100% 24px; animation: streamFlow 0.28s linear infinite"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; left: 182px; top: {{splashT}}px; width: 26px; height: 9px; z-index: 6; box-sizing: border-box; border-radius: 50%; border: 2px solid {{tone1}}; animation: ripple 0.5s ease-out infinite; transition: top 0.5s ease"></div>
+
+  <div style="position: absolute; left: 149px; top: 400px; width: 92px; height: 220px; display: flex; justify-content: center; align-items: flex-end; filter: {{targetGlow}}; transition: filter 0.3s ease">
+    <dc-import name="Bottle" shape="classic" colors="{{targetColors}}" size="{{targetSize}}" hint-size="90px,216px"></dc-import>
+  </div>
+  <sc-if value="{{full}}" hint-placeholder-val="{{false}}">
+    <sc-for list="{{sparks}}" as="s" hint-placeholder-count="10">
+      <span aria-hidden="true" style="position: absolute; left: 191px; top: 500px; width: 9px; height: 9px; z-index: 7; background: {{s.c}}; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); --bx: {{s.x}}px; --by: {{s.y}}px; animation: burst 0.9s ease-out {{s.d}}s both"></span>
+    </sc-for>
+  </sc-if>
+  <div style="position: absolute; left: 70px; top: 612px; width: 250px; height: 12px; border-radius: 6px; background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(200,230,255,0.18) 45%, rgba(255,255,255,0.06) 100%); border-top: 1px solid rgba(255,255,255,0.75); box-shadow: 0 12px 22px rgba(0,0,0,0.35), 0 0 22px rgba(160,140,255,0.3)"></div>
+
+  <div style="position: absolute; left: 0; right: 0; top: 664px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+    <div style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 19px; color: rgba(240,236,255,0.92); letter-spacing: 0.3px">Расставь цвета по местам</div>
+    <div role="progressbar" aria-label="Загрузка" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{progress}}" style="position: relative; width: 260px; height: 16px; box-sizing: border-box; border-radius: 8px; background: rgba(0,0,0,0.35); border: 1.5px solid rgba(220,210,255,0.4); overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.4)">
+      <div style="position: absolute; left: 0; top: 0; bottom: 0; width: {{progress}}%; border-radius: 8px; background: linear-gradient(180deg, #8EE07A 0%, #2A9E4A 100%); box-shadow: inset 0 2px 0 rgba(255,255,255,0.35); transition: width 0.6s ease"></div>
+      <div style="position: absolute; top: 0; bottom: 0; width: 40px; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.45), rgba(255,255,255,0)); animation: shine 1.8s ease-in-out infinite"></div>
+    </div>
+    <div style="font-size: 13px; font-weight: 800; color: rgba(225,220,255,0.8)">Загрузка<span style="animation: dots 1.2s infinite">.</span><span style="animation: dots 1.2s 0.2s infinite">.</span><span style="animation: dots 1.2s 0.4s infinite">.</span> {{progress}}%</div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 34px; text-align: center; font-size: 12px; font-weight: 800; letter-spacing: 2px; color: rgba(220,215,255,0.55)">CODEAFM GAMES</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const ORDER = ['R', 'O', 'Y', 'G', 'C', 'B', 'P', 'K'];
+const TONE = {
+  R: ['#C9283A', '#D9636F', '#7C1924'], O: ['#D9772A', '#E49D65', '#86491A'], Y: ['#E3B21E', '#EBC85C', '#8C6E13'],
+  G: ['#2A9E4A', '#68B77E', '#1A622E'], C: ['#1495AA', '#55B1C0', '#0C5C69'], B: ['#2D5FC4', '#6A8DD4', '#1C3B79'],
+  P: ['#6E3BB0', '#9A76C7', '#44246D'], K: ['#C73278', '#D76DA0', '#7B1F4A']
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 0, progress: 6 };
+  }
+
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      const s = this.state.step + 1;
+      const p = this.state.progress >= 100 ? 6 : Math.min(100, this.state.progress + 7);
+      this.setState({ step: s, progress: p });
+    }, 750);
+  }
+
+  componentWillUnmount() { clearInterval(this.iv); }
+
+  renderVals() {
+    const { step, progress } = this.state;
+    const cycle = Math.floor(step / 6);
+    const k = step % 6;
+    const filled = Math.min(k, 4);
+    const full = k >= 4;
+    const c = ORDER[cycle % ORDER.length];
+    const tone = TONE[c];
+    const targetSize = 90;
+    const top = 400 + 4;
+    const svgH = targetSize * 2.4;
+    const surf = top + svgH * ((226 - filled * 40) / 240);
+    const pouring = !full;
+    const sparks = [];
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      sparks.push({ x: Math.round(Math.cos(a) * 80), y: Math.round(Math.sin(a) * 90), d: (i % 3) * 0.06, c: i % 2 ? '#FFE07A' : '#FFFFFF' });
+    }
+    return {
+      pourSize: 56, targetSize,
+      pourColors: pouring ? [c, c] : [],
+      targetColors: Array(filled).fill(c),
+      streamH: pouring ? Math.max(surf - 330, 10) : 0,
+      splashT: surf - 4,
+      streamBg: 'linear-gradient(90deg, ' + tone[2] + ' 0%, ' + tone[1] + ' 32%, ' + tone[0] + ' 62%, ' + tone[2] + ' 100%)',
+      tone0: tone[0], tone1: pouring ? tone[1] : 'transparent',
+      full,
+      targetGlow: full ? 'drop-shadow(0 0 14px rgba(255,236,150,0.9))' : 'none',
+      sparks, progress
+    };
+  }
+}
+</script>
+</body>
+</html>

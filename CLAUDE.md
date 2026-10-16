@@ -1,0 +1,67 @@
+# Bottle Sort — Unity
+
+Порт игры Bottle Sort с Flutter (`E:\Projects\Flutter\bottle_sort`) на Unity, с улучшенной графикой и геймплеем.
+
+## Платформы
+- **iOS и Android** — мобильная игра, только портретная ориентация.
+- Учитывать Safe Area (чёлка, Dynamic Island, жестовая навигация Android).
+- Целевые разрешения: от 720×1280 до 1290×2796; референс-разрешение UI 1080×1920 (Canvas Scaler, match 0.5).
+- 60 FPS на средних устройствах (2020+), батчинг спрайтов, без тяжёлого пост-процессинга.
+
+## Движок
+- Unity 6 (6000.3.18f1, установлен в Unity Hub), URP 2D.
+- UI: uGUI + TextMeshPro. Анимации: DOTween (или собственный tween-код).
+- Сохранения: JSON в `Application.persistentDataPath`.
+- Реклама: Yandex Mobile Ads (как во Flutter-версии). Уведомления: Firebase / Mobile Notifications.
+
+## Источник
+- Логика уровней, правила переливания, экономика — см. `Docs/FLUTTER_SPEC.md`.
+- Готовые арты (фоны, логотип, иконки, звуки) берём из `E:\Projects\Flutter\bottle_sort\assets`.
+- Макет нового дизайна: https://claude.ai/artifact/TfJCGnEMrZCb3iVL5mrrwR
+- Исходники макета (точные цвета, SVG-контуры бутылок, тайминги анимации): `Docs/Mockup/*.dc.html`
+  - `Bottle.dc.html` — 9 форм бутылок (контуры outer/inner, область жидкости top/bot), палитра, стекло, скрытые слои/лёд/замок
+  - `Game.dc.html` — HUD, правила, раскладки, анимация переливания (фазы lift/move/tilt/pour/untilt/back и тайминги), уровни 100–2000
+  - `Bg.dc.html` — 6 тем фона; `Main/Levels/Win/Shop.dc.html` — экраны
+
+## Утверждённые решения заказчика
+- Вода в покое неподвижна (без волн/пузырей); анимируются только уровень и струя при переливании.
+- Палитра: чистые приглушённые цвета (см. `.claude/agents/vfx-art.md`), не кислотные, не пастель.
+- Фоны без фото: радиальный градиент + искорки, 6 тем.
+- Типы уровней: обычный (классические бутылки), особый (разные формы), с большой колбой (8 слоёв); ритм и фишки решает level-designer.
+- Шапка игрового экрана одинаковая на всех уровнях.
+
+## Стиль кода (требование заказчика)
+- Комментарии — только там, где без них непонятно, коротко и по-человечески, как пишет живой разработчик.
+- Нельзя: комментарии на каждую строку, пересказ кода («// увеличиваем счётчик»), шаблонные XML-doc на всё подряд, «This method…», «Helper function to…», декоративные разделители, эмодзи, маркеры вроде «AI-generated», «Note:», «Important:».
+- Имена переменных и методов должны объяснять код сами.
+- Сообщения коммитов — коротко, обычным языком, без упоминания ИИ.
+
+## Порядок работ
+1. architect — создать Unity-проект, пакеты, структуру, asmdef, настройки iOS/Android. ← первым
+2. level-designer — `Docs/LEVEL_DESIGN.md`, `Docs/BOTTLE_MODELS.md` (параллельно, только документы)
+3. gameplay — `Game.Core` (модель, генератор, солвер, тесты), затем переливание
+4. vfx-art — шейдеры стекла/жидкости, бутылки, фоны, частицы
+5. ui — экраны и HUD по макету
+6. services — сохранения, экономика, магазин, звук, реклама, уведомления
+7. qa — после каждой фичи
+
+## Структура (план)
+```
+Assets/_Game/
+  Scripts/Core      — модель: Bottle, Level, LevelGenerator, MoveValidator (без UnityEngine, покрыто тестами)
+  Scripts/Gameplay  — BottleView, PourAnimator, InputController, GameController
+  Scripts/UI        — экраны: Splash, MainMenu, LevelMap, HUD, Win, Shop, Settings
+  Scripts/Services  — Save, Audio, Ads, Notifications, Economy
+  Art/ Audio/ Prefabs/ Scenes/ Shaders/ VFX/
+Assets/Tests/EditMode — юнит-тесты логики
+```
+
+## Агенты
+Определены в `.claude/agents/`:
+- `level-designer` — уровни (2000+), сложность, фишки/механики, главы, модели бутылок
+- `architect` — структура проекта, Unity/URP, Player Settings iOS/Android
+- `gameplay` — логика бутылок, генератор+солвер, переливание, бустеры
+- `ui` — экраны, Safe Area, анимации интерфейса
+- `vfx-art` — шейдеры жидкости/стекла, частицы, фоны, атласы
+- `services` — сохранения, экономика, магазин, звук, реклама, уведомления, сборки
+- `qa` — тесты, проверка решаемости, ревью

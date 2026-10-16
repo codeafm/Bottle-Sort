@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Магазин</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+@keyframes bsWave{from{transform:translateX(0)}to{transform:translateX(-50px)}}
+@keyframes bsBub{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.95}100%{transform:translateY(-70px) scale(1.1);opacity:0}}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+@keyframes spinGlow{from{transform:translateX(-50%) rotate(0deg)}to{transform:translateX(-50%) rotate(360deg)}}
+@keyframes hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes toastIn{0%{opacity:0;transform:translate(-50%,-8px)}100%{opacity:1;transform:translate(-50%,0)}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #071338; color: #ffffff; font-family: 'Nunito', system-ui, sans-serif">
+  <div style="position: absolute; inset: 0">
+    <dc-import name="Bg" theme="{{previewTheme}}" hint-size="390px,844px"></dc-import>
+  </div>
+
+  <div style="position: relative; height: 100%; box-sizing: border-box; padding: 54px 16px 20px; display: flex; flex-direction: column">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <a href="Main.dc.html" aria-label="Назад" style="width: 48px; height: 48px; border-radius: 16px; border: 1.5px solid rgba(170,210,255,0.35); background: rgba(10,26,80,0.6); display: flex; align-items: center; justify-content: center">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </a>
+      <div style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; text-shadow: 0 3px 0 rgba(0,20,70,0.7)">Магазин</div>
+      <div style="height: 44px; padding: 0 12px 0 8px; border-radius: 22px; border: 1.5px solid rgba(255,214,110,0.55); background: rgba(10,26,80,0.6); display: flex; align-items: center; gap: 7px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 18px">
+        <span style="width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFF5BF 0%, #FFC83D 45%, #D97F00 100%); box-shadow: inset 0 -2px 0 rgba(140,70,0,0.55)"></span>
+        {{coinsText}}
+      </div>
+    </div>
+
+    <div style="position: relative; height: 236px; display: flex; align-items: flex-end; justify-content: center">
+      <div style="position: absolute; left: 50%; top: 16px; width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(from 0deg, rgba(53,244,255,0), rgba(53,244,255,0.4), rgba(228,116,255,0.4), rgba(53,244,255,0)); filter: blur(20px); animation: spinGlow 8s linear infinite"></div>
+      <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 170px; height: 28px; border-radius: 50%; background: radial-gradient(ellipse, rgba(120,220,255,0.6) 0%, rgba(120,220,255,0) 70%)"></div>
+      <div style="position: relative; padding-bottom: 30px; animation: hover 3s ease-in-out infinite">
+        <dc-import name="Bottle" shape="{{pvShape}}" colors="{{pvColors}}" size="{{pvSize}}" hint-size="84px,202px"></dc-import>
+      </div>
+      <div style="position: absolute; bottom: 0; left: 0; right: 0; text-align: center; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px">{{pvName}}</div>
+    </div>
+
+    <div role="tablist" style="margin-top: 14px; padding: 4px; border-radius: 18px; background: rgba(8,20,64,0.8); border: 1.5px solid rgba(150,200,255,0.25); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px">
+      <button role="tab" aria-selected="{{tabBottles}}" onClick="{{showBottles}}" style="height: 42px; border-radius: 14px; border: none; cursor: pointer; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: #ffffff; background: {{tabBgBottles}}">Бутылки</button>
+      <button role="tab" aria-selected="{{tabBgs}}" onClick="{{showBgs}}" style="height: 42px; border-radius: 14px; border: none; cursor: pointer; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: #ffffff; background: {{tabBgBgs}}">Фоны</button>
+    </div>
+    <div style="margin-top: 8px; text-align: center; font-size: 12px; font-weight: 800; color: #A9CCF2">{{tabHint}}</div>
+
+    <div style="position: relative; margin-top: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+      <sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+        <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); z-index: 5; white-space: nowrap; padding: 8px 14px; border-radius: 14px; background: linear-gradient(180deg, #1D64E8, #087BDE); border: 1.5px solid rgba(255,255,255,0.5); font-weight: 900; font-size: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); animation: toastIn 0.25s ease">{{toast}}</div>
+      </sc-if>
+      <sc-for list="{{items}}" as="it" hint-placeholder-count="6">
+        <button aria-label="{{it.aria}}" onClick="{{it.tap}}" style="position: relative; height: 170px; padding: 8px 6px; box-sizing: border-box; border-radius: 20px; border: {{it.border}}; background: linear-gradient(180deg, rgba(22,56,128,0.92), rgba(8,24,66,0.92)); box-shadow: {{it.glow}}; color: #ffffff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between">
+          <sc-if value="{{it.isNew}}" hint-placeholder-val="{{false}}">
+            <span style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 2px 8px; border-radius: 8px; background: linear-gradient(180deg, #FF8BCB, #D81B60); border: 1.5px solid #ffffff; font-size: 10px; font-weight: 900; letter-spacing: 0.5px">НОВИНКА</span>
+          </sc-if>
+          <div style="height: 98px; display: flex; align-items: flex-end; justify-content: center">
+            <sc-if value="{{it.isBottle}}" hint-placeholder-val="{{true}}">
+              <dc-import name="Bottle" shape="{{it.shape}}" colors="{{it.colors}}" size="{{cardSize}}" hint-size="40px,96px"></dc-import>
+            </sc-if>
+            <sc-if value="{{it.isBg}}" hint-placeholder-val="{{false}}">
+              <div style="position: relative; width: 84px; height: 96px; border-radius: 14px; overflow: hidden; border: 2px solid rgba(255,255,255,0.4)">
+                <div style="position: absolute; left: 0; top: -40px; width: 390px; height: 844px; transform: scale(0.2154); transform-origin: 0 0">
+                  <dc-import name="Bg" theme="{{it.theme}}" hint-size="390px,844px"></dc-import>
+                </div>
+                <div style="position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%)">
+                  <dc-import name="Bottle" shape="classic" colors="{{it.colors}}" size="{{thumbBottle}}" hint-size="24px,58px"></dc-import>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <div style="font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; line-height: 1.1; text-align: center">{{it.name}}</div>
+          <div style="width: 100%; height: 30px; border-radius: 12px; background: {{it.pillBg}}; display: flex; align-items: center; justify-content: center; gap: 5px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: {{it.pillInk}}">
+            <sc-if value="{{it.showCoin}}" hint-placeholder-val="{{true}}">
+              <span style="width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFF5BF 0%, #FFC83D 45%, #D97F00 100%)"></span>
+            </sc-if>
+            {{it.pill}}
+          </div>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+const BOTTLES = [
+  { id: 'wine', name: 'Длинная', price: 0, colors: ['B', 'C', 'K', 'Y'] },
+  { id: 'jug', name: 'Кувшин', price: 500, colors: ['P', 'K', 'O', 'Y'], isNew: true },
+  { id: 'teapot', name: 'Чайник', price: 700, colors: ['G', 'L', 'Y', 'O'], isNew: true },
+  { id: 'flask', name: 'Колба', price: 600, colors: ['C', 'B', 'P', 'K'] },
+  { id: 'potion', name: 'Зелье', price: 800, colors: ['P', 'K', 'R', 'O'], isNew: true },
+  { id: 'jar', name: 'Банка', price: 750, colors: ['N', 'O', 'Y', 'L'] }
+];
+const BGS = [
+  { id: 'navy', name: 'Ночь', price: 0, colors: ['B', 'C', 'B'] },
+  { id: 'violet', name: 'Аметист', price: 600, colors: ['P', 'K', 'P'] },
+  { id: 'teal', name: 'Лагуна', price: 700, colors: ['C', 'G', 'C'] },
+  { id: 'rose', name: 'Роза', price: 750, colors: ['K', 'R', 'K'] },
+  { id: 'emerald', name: 'Изумруд', price: 900, colors: ['G', 'L', 'G'] },
+  { id: 'amber', name: 'Янтарь', price: 1000, colors: ['O', 'Y', 'O'] }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'bottles', coins: 1250, owned: ['wine', 'flask', 'navy', 'violet'], selBottle: 'wine', selBg: 'violet', preview: 'jug', toast: null };
+  }
+
+  flash(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this.tt);
+    this.tt = setTimeout(() => this.setState({ toast: null }), 1500);
+  }
+
+  pick(item, kind) {
+    const { owned, coins } = this.state;
+    const key = kind === 'bottle' ? 'selBottle' : 'selBg';
+    const upd = { [key]: item.id };
+    if (kind === 'bottle') upd.preview = item.id;
+    if (owned.indexOf(item.id) >= 0) { this.setState(upd); return; }
+    if (coins < item.price) {
+      if (kind === 'bottle') this.setState({ preview: item.id });
+      this.flash('Не хватает монет');
+      return;
+    }
+    upd.coins = coins - item.price;
+    upd.owned = owned.concat([item.id]);
+    this.setState(upd);
+    this.flash('Куплено: ' + item.name);
+  }
+
+  renderVals() {
+    const { tab, coins, owned, selBottle, selBg, preview, toast } = this.state;
+    const isB = tab === 'bottles';
+    const list = isB ? BOTTLES : BGS;
+    const sel = isB ? selBottle : selBg;
+    const items = list.map((it) => {
+      const has = owned.indexOf(it.id) >= 0;
+      const on = it.id === sel;
+      const afford = coins >= it.price;
+      return {
+        name: it.name, isNew: !!it.isNew && !has, isBottle: isB, isBg: !isB,
+        shape: it.id, colors: it.colors || [], theme: it.id,
+        aria: it.name + (on ? ', выбрано' : has ? ', куплено' : ', цена ' + it.price),
+        border: on ? '2.5px solid #9BFF4F' : '1.5px solid rgba(150,200,255,0.3)',
+        glow: on ? '0 0 18px rgba(155,255,79,0.55)' : '0 6px 14px rgba(0,0,0,0.35)',
+        showCoin: !has,
+        pill: on ? 'Выбрано' : has ? 'Выбрать' : String(it.price),
+        pillBg: on ? 'linear-gradient(180deg, #9BFF4F, #17A523)' : has ? 'linear-gradient(180deg, #35C7FF, #0870E8)' : afford ? 'linear-gradient(180deg, #FFD957, #FF7A00)' : 'rgba(255,255,255,0.12)',
+        pillInk: !has && afford ? '#4A1E00' : '#ffffff',
+        tap: () => this.pick(it, isB ? 'bottle' : 'bg')
+      };
+    });
+    const pv = BOTTLES.find((b) => b.id === preview) || BOTTLES[0];
+    return {
+      items, toast,
+      coinsText: coins.toLocaleString('ru-RU'),
+      pvShape: pv.id, pvColors: pv.colors, pvName: pv.name, pvSize: 84, cardSize: 40, thumbBottle: 24,
+      previewTheme: selBg,
+      tabHint: isB ? 'Купленные модели появляются на уровнях' : 'Фон игрового поля и меню',
+      tabBottles: isB ? 'true' : 'false', tabBgs: isB ? 'false' : 'true',
+      tabBgBottles: isB ? 'linear-gradient(180deg, #35C7FF, #0870E8)' : 'transparent',
+      tabBgBgs: isB ? 'transparent' : 'linear-gradient(180deg, #35C7FF, #0870E8)',
+      showBottles: () => this.setState({ tab: 'bottles' }),
+      showBgs: () => this.setState({ tab: 'bgs' })
+    };
+  }
+}
+</script>
+</body>
+</html>

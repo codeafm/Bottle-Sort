@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Фон</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+@keyframes twinkle{0%,100%{opacity:.1;transform:scale(.6)}50%{opacity:.75;transform:scale(1)}}
+@keyframes breathe{0%,100%{opacity:.55;transform:translate(-50%,-50%) scale(1)}50%{opacity:.85;transform:translate(-50%,-50%) scale(1.08)}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: {{base}}">
+  <div style="position: absolute; left: 50%; top: 40%; width: 520px; height: 520px; border-radius: 50%; background: {{halo}}; animation: breathe 9s ease-in-out infinite"></div>
+  <sc-for list="{{sparks}}" as="s" hint-placeholder-count="22">
+    <span style="position: absolute; left: {{s.x}}px; top: {{s.y}}px; width: {{s.r}}px; height: {{s.r}}px; border-radius: 50%; background: #ffffff; box-shadow: 0 0 6px 1px {{glow}}; animation: twinkle {{s.d}}s ease-in-out {{s.delay}}s infinite"></span>
+  </sc-for>
+  <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%)"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["navy","violet","teal","rose","emerald","amber"],"default":"navy"},"$preview":{"width":390,"height":844}}'>
+const THEMES = {
+  navy: ['#12306E', '#071338', '#040A22', '#3A7BFF', 'rgba(150,190,255,0.8)'],
+  violet: ['#3A1E78', '#1A0F45', '#0B0624', '#9A5CFF', 'rgba(210,170,255,0.8)'],
+  teal: ['#0B3E4E', '#05222D', '#020E14', '#1BA9C0', 'rgba(150,240,255,0.7)'],
+  rose: ['#6E1240', '#3A0A26', '#1A0412', '#FF3D8D', 'rgba(255,170,210,0.8)'],
+  emerald: ['#0F5A3E', '#06301F', '#02150D', '#2DFFB0', 'rgba(170,255,210,0.8)'],
+  amber: ['#6B4310', '#2E1C06', '#120A02', '#FFB547', 'rgba(255,220,150,0.85)']
+};
+
+class Component extends DCLogic {
+  renderVals() {
+    const t = THEMES[this.props.theme] || THEMES.navy;
+    const rnd = (i, n) => ((i * 9301 + n * 49297 + 233) % 233280) / 233280;
+    const sparks = [];
+    for (let i = 0; i < 22; i++) {
+      sparks.push({ x: Math.round(rnd(i, 1) * 384), y: Math.round(rnd(i, 2) * 830), r: 2 + Math.round(rnd(i, 3) * 2), d: (3 + rnd(i, 4) * 4).toFixed(2), delay: (-rnd(i, 5) * 7).toFixed(2) });
+    }
+    return {
+      base: 'radial-gradient(ellipse at 50% 35%, ' + t[0] + ' 0%, ' + t[1] + ' 55%, ' + t[2] + ' 100%)',
+      halo: 'radial-gradient(circle, ' + t[3] + '24 0%, ' + t[3] + '00 65%)',
+      glow: t[4],
+      sparks
+    };
+  }
+}
+</script>
+</body>
+</html>

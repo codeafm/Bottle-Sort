@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Игровой экран</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@700;800;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:inherit}
+@keyframes shake{0%,100%{translate:0 0}20%{translate:-7px 0}40%{translate:7px 0}60%{translate:-5px 0}80%{translate:4px 0}}
+@keyframes toastIn{0%{opacity:0;transform:translate(-50%,-8px)}100%{opacity:1;transform:translate(-50%,0)}}
+@keyframes winIn{0%{opacity:0;transform:scale(.85)}100%{opacity:1;transform:scale(1)}}
+@keyframes tagGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,139,203,0.6)}50%{box-shadow:0 0 16px 2px rgba(255,139,203,0.7)}}
+@keyframes streamIn{0%{transform:scaleY(0)}100%{transform:scaleY(1)}}
+@keyframes streamFlow{0%{background-position:0 0}100%{background-position:0 24px}}
+@keyframes ripple{0%{transform:scale(.35);opacity:.95}100%{transform:scale(1.5);opacity:0}}
+@keyframes hopL{0%{transform:translate(0,0);opacity:0}20%{opacity:1}100%{transform:translate(-11px,-13px);opacity:0}}
+@keyframes hopR{0%{transform:translate(0,0);opacity:0}20%{opacity:1}100%{transform:translate(10px,-11px);opacity:0}}
+@keyframes hopC{0%{transform:translate(0,0);opacity:0}20%{opacity:1}100%{transform:translate(2px,-17px);opacity:0}}
+@keyframes bsWave{from{transform:translateX(0)}to{transform:translateX(-50px)}}
+@keyframes bsBub{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.95}100%{transform:translateY(-70px) scale(1.1);opacity:0}}
+</style>
+</helmet>
+<div data-game-root="1" style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #0C0E30; color: #ffffff; font-family: 'Nunito', system-ui, sans-serif">
+  <div style="position: absolute; inset: 0">
+    <dc-import name="Bg" theme="{{theme}}" hint-size="390px,844px"></dc-import>
+  </div>
+
+  <div style="position: relative; height: 100%; box-sizing: border-box; padding: 54px 16px 18px; display: flex; flex-direction: column">
+
+    <div style="display: grid; grid-template-columns: 112px minmax(0, 1fr) 112px; align-items: start; height: 74px">
+      <a href="Main.dc.html" aria-label="В меню" style="width: 48px; height: 48px; margin-top: 4px; border-radius: 16px; border: 1.5px solid rgba(220,235,255,0.4); background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.06)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 6px 14px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      </a>
+      <div style="position: relative; justify-self: center; width: 150px; height: 58px; border-radius: 20px; background: linear-gradient(180deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.08) 100%); border: 1.5px solid rgba(230,240,255,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 8px 18px rgba(0,0,0,0.35); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1">
+        <span style="font-size: 11px; font-weight: 900; letter-spacing: 2.5px; color: rgba(235,243,255,0.85)">УРОВЕНЬ</span>
+        <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; margin-top: 2px; text-shadow: 0 2px 0 rgba(0,0,0,0.3)">{{levelNum}}</span>
+        <span style="position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%); height: 20px; padding: 0 12px; box-sizing: border-box; border-radius: 10px; background: {{tagBg}}; border: 1.5px solid rgba(255,255,255,0.9); box-shadow: 0 4px 10px rgba(0,0,0,0.35); display: flex; align-items: center; font-size: 10.5px; font-weight: 900; letter-spacing: 0.6px; white-space: nowrap; text-shadow: 0 1px 0 rgba(0,0,0,0.3)">{{tag}}</span>
+      </div>
+      <div style="justify-self: end; width: 104px; height: 44px; margin-top: 6px; box-sizing: border-box; padding: 0 12px 0 6px; border-radius: 22px; border: 1.5px solid rgba(255,214,110,0.6); background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.06)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 6px 14px rgba(0,0,0,0.3); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: space-between; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 18px">
+        <span style="width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFF5BF 0%, #FFC83D 45%, #D97F00 100%); box-shadow: inset 0 -2px 0 rgba(140,70,0,0.55), 0 0 10px rgba(255,200,60,0.5)"></span>
+        1 250
+      </div>
+    </div>
+
+    <div style="margin-top: 6px; height: 54px; box-sizing: border-box; padding: 0 16px; border-radius: 18px; background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05)); border: 1.5px solid rgba(220,235,255,0.3); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3); backdrop-filter: blur(10px); display: grid; grid-template-columns: minmax(0, 1fr) 74px 68px; align-items: center; gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; font-weight: 900; color: rgba(235,243,255,0.9)">Собрано {{doneCount}} / {{colorCount}}</span>
+        <div style="height: 9px; border-radius: 5px; background: rgba(0,0,0,0.35); overflow: hidden">
+          <div style="width: {{donePct}}%; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #9BFF4F, #17A523); transition: width 0.4s ease"></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; line-height: 1; border-left: 1px solid rgba(255,255,255,0.18); border-right: 1px solid rgba(255,255,255,0.18)">
+        <span style="font-size: 10px; font-weight: 900; letter-spacing: 1px; color: rgba(235,243,255,0.75)">ХОДЫ</span>
+        <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; margin-top: 3px">{{moves}}</span>
+      </div>
+      <div style="display: flex; gap: 1px; justify-content: flex-end" aria-label="Звёзды за текущий результат">
+        <sc-for list="{{starRow}}" as="s" hint-placeholder-count="3">
+          <svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="{{s.fill}}" stroke="#7A3F00" stroke-width="1.5" stroke-linejoin="round"></polygon></svg>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="margin-top: 8px; height: 28px; display: flex; align-items: center; justify-content: center">
+      <span style="max-width: 100%; padding: 5px 12px; box-sizing: border-box; border-radius: 12px; background: rgba(0,0,0,0.25); font-size: 12px; font-weight: 800; color: #DCEBFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{info}}</span>
+    </div>
+
+    <div style="position: relative; flex-grow: 1; display: flex; align-items: center; justify-content: center">
+      <sc-if value="{{toast}}" hint-placeholder-val="{{false}}">
+        <div style="position: absolute; top: 4px; left: 50%; transform: translateX(-50%); z-index: 40; white-space: nowrap; padding: 9px 16px; border-radius: 14px; background: linear-gradient(180deg, #1D64E8, #087BDE); border: 1.5px solid rgba(255,255,255,0.5); font-weight: 900; font-size: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); animation: toastIn 0.25s ease">{{toast}}</div>
+      </sc-if>
+
+      <sc-if value="{{isRows}}" hint-placeholder-val="{{true}}">
+        <div style="zoom: {{zoom}}; display: flex; flex-direction: column; align-items: center; gap: {{rowGap}}px; padding-top: 24px">
+          <sc-for list="{{rows}}" as="row" hint-placeholder-count="2">
+            <div style="display: flex; flex-direction: column; align-items: center">
+              <div style="display: flex; gap: 12px; align-items: flex-end; padding: 0 10px">
+                <sc-for list="{{row.items}}" as="b" hint-placeholder-count="4">
+                  <button data-bi="{{b.idx}}" aria-label="{{b.label}}" onClick="{{b.tap}}" style="position: relative; z-index: {{b.z}}; width: {{b.btnW}}px; height: {{b.btnH}}px; padding: 0; border: none; background: none; cursor: pointer; display: flex; justify-content: center; align-items: flex-end; transform: {{b.transform}}; transition: {{b.trans}}; animation: {{b.anim}}">
+                    <dc-import name="Bottle" shape="{{b.shape}}" colors="{{b.colors}}" cap="{{b.cap}}" glow="{{b.glow}}" size="{{b.size}}" tilt="{{b.tilt}}" agitated="{{b.agit}}" veiled="{{b.hidden}}" frozen="{{b.frozen}}" locked="{{b.locked}}" hint-size="70px,168px"></dc-import>
+                    <sc-if value="{{b.done}}" hint-placeholder-val="{{false}}">
+                      <span style="position: absolute; top: -8px; right: -4px; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #9BFF4F, #17A523); border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px rgba(155,255,79,0.8)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      </span>
+                    </sc-if>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="width: {{row.shelfW}}px; height: 12px; margin-top: -6px; border-radius: 6px; background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(200,230,255,0.18) 45%, rgba(255,255,255,0.06) 100%); border-top: 1px solid rgba(255,255,255,0.75); box-shadow: 0 12px 22px rgba(0,0,0,0.35), 0 0 22px rgba(140,200,255,0.25)"></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isGrid}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; align-items: center; padding-top: 20px">
+          <div style="display: grid; grid-template-columns: 52px 52px 116px 52px 52px; grid-template-rows: 150px 150px; column-gap: 6px; row-gap: 6px; align-items: end">
+            <sc-for list="{{flat}}" as="b" hint-placeholder-count="9">
+              <button data-bi="{{b.idx}}" aria-label="{{b.label}}" onClick="{{b.tap}}" style="position: relative; z-index: {{b.z}}; grid-column: {{b.gc}}; grid-row: {{b.gr}}; width: {{b.btnW}}px; height: {{b.btnH}}px; padding: 0; border: none; background: none; cursor: pointer; display: flex; justify-content: center; align-items: flex-end; transform: {{b.transform}}; transition: {{b.trans}}; animation: {{b.anim}}">
+                <dc-import name="Bottle" shape="{{b.shape}}" colors="{{b.colors}}" cap="{{b.cap}}" glow="{{b.glow}}" size="{{b.size}}" tilt="{{b.tilt}}" agitated="{{b.agit}}" veiled="{{b.hidden}}" frozen="{{b.frozen}}" locked="{{b.locked}}" hint-size="50px,120px"></dc-import>
+                <sc-if value="{{b.done}}" hint-placeholder-val="{{false}}">
+                  <span style="position: absolute; top: -8px; right: -4px; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #9BFF4F, #17A523); border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px rgba(155,255,79,0.8)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  </span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+          <div style="width: 356px; height: 12px; margin-top: -6px; border-radius: 6px; background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(200,230,255,0.18) 45%, rgba(255,255,255,0.06) 100%); border-top: 1px solid rgba(255,255,255,0.75); box-shadow: 0 12px 22px rgba(0,0,0,0.35), 0 0 22px rgba(140,200,255,0.25)"></div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px">
+      <sc-for list="{{boosters}}" as="k" hint-placeholder-count="4">
+        <button aria-label="{{k.aria}}" onClick="{{k.tap}}" style="display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; color: #ffffff; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px; cursor: pointer; padding: 0">
+          <span style="position: relative; width: 62px; height: 62px; border-radius: 22px; background: linear-gradient(180deg, #35C7FF 0%, #0870E8 60%, #0548A8 100%); border: 2px solid rgba(255,255,255,0.5); box-shadow: inset 0 -4px 0 rgba(0,30,90,0.4), 0 8px 16px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center">
+            <sc-if value="{{k.isUndo}}" hint-placeholder-val="{{false}}">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+            </sc-if>
+            <sc-if value="{{k.isRestart}}" hint-placeholder-val="{{false}}">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            </sc-if>
+            <sc-if value="{{k.isHint}}" hint-placeholder-val="{{false}}">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"></path></svg>
+            </sc-if>
+            <sc-if value="{{k.isBottle}}" hint-placeholder-val="{{false}}">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6"></path><path d="M10 2v5l-3 3v10a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V10l-3-3V2"></path><line x1="12" y1="12" x2="12" y2="18"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+            </sc-if>
+            <sc-if value="{{k.hasBadge}}" hint-placeholder-val="{{true}}">
+              <span style="position: absolute; top: -7px; right: -7px; min-width: 24px; height: 24px; padding: 0 5px; box-sizing: border-box; border-radius: 12px; background: {{k.badgeBg}}; color: {{k.badgeInk}}; border: 2px solid #ffffff; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center">{{k.badge}}</span>
+            </sc-if>
+          </span>
+          {{k.label}}
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="margin: 14px auto 0; width: 320px; height: 50px; border-radius: 10px; border: 1.5px dashed rgba(220,235,255,0.4); background: rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: rgba(230,240,255,0.8)">Баннер Yandex Ads · 320×50</div>
+  </div>
+
+  <sc-if value="{{streamOn}}" hint-placeholder-val="{{false}}">
+    <div aria-hidden="true" style="position: absolute; left: {{st.left}}px; top: {{st.top}}px; width: 9px; height: {{st.h}}px; z-index: 25; transform-origin: 50% 0; animation: streamIn 0.14s ease-out; filter: drop-shadow(0 0 5px {{st.glow}})">
+      <div style="position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, 74% 100%, 26% 100%); background: {{st.bg}}"></div>
+      <div style="position: absolute; inset: 0; clip-path: polygon(0 0, 100% 0, 74% 100%, 26% 100%); background: repeating-linear-gradient(180deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0.55) 5px, rgba(255,255,255,0) 12px); background-size: 100% 24px; animation: streamFlow 0.28s linear infinite"></div>
+    </div>
+    <div aria-hidden="true" style="position: absolute; left: {{st.splashL}}px; top: {{st.splashT}}px; width: 26px; height: 9px; z-index: 26; box-sizing: border-box; border-radius: 50%; border: 2px solid {{st.light}}; animation: ripple 0.5s ease-out infinite"></div>
+    <div aria-hidden="true" style="position: absolute; left: {{st.splashL}}px; top: {{st.splashT}}px; width: 26px; height: 9px; z-index: 26; box-sizing: border-box; border-radius: 50%; border: 2px solid {{st.light}}; animation: ripple 0.5s ease-out -0.25s infinite"></div>
+    <div aria-hidden="true" style="position: absolute; left: {{st.dropL}}px; top: {{st.dropT}}px; width: 4px; height: 4px; z-index: 27; border-radius: 50%; background: {{st.light}}; animation: hopL 0.42s ease-out infinite"></div>
+    <div aria-hidden="true" style="position: absolute; left: {{st.dropL}}px; top: {{st.dropT}}px; width: 3px; height: 3px; z-index: 27; border-radius: 50%; background: {{st.light}}; animation: hopR 0.38s ease-out -0.15s infinite"></div>
+    <div aria-hidden="true" style="position: absolute; left: {{st.dropL}}px; top: {{st.dropT}}px; width: 3px; height: 3px; z-index: 27; border-radius: 50%; background: #FFFFFF; animation: hopC 0.46s ease-out -0.3s infinite"></div>
+  </sc-if>
+
+  <sc-if value="{{won}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; background: rgba(3,8,30,0.62); display: flex; align-items: center; justify-content: center; z-index: 50">
+      <div style="width: 300px; padding: 28px 22px 22px; border-radius: 28px; background: linear-gradient(180deg, #123C87, #061B42); border: 2.5px solid rgba(120,200,255,0.6); box-shadow: 0 0 40px rgba(53,199,255,0.45); display: flex; flex-direction: column; align-items: center; gap: 14px; animation: winIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)">
+        <div style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 30px; color: #FFD957; text-shadow: 0 3px 0 #A84A00">Уровень пройден!</div>
+        <div style="font-size: 15px; font-weight: 800; color: #CFE6FF">Ходов: {{moves}}</div>
+        <a href="Win.dc.html" style="width: 100%; height: 58px; border-radius: 20px; background: linear-gradient(180deg, #B6FF6E 0%, #17A523 100%); border: 2px solid rgba(255,255,255,0.6); box-shadow: 0 5px 0 #0E6B17; display: flex; align-items: center; justify-content: center; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; text-shadow: 0 2px 0 #0E6B17">Забрать награду</a>
+        <button onClick="{{restart}}" style="background: none; border: none; color: #9FDDFF; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 15px; cursor: pointer; padding: 6px">Сыграть ещё раз</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["normal","special","big","lv100","lv200","lv500","lv1000","lv1500","lv2000"],"default":"normal"},"$preview":{"width":390,"height":844}}'>
+const NAMES = { R: 'красный', B: 'синий', Y: 'жёлтый', G: 'зелёный', P: 'фиолетовый', C: 'бирюзовый', O: 'оранжевый', K: 'розовый', L: 'лайм', N: 'коричневый', W: 'белый', D: 'тёмно-синий' };
+const TONE = {
+  R: ['#C9283A', '#D86471', '#7D1924'], B: ['#2D5FC4', '#688CD5', '#1C3B7A'], Y: ['#E3B21E', '#EBC85D', '#8D6E13'],
+  G: ['#2A9E4A', '#66B97D', '#1A622E'], P: ['#6E3BB0', '#9772C6', '#44256D'], C: ['#1495AA', '#56B3C2', '#0C5C69'],
+  O: ['#D9772A', '#E49D66', '#874A1A'], K: ['#C73278', '#D76B9E', '#7B1F4A'], L: ['#85B524', '#A7CA61', '#527016'],
+  N: ['#8A5530', '#AB856A', '#56351E'], W: ['#D5D9E6', '#E1E4ED', '#84878F'], D: ['#2A2D57', '#666886', '#1A1C36']
+};
+const GEO = { classic: [66, 226], cylinder: [36, 212], wine: [106, 226], jug: [104, 226], teapot: [120, 225], glass: [100, 220], flask: [106, 226], potion: [140, 224], jar: [106, 226] };
+const MIXED = ['wine', 'jug', 'teapot', 'flask', 'potion', 'glass', 'jar'];
+const LEVELS = {
+  normal: { num: 24, theme: 'navy', tag: '', unit: 4, shapes: 'classic',
+    start: [['R', 'B', 'G', 'Y'], ['Y', 'R', 'P', 'B'], ['G', 'C', 'R', 'P'], ['B', 'P', 'C', 'C'], ['P', 'G', 'Y', 'R'], ['C', 'Y', 'B', 'G'], [], []] },
+  special: { num: 30, theme: 'violet', tag: '★ ОСОБЫЙ УРОВЕНЬ', unit: 4, shapes: 'mixed',
+    start: [['K', 'B', 'G', 'Y'], ['Y', 'K', 'P', 'B'], ['G', 'C', 'K', 'P'], ['B', 'P', 'C', 'C'], ['P', 'G', 'Y', 'K'], ['C', 'Y', 'B', 'G'], [], []] },
+  big: { num: 45, theme: 'teal', tag: 'БОЛЬШАЯ КОЛБА', unit: 4, shapes: 'classic', layout: 'grid', bigIdx: 8,
+    start: [['R', 'B', 'Y', 'G'], ['P', 'C', 'O', 'R'], ['B', 'Y', 'G', 'P'], ['C', 'O', 'R', 'B'], ['Y', 'G', 'P', 'C'], ['O', 'R', 'B', 'Y'], ['G', 'P', 'C', 'O'], [], []],
+    cells: [['1', '1'], ['2', '1'], ['4', '1'], ['5', '1'], ['1', '2'], ['2', '2'], ['4', '2'], ['5', '2'], ['3', '1 / span 2']] },
+  lv100: { num: 100, theme: 'teal', tag: 'НОВОЕ: СКРЫТЫЕ СЛОИ', unit: 4, shapes: 'classic', colors: 'RBYGPCOK', empty: 2, hidden: 2, seed: 100,
+    info: 'Слои «?» открываются, когда над ними освобождается место' },
+  lv200: { num: 200, theme: 'emerald', tag: 'НОВОЕ: ЛЁД', unit: 4, shapes: 'classic', colors: 'RBYGPCOKL', empty: 2, hidden: 1, frozenAt: 2, frozenN: 3, seed: 200,
+    info: 'Бутылка во льду оттает через 3 хода' },
+  lv500: { num: 500, theme: 'rose', tag: '5 СЛОЁВ · ОСОБЫЙ', unit: 5, shapes: 'mixed', colors: 'RBYGPCOKL', empty: 2, hidden: 2, seed: 500,
+    info: 'Каждого цвета по 5 слоёв, формы бутылок разные' },
+  lv1000: { num: 1000, theme: 'amber', tag: 'БОСС · ЗАМОК', unit: 4, shapes: 'mixed', colors: 'RBYGPCOKLN', empty: 2, hidden: 2, lockLast: true, seed: 1000,
+    info: 'Замок откроется, когда соберёшь любой цвет' },
+  lv1500: { num: 1500, theme: 'violet', tag: 'БОЛЬШАЯ КОЛБА + ЛЁД', unit: 4, shapes: 'classic', colors: 'RBYGPCOKLN', empty: 1, big: true, hidden: 2, frozenAt: 6, frozenN: 4, seed: 1500,
+    info: 'Колба на 8 слоёв, одна бутылка во льду' },
+  lv2000: { num: 2000, theme: 'navy', tag: 'ФИНАЛ · 12 ЦВЕТОВ', unit: 5, shapes: 'mixed', colors: 'RBYGPCOKLNWD', empty: 2, hidden: 3, frozenAt: 4, frozenN: 5, lockLast: true, seed: 2000,
+    info: 'Всё вместе: «?», лёд, замок и 5 слоёв' }
+};
+
+const HUD = {
+  normal: ['ОБЫЧНЫЙ', 'linear-gradient(180deg, #7BE84A, #1E9A2C)', 'Собери каждый цвет в свою бутылку'],
+  special: ['★ ОСОБЫЙ', 'linear-gradient(180deg, #FF8BCB, #D81B60)', 'Особый уровень: бутылки разной формы'],
+  big: ['БОЛЬШАЯ КОЛБА', 'linear-gradient(180deg, #4FD8FF, #0870E8)', 'Большая колба вмещает 8 слоёв'],
+  lv100: ['СКРЫТЫЕ СЛОИ', 'linear-gradient(180deg, #B07BFF, #6A2BD4)', 'Слои «?» откроются, когда станут верхними'],
+  lv200: ['ЛЁД', 'linear-gradient(180deg, #8EE6FF, #2FA8E8)', 'Бутылка во льду оттает через 3 хода'],
+  lv500: ['5 СЛОЁВ', 'linear-gradient(180deg, #FF8BCB, #D81B60)', 'По 5 слоёв каждого цвета, разные формы'],
+  lv1000: ['БОСС · ЗАМОК', 'linear-gradient(180deg, #FFD957, #E07800)', 'Замок откроется после первого цвета'],
+  lv1500: ['КОЛБА + ЛЁД', 'linear-gradient(180deg, #4FE3D0, #0B8F9E)', 'Колба на 8 слоёв, одна бутылка во льду'],
+  lv2000: ['ФИНАЛ', 'linear-gradient(180deg, #FF7A5C, #C2185B)', 'Всё вместе: «?», лёд, замок, 5 слоёв']
+};
+
+function build(L) {
+  let bottles;
+  if (L.start) {
+    bottles = L.start.map((b) => b.slice());
+  } else {
+    let seed = L.seed * 7919 + 13;
+    const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    const pool = [];
+    L.colors.split('').forEach((c) => { for (let k = 0; k < L.unit; k++) pool.push(c); });
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    bottles = [];
+    for (let i = 0; i < pool.length; i += L.unit) bottles.push(pool.slice(i, i + L.unit));
+    for (let i = 0; i < bottles.length; i++) {
+      const b = bottles[i];
+      if (b.every((c) => c === b[0])) { const nx = bottles[(i + 1) % bottles.length]; const t = b[0]; b[0] = nx[0]; nx[0] = t; }
+    }
+    for (let e = 0; e < L.empty; e++) bottles.push([]);
+  }
+  const n = bottles.length;
+  const caps = bottles.map(() => L.unit);
+  const shapes = bottles.map((_, i) => (L.shapes === 'mixed' ? MIXED[i % MIXED.length] : 'classic'));
+  let bigIdx = L.bigIdx ?? -1;
+  if (L.big) { bigIdx = 1; bottles.splice(bigIdx, 0, []); caps.splice(bigIdx, 0, L.unit * 2); shapes.splice(bigIdx, 0, 'cylinder'); }
+  if (bigIdx >= 0) { caps[bigIdx] = L.unit * 2; shapes[bigIdx] = 'cylinder'; }
+  const hidden = bottles.map((b) => Math.min(L.hidden || 0, Math.max(b.length - 1, 0)));
+  const frozen = bottles.map((_, i) => (i === L.frozenAt ? L.frozenN : 0));
+  const locked = bottles.map((_, i) => !!L.lockLast && i === bottles.length - 1);
+  return { bottles, caps, shapes, hidden, frozen, locked, bigIdx, colorCount: L.start ? new Set([].concat(...L.start)).size : L.colors.length, n };
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.timers = [];
+    this.state = this.fresh(props.mode);
+  }
+
+  lvl(mode) { return LEVELS[mode] || LEVELS.normal; }
+
+  fresh(mode) {
+    const g = build(this.lvl(mode));
+    return Object.assign(g, {
+      sel: null, hintTo: null, history: [], shake: null, extra: false, pour: null, agit: null,
+      undoLeft: 3, hintLeft: 2, bottleLeft: 1, toast: null
+    });
+  }
+
+  componentDidUpdate(prev) {
+    if (prev.mode !== this.props.mode) { this.clearTimers(); this.setState(this.fresh(this.props.mode)); }
+  }
+
+  componentWillUnmount() { this.clearTimers(); }
+
+  clearTimers() { this.timers.forEach((t) => clearTimeout(t)); this.timers = []; }
+
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+
+  isDone(b) { const u = this.lvl(this.props.mode).unit; return b.length === u && b.every((c) => c === b[0]); }
+
+  canPour(st, f, t) {
+    const s = st.bottles[f], d = st.bottles[t];
+    if (f === t || !s.length || d.length >= st.caps[t] || st.locked[t] || st.frozen[t] > 0) return false;
+    return !d.length || d[d.length - 1] === s[s.length - 1];
+  }
+
+  flash(key, val, ms) {
+    this.setState({ [key]: val });
+    clearTimeout(this['t_' + key]);
+    this['t_' + key] = setTimeout(() => this.setState({ [key]: null }), ms);
+  }
+
+  snapshot() {
+    const st = this.state;
+    return { bottles: st.bottles.map((b) => b.slice()), hidden: st.hidden.slice(), frozen: st.frozen.slice(), locked: st.locked.slice(), caps: st.caps.slice(), shapes: st.shapes.slice() };
+  }
+
+  tap(i, e) {
+    const st = this.state;
+    if (st.pour) return;
+    if (st.locked[i]) { this.flash('toast', 'Закрыто — собери любой цвет', 1400); this.flash('shake', i, 450); return; }
+    if (st.frozen[i] > 0) { this.flash('toast', 'Лёд: ещё ' + st.frozen[i] + ' хода', 1400); this.flash('shake', i, 450); return; }
+    const sel = st.sel;
+    if (sel === null) {
+      if (st.bottles[i].length && !this.isDone(st.bottles[i])) this.setState({ sel: i, hintTo: null });
+      return;
+    }
+    if (sel === i) { this.setState({ sel: null, hintTo: null }); return; }
+    if (!this.canPour(st, sel, i)) {
+      this.setState({ sel: null, hintTo: null });
+      this.flash('shake', i, 450);
+      return;
+    }
+    const src = st.bottles[sel], top = src[src.length - 1];
+    let run = 0;
+    for (let k = src.length - 1; k >= 0 && src[k] === top; k--) run++;
+    const n = Math.min(run, st.caps[i] - st.bottles[i].length);
+    this.startPour(sel, i, n, top, e);
+  }
+
+  startPour(from, to, n, color, e) {
+    const st = this.state;
+    const z = this.zoomNow || 1;
+    let geo = null;
+    try {
+      const root = e.currentTarget.closest('[data-game-root]');
+      const sEl = root.querySelector('[data-bi="' + from + '"]');
+      const rr = root.getBoundingClientRect();
+      const k = rr.width / 390;
+      const s = sEl.getBoundingClientRect();
+      const t = e.currentTarget.getBoundingClientRect();
+      const sx = (s.left + s.width / 2 - rr.left) / k;
+      const sy = (s.top + s.height / 2 - rr.top) / k + 22 * z;
+      const tx = (t.left + t.width / 2 - rr.left) / k;
+      const tTop = (t.top - rr.top) / k;
+      const tH = t.height / k;
+      const H = s.height / k;
+      const sign = tx >= sx ? 1 : -1;
+      const deg = 66 * sign;
+      const rad = deg * Math.PI / 180;
+      const r = H * 0.44;
+      const mouthY = tTop - 6;
+      const dx = (tx - r * Math.sin(rad) - sx) / z;
+      const dy = (mouthY + r * Math.cos(rad) - sy) / z;
+      const g = GEO[st.shapes[to]] || GEO.classic;
+      const lh = (g[1] - g[0]) / st.caps[to];
+      const surf = g[1] - st.bottles[to].length * lh;
+      const svgH = tH - 4 * z;
+      const endY = tTop + 4 * z + svgH * (surf / 240);
+      const tone = TONE[color];
+      geo = {
+        dx, dy, deg,
+        stream: {
+          left: tx - 4.5, top: mouthY, h: Math.max(endY - mouthY, 10),
+          bg: 'linear-gradient(90deg, ' + tone[2] + ' 0%, ' + tone[1] + ' 32%, ' + tone[0] + ' 62%, ' + tone[2] + ' 100%)',
+          glow: tone[0], light: tone[1], dropL: tx - 2, dropT: endY - 3, splashL: tx - 13, splashT: endY - 4.5
+        }
+      };
+    } catch (err) {
+      geo = null;
+    }
+    const hist = st.history.concat([this.snapshot()]);
+    if (!geo) {
+      const nb = st.bottles.map((b) => b.slice());
+      for (let k = 0; k < n; k++) nb[to].push(nb[from].pop());
+      this.setState({ bottles: nb, sel: null, hintTo: null, history: hist });
+      this.afterMove(to, color);
+      return;
+    }
+    const ph = (phase) => () => this.setState({ pour: Object.assign({}, this.state.pour, { phase }) });
+    this.setState({ sel: null, hintTo: null, history: hist, pour: { from, to, phase: 'lift', dx: geo.dx, dy: geo.dy, deg: geo.deg, stream: geo.stream } });
+    this.later(ph('move'), 150);
+    this.later(ph('tilt'), 470);
+    this.later(ph('pour'), 690);
+    for (let k = 0; k < n; k++) {
+      this.later(() => {
+        const cur = this.state;
+        const nb = cur.bottles.map((b) => b.slice());
+        nb[to].push(nb[from].pop());
+        const hid = cur.hidden.slice();
+        hid[from] = Math.min(hid[from], Math.max(nb[from].length - 1, 0));
+        this.setState({ bottles: nb, hidden: hid });
+      }, 760 + k * 320);
+    }
+    const end = 760 + n * 320 + 40;
+    this.later(ph('untilt'), end);
+    this.later(ph('back'), end + 210);
+    this.later(() => { this.setState({ pour: null }); this.afterMove(to, color); }, end + 560);
+  }
+
+  afterMove(to, color) {
+    const st = this.state;
+    const frozen = st.frozen.map((f) => (f > 0 ? f - 1 : 0));
+    const hidden = st.hidden.map((h, i) => Math.min(h, Math.max(st.bottles[i].length - 1, 0)));
+    let locked = st.locked;
+    const completed = this.isDone(st.bottles[to]);
+    if (completed && locked.some((x) => x)) { locked = locked.map(() => false); this.flash('toast', 'Замок открыт!', 1500); }
+    else if (completed) this.flash('toast', 'Цвет собран: ' + NAMES[color] + '!', 1400);
+    const thawed = st.frozen.some((f, i) => f === 1 && frozen[i] === 0);
+    if (thawed && !completed) this.flash('toast', 'Лёд растаял!', 1300);
+    this.setState({ frozen, hidden, locked });
+  }
+
+  undo() {
+    const st = this.state;
+    if (st.pour) return;
+    if (!st.history.length) { this.flash('toast', 'Нечего отменять', 1200); return; }
+    if (st.undoLeft <= 0) { this.setState({ undoLeft: 1 }); this.flash('toast', 'Реклама просмотрена: +1 отмена', 1500); return; }
+    const prev = st.history[st.history.length - 1];
+    this.setState(Object.assign({}, prev, { history: st.history.slice(0, -1), sel: null, hintTo: null, undoLeft: st.undoLeft - 1 }));
+  }
+
+  restart() {
+    this.clearTimers();
+    const f = this.fresh(this.props.mode);
+    const { undoLeft, hintLeft, bottleLeft } = this.state;
+    this.setState(Object.assign(f, { undoLeft, hintLeft, bottleLeft }));
+  }
+
+  hint() {
+    const st = this.state;
+    if (st.pour) return;
+    if (st.hintLeft <= 0) { this.setState({ hintLeft: 1 }); this.flash('toast', 'Реклама просмотрена: +1 подсказка', 1500); return; }
+    const bs = st.bottles;
+    const ok = (f) => !st.locked[f] && !(st.frozen[f] > 0);
+    let best = null;
+    for (let f = 0; f < bs.length && !best; f++) {
+      if (!ok(f) || this.isDone(bs[f])) continue;
+      for (let t = 0; t < bs.length; t++) if (this.canPour(st, f, t) && bs[t].length) { best = [f, t]; break; }
+    }
+    for (let f = 0; f < bs.length && !best; f++) {
+      const s = bs[f];
+      if (!ok(f) || !s.length || s.every((c) => c === s[0])) continue;
+      for (let t = 0; t < bs.length; t++) if (this.canPour(st, f, t)) { best = [f, t]; break; }
+    }
+    if (!best) { this.flash('toast', 'Ходов нет — добавь бутылку', 1500); return; }
+    this.setState({ sel: best[0], hintTo: best[1], hintLeft: st.hintLeft - 1 });
+  }
+
+  addBottle() {
+    const st = this.state;
+    const L = this.lvl(this.props.mode);
+    if (st.pour) return;
+    if (L.layout === 'grid') { this.flash('toast', 'Здесь помогает большая колба', 1300); return; }
+    if (st.extra) { this.flash('toast', 'Бутылка уже добавлена', 1200); return; }
+    if (st.bottleLeft <= 0) { this.setState({ bottleLeft: 1 }); this.flash('toast', 'Реклама просмотрена: +1 бутылка', 1500); return; }
+    this.setState({
+      bottles: st.bottles.concat([[]]), caps: st.caps.concat([L.unit]), shapes: st.shapes.concat(['classic']),
+      hidden: st.hidden.concat([0]), frozen: st.frozen.concat([0]), locked: st.locked.concat([false]),
+      extra: true, bottleLeft: st.bottleLeft - 1
+    });
+  }
+
+  renderVals() {
+    const L = this.lvl(this.props.mode);
+    const st = this.state;
+    const { bottles, caps, sel, hintTo, shake, pour, agit, history } = st;
+    const grid = L.layout === 'grid';
+    const n = bottles.length;
+    const doneCount = bottles.filter((b) => this.isDone(b)).length;
+    const won = !pour && bottles.every((b) => !b.length || this.isDone(b));
+    const moves = history.length;
+    const cc = st.colorCount;
+    const stars = moves <= Math.max(8, cc * 4 + L.num) ? 3 : moves <= Math.max(14, cc * 6 + 2 * L.num) ? 2 : 1;
+
+    const rowsN = n <= 10 ? 2 : 3;
+    const per = Math.ceil(n / rowsN);
+    const base = n <= 8 ? 70 : n <= 10 ? 58 : 50;
+
+    const view = bottles.map((b, i) => {
+      const big = caps[i] > L.unit;
+      const size = grid ? (big ? 112 : 50) : (big ? Math.round(base * 1.35) : base);
+      let glow = 'none';
+      if (i === sel) glow = 'drop-shadow(0 0 6px rgba(53,244,255,1)) drop-shadow(0 0 14px rgba(53,244,255,0.8))';
+      else if (i === hintTo) glow = 'drop-shadow(0 0 6px rgba(255,200,61,1)) drop-shadow(0 0 14px rgba(255,200,61,0.8))';
+      else if (this.isDone(b)) glow = 'drop-shadow(0 0 10px rgba(255,236,150,0.85))';
+      let transform = 'translate(0px, 0px) rotate(0deg)';
+      let trans = 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      let tilt = 0;
+      let z = 1;
+      if (pour && pour.from === i) {
+        z = 30;
+        const at = 'translate(' + pour.dx + 'px, ' + pour.dy + 'px) ';
+        if (pour.phase === 'lift') { transform = 'translate(0px, -40px) rotate(0deg)'; trans = 'transform 0.15s ease-out'; }
+        else if (pour.phase === 'move') { transform = at + 'rotate(0deg)'; trans = 'transform 0.32s cubic-bezier(0.25, 0.9, 0.35, 1)'; }
+        else if (pour.phase === 'tilt' || pour.phase === 'pour') { transform = at + 'rotate(' + pour.deg + 'deg)'; trans = 'transform 0.22s cubic-bezier(0.3, 0.7, 0.4, 1)'; tilt = pour.deg; }
+        else if (pour.phase === 'untilt') { transform = at + 'rotate(0deg)'; trans = 'transform 0.2s ease-in-out'; }
+        else { transform = 'translate(0px, 0px) rotate(0deg)'; trans = 'transform 0.34s cubic-bezier(0.25, 0.9, 0.35, 1)'; }
+      } else if (i === sel) {
+        transform = 'translate(0px, -22px) rotate(0deg)';
+      }
+      const cell = grid && L.cells ? L.cells[i] : ['auto', 'auto'];
+      const desc = b.map((c, k) => (k < st.hidden[i] ? 'скрытый' : NAMES[c]));
+      return {
+        idx: String(i), done: this.isDone(b), glow, shape: st.shapes[i] || 'classic', colors: b, cap: caps[i], size,
+        tilt, agit: agit === i || (pour && pour.from === i && pour.phase === 'pour') || false,
+        hidden: st.hidden[i], frozen: st.frozen[i], locked: st.locked[i],
+        btnW: size + 2, btnH: Math.round(size * 2.4) + 4, gc: cell[0], gr: cell[1], z,
+        label: 'Бутылка ' + (i + 1) + (big ? ' (большая)' : '') + ': ' + (b.length ? desc.join(', ') : 'пустая'),
+        transform, trans,
+        anim: i === shake ? 'shake 0.42s ease' : 'none',
+        tap: (e) => this.tap(i, e)
+      };
+    });
+
+    const rows = [];
+    for (let r = 0; r < rowsN; r++) {
+      const items = view.slice(r * per, (r + 1) * per);
+      if (items.length) rows.push({ items, w: items.reduce((a, b) => a + b.btnW, 0) + (items.length - 1) * 12 + 20, h: Math.max.apply(null, items.map((b) => b.btnH)) });
+    }
+    rows.forEach((r) => { r.shelfW = r.w + 16; });
+    const rowGap = rowsN === 3 ? 22 : 34;
+    const maxW = Math.max.apply(null, rows.map((r) => r.w + 16));
+    const totalH = rows.reduce((a, r) => a + r.h + 6, 0) + (rows.length - 1) * rowGap + 24;
+    const availH = 420;
+    const zoom = Math.min(1, 358 / maxW, availH / totalH);
+    this.zoomNow = grid ? 1 : zoom;
+
+    const badge = (k) => k > 0
+      ? { badge: String(k), badgeBg: 'linear-gradient(180deg, #FFC107, #FF8A00)', badgeInk: '#3A1A00' }
+      : { badge: 'AD', badgeBg: 'linear-gradient(180deg, #FF3D71, #FF8A00)', badgeInk: '#ffffff' };
+    const boosters = [
+      Object.assign({ label: 'Отмена', aria: 'Отменить ход', isUndo: true, hasBadge: true, tap: () => this.undo() }, badge(st.undoLeft)),
+      { label: 'Заново', aria: 'Начать уровень заново', isRestart: true, hasBadge: false, badge: '', badgeBg: 'none', badgeInk: '#fff', tap: () => this.restart() },
+      Object.assign({ label: 'Подсказка', aria: 'Подсказка', isHint: true, hasBadge: true, tap: () => this.hint() }, badge(st.hintLeft)),
+      Object.assign({ label: '+Бутылка', aria: 'Добавить пустую бутылку', isBottle: true, hasBadge: true, tap: () => this.addBottle() }, badge(st.bottleLeft))
+    ];
+    const streamOn = !!(pour && pour.phase === 'pour' && pour.stream);
+    return {
+      theme: L.theme, levelNum: L.num,
+      tag: (HUD[this.props.mode] || HUD.normal)[0], tagBg: (HUD[this.props.mode] || HUD.normal)[1], info: (HUD[this.props.mode] || HUD.normal)[2],
+      isRows: !grid, isGrid: grid, rows, flat: view, zoom: zoom.toFixed(3), rowGap,
+      boosters, toast: st.toast, won, moves, doneCount, colorCount: cc,
+      donePct: Math.round((doneCount / cc) * 100),
+      starRow: [0, 1, 2].map((i) => ({ fill: i < stars ? '#FFC83D' : 'rgba(255,255,255,0.25)' })),
+      streamOn, st: streamOn ? pour.stream : { left: 0, top: 0, h: 0, bg: 'none', glow: 'transparent', light: 'transparent', dropL: 0, dropT: 0, splashL: 0, splashT: 0 },
+      restart: () => this.restart()
+    };
+  }
+}
+</script>
+</body>
+</html>
