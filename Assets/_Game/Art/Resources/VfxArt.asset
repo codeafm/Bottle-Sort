@@ -1,0 +1,146 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c48a0080f08b0e64183e794957197c2f, type: 3}
+  m_Name: VfxArt
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.Gameplay.VfxArt
+  shapes:
+  - id: classic
+    back: {fileID: 2800000, guid: f6d7d048832fc4b4d889a4c1e814b303, type: 3}
+    front: {fileID: 2800000, guid: 0caebeaaf593e9349897e473acf46c98, type: 3}
+    mask: {fileID: 2800000, guid: bdabdd5e657933144bd1979e481db0e5, type: 3}
+    liquidTop: 66
+    liquidBottom: 226
+    mouth: {x: 50, y: 12}
+    outline:
+      serializedVersion: 2
+      x: 16
+      y: 12
+      width: 68
+      height: 218
+  - id: cylinder
+    back: {fileID: 2800000, guid: 8941f589470c4f343bd130a40845bf97, type: 3}
+    front: {fileID: 2800000, guid: a2f986c033e39a34d9f238f1d94db499, type: 3}
+    mask: {fileID: 2800000, guid: 869b460a7924c304dada1826e8bff98e, type: 3}
+    liquidTop: 36
+    liquidBottom: 212
+    mouth: {x: 50, y: 6}
+    outline:
+      serializedVersion: 2
+      x: 6
+      y: 6
+      width: 88
+      height: 226
+  - id: wine
+    back: {fileID: 2800000, guid: ca71ce6d0aee9be4a91bb81d2b6630e0, type: 3}
+    front: {fileID: 2800000, guid: 293ed09e764e4b849a8c51ad96bc1a01, type: 3}
+    mask: {fileID: 2800000, guid: 4d30f6e58b21cc744b627d84801c24ef, type: 3}
+    liquidTop: 106
+    liquidBottom: 226
+    mouth: {x: 50, y: 6}
+    outline:
+      serializedVersion: 2
+      x: 14
+      y: 6
+      width: 72
+      height: 224
+  - id: jug
+    back: {fileID: 2800000, guid: 5b266db275afcf746882a2260302b1b5, type: 3}
+    front: {fileID: 2800000, guid: d800a14280326034491688e15cb49079, type: 3}
+    mask: {fileID: 2800000, guid: b411a5110d444c343b5bee98885313de, type: 3}
+    liquidTop: 104
+    liquidBottom: 226
+    mouth: {x: 50, y: 20}
+    outline:
+      serializedVersion: 2
+      x: 14
+      y: 20
+      width: 84.95759
+      height: 210
+  - id: teapot
+    back: {fileID: 2800000, guid: ea36faad546405a409123693d425c742, type: 3}
+    front: {fileID: 2800000, guid: 0c3de26093319d1468a4d68323448dd0, type: 3}
+    mask: {fileID: 2800000, guid: 2e78a3fb0b08eb5409c252c6ebe91a9a, type: 3}
+    liquidTop: 120
+    liquidBottom: 225
+    mouth: {x: 50, y: 74}
+    outline:
+      serializedVersion: 2
+      x: -1
+      y: 72.75
+      width: 107.87721
+      height: 157.25
+  - id: glass
+    back: {fileID: 2800000, guid: d986e8858b9148548b1922a136f73039, type: 3}
+    front: {fileID: 2800000, guid: 4f5cb32b3cc8eb847b64925d684c2445, type: 3}
+    mask: {fileID: 2800000, guid: 195af5a7f4270f14582a56243e99632c, type: 3}
+    liquidTop: 100
+    liquidBottom: 220
+    mouth: {x: 50, y: 60}
+    outline:
+      serializedVersion: 2
+      x: 14
+      y: 60
+      width: 72
+      height: 170
+  - id: flask
+    back: {fileID: 2800000, guid: 67d3c20c6965fd549a6798025682d55d, type: 3}
+    front: {fileID: 2800000, guid: a2c336fe79288584e8f5875f753c400d, type: 3}
+    mask: {fileID: 2800000, guid: e0f3e0cac1f00924cbf01ca4203e7bda, type: 3}
+    liquidTop: 106
+    liquidBottom: 226
+    mouth: {x: 50, y: 10}
+    outline:
+      serializedVersion: 2
+      x: 7.333399
+      y: 10
+      width: 85.3332
+      height: 220
+  - id: potion
+    back: {fileID: 2800000, guid: 1a7fa6e990eebfe40bb3e59c7339ba9b, type: 3}
+    front: {fileID: 2800000, guid: 82f68a8707f046b4db53fe05e729a18c, type: 3}
+    mask: {fileID: 2800000, guid: 2212cb0bd112ff143b18d8ea4f10f24f, type: 3}
+    liquidTop: 140
+    liquidBottom: 224
+    mouth: {x: 50, y: 22}
+    outline:
+      serializedVersion: 2
+      x: 2.0001297
+      y: 22
+      width: 95.99974
+      height: 205.94678
+  - id: jar
+    back: {fileID: 2800000, guid: 65a4c8f446ff3734ba12eaa3692f454c, type: 3}
+    front: {fileID: 2800000, guid: 7f26fe55e65507d4fbbf12f15214ddae, type: 3}
+    mask: {fileID: 2800000, guid: 32180b81cf7e4bb41899d0d4b47baa94, type: 3}
+    liquidTop: 106
+    liquidBottom: 226
+    mouth: {x: 50, y: 22}
+    outline:
+      serializedVersion: 2
+      x: 10
+      y: 22
+      width: 80
+      height: 208
+  glyphs: {fileID: 2800000, guid: d40f790b9096d974f9ab73ddbe5b604d, type: 3}
+  bottleShader: {fileID: 4800000, guid: 79e5c1ea094b2bd4590740c4b0bb08f9, type: 3}
+  streamShader: {fileID: 4800000, guid: df3dd9990deeffc40a4806a7643e3467, type: 3}
+  backgroundShader: {fileID: 4800000, guid: cef3b5f5295056c48b7597e9eb4b1aff, type: 3}
+  spriteMaterial: {fileID: 2100000, guid: 0e7f6dc23f52b7c4eb9858e7a5f94e87, type: 2}
+  additiveMaterial: {fileID: 2100000, guid: d80a106bf74438e4b84eb1cdb4a73902, type: 2}
+  lockSprite: {fileID: 21300000, guid: febfc1e5e27357845ac8330892f6ebeb, type: 3}
+  gemSprite: {fileID: 21300000, guid: 1789fb7837e0abf4db7405282e6bf599, type: 3}
+  shelfSprite: {fileID: 21300000, guid: aebd319cf626edc4a93940372164aaa4, type: 3}
+  rippleSprite: {fileID: 21300000, guid: b36768dc1cfeeda44b47f99425e7bfa4, type: 3}
+  dropSprite: {fileID: 21300000, guid: b31f00c61aabf2c4889ecc54d22261b5, type: 3}
+  flashSprite: {fileID: 21300000, guid: 42f2ca936a382c343b1b6b3f24b6fa5a, type: 3}
+  sparkSprite: {fileID: 21300000, guid: 6e37e9d8c0fb91a4eb3ce6c6e411e66e, type: 3}
+  confettiSprite: {fileID: 21300000, guid: 7518cda6d2494fd4fabe94202a615d09, type: 3}
