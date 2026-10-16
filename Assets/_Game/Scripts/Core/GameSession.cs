@@ -13,13 +13,17 @@ namespace BottleSort.Core
         public int MoveLimit { get; }
         public bool ExtraBottleAllowed { get; }
         public bool ExtraBottleUsed { get; private set; }
+        // На обучающих уровнях звёзды всегда три, ходы не считаются.
+        public bool IsTutorial { get; }
 
-        public GameSession(LevelState initial, int par, int moveLimit = 0, bool extraBottleAllowed = true)
+        public GameSession(LevelState initial, int par, int moveLimit = 0, bool extraBottleAllowed = true,
+            bool isTutorial = false)
         {
             this.initial = initial?.Clone() ?? throw new ArgumentNullException(nameof(initial));
             Par = par;
             MoveLimit = moveLimit;
             ExtraBottleAllowed = extraBottleAllowed;
+            IsTutorial = isTutorial;
             State = initial.Clone();
         }
 
@@ -30,7 +34,7 @@ namespace BottleSort.Core
         public bool HasMoveLimit => MoveLimit > 0;
         public int MovesLeft => HasMoveLimit ? Math.Max(MoveLimit - MovesMade, 0) : int.MaxValue;
         public bool IsOutOfMoves => HasMoveLimit && MovesMade >= MoveLimit && !IsWon;
-        public int Stars => StarRating.Calculate(MovesMade, Par, ExtraBottleUsed);
+        public int Stars => IsTutorial ? 3 : StarRating.Calculate(MovesMade, Par, ExtraBottleUsed);
         public bool CanAddBottle => ExtraBottleAllowed && !ExtraBottleUsed;
 
         public MoveError TryMove(Move move, out MoveOutcome outcome)

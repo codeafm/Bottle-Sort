@@ -52,7 +52,9 @@ namespace BottleSort.Core
         TargetFull,
         ColorMismatch,
         TargetRejectsColor,
-        NoFlipsLeft
+        NoFlipsLeft,
+        // На строгом обучающем уровне можно делать только показанный ход.
+        NotRecommended
     }
 
     // Что случилось после хода: этого хватает, чтобы проиграть анимацию и показать тосты.

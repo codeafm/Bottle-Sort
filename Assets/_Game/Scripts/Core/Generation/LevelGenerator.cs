@@ -16,8 +16,12 @@ namespace BottleSort.Core
         // false — ни один кандидат не прошёл мягкие фильтры, взят лучший из решаемых.
         public bool PassedAllFilters;
         public LevelMetrics Metrics;
+        // Уровень задан вручную (override по номеру), генератор его не строил.
+        public bool IsHandmade;
+        public bool IsTutorial;
 
-        public GameSession CreateSession() => new GameSession(State, Par, MoveLimit, Spec.AllowsExtraBottle);
+        public GameSession CreateSession() =>
+            new GameSession(State, Par, MoveLimit, Spec.AllowsExtraBottle && !IsTutorial, IsTutorial);
     }
 
     // Перемешать слои → нарезать по бутылкам → расставить фишки → отфильтровать → проверить солвером.
