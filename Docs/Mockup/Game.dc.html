@@ -17,6 +17,8 @@ a{color:inherit;text-decoration:none}a:hover{color:inherit}
 @keyframes toastIn{0%{opacity:0;transform:translate(-50%,-8px)}100%{opacity:1;transform:translate(-50%,0)}}
 @keyframes winIn{0%{opacity:0;transform:scale(.85)}100%{opacity:1;transform:scale(1)}}
 @keyframes tagGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,139,203,0.6)}50%{box-shadow:0 0 16px 2px rgba(255,139,203,0.7)}}
+@keyframes tapHand{0%,100%{transform:translate(0,0) scale(1)}45%{transform:translate(-3px,-6px) scale(1.06)}60%{transform:translate(0,2px) scale(.94)}}
+@keyframes tapRing{0%,40%{transform:scale(.3);opacity:0}55%{opacity:.9}100%{transform:scale(1.6);opacity:0}}
 @keyframes streamIn{0%{transform:scaleY(0)}100%{transform:scaleY(1)}}
 @keyframes streamFlow{0%{background-position:0 0}100%{background-position:0 24px}}
 @keyframes ripple{0%{transform:scale(.35);opacity:.95}100%{transform:scale(1.5);opacity:0}}
@@ -87,6 +89,11 @@ a{color:inherit;text-decoration:none}a:hover{color:inherit}
                     <sc-if value="{{b.done}}" hint-placeholder-val="{{false}}">
                       <span style="position: absolute; top: -8px; right: -4px; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(180deg, #9BFF4F, #17A523); border: 2px solid #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px rgba(155,255,79,0.8)">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      </span>
+                    <sc-if value="{{b.hand}}" hint-placeholder-val="{{false}}">
+                      <span aria-hidden="true" style="position: absolute; left: 50%; bottom: 38%; width: 46px; height: 46px; margin-left: -6px; z-index: 40; pointer-events: none; animation: tapHand 1.1s ease-in-out infinite">
+                        <span style="position: absolute; left: -10px; top: -10px; width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.85); animation: tapRing 1.1s ease-out infinite"></span>
+                        <svg width="46" height="46" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#1B2550" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.45))"><path d="M10 9.5V4a2 2 0 0 0-4 0v10l-1.6-1.6a2 2 0 0 0-2.8 2.8l3.6 3.6C6.7 20.3 8.4 22 11.2 22H14a8 8 0 0 0 8-8v-3a2 2 0 0 0-4 0v-1a2 2 0 0 0-4 0v-1a2 2 0 0 0-4 0z"></path></svg>
                       </span>
                     </sc-if>
                   </button>
@@ -169,7 +176,7 @@ a{color:inherit;text-decoration:none}a:hover{color:inherit}
   </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["normal","special","big","lv100","lv200","lv500","lv1000","lv1500","lv2000"],"default":"normal"},"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["tut1","tut2","tut3","normal","special","big","lv100","lv200","lv500","lv1000","lv1500","lv2000"],"default":"normal"},"$preview":{"width":390,"height":844}}'>
 const NAMES = { R: 'красный', B: 'синий', Y: 'жёлтый', G: 'зелёный', P: 'фиолетовый', C: 'бирюзовый', O: 'оранжевый', K: 'розовый', L: 'лайм', N: 'коричневый', W: 'белый', D: 'тёмно-синий' };
 const TONE = {
   R: ['#C9283A', '#D86471', '#7D1924'], B: ['#2D5FC4', '#688CD5', '#1C3B7A'], Y: ['#E3B21E', '#EBC85D', '#8D6E13'],
@@ -180,6 +187,12 @@ const TONE = {
 const GEO = { classic: [66, 226], cylinder: [36, 212], wine: [106, 226], jug: [104, 226], teapot: [120, 225], glass: [100, 220], flask: [106, 226], potion: [140, 224], jar: [106, 226] };
 const MIXED = ['wine', 'jug', 'teapot', 'flask', 'potion', 'glass', 'jar'];
 const LEVELS = {
+  tut1: { num: 1, theme: 'navy', unit: 4, shapes: 'classic', tutorial: 'always',
+    start: [['R', 'R', 'B', 'B'], ['B', 'B', 'R', 'R'], [], []] },
+  tut2: { num: 2, theme: 'navy', unit: 4, shapes: 'classic', tutorial: 'first3',
+    start: [['R', 'G', 'B', 'R'], ['G', 'B', 'R', 'G'], ['B', 'R', 'G', 'B'], [], []] },
+  tut3: { num: 3, theme: 'navy', unit: 4, shapes: 'classic', tutorial: 'onError',
+    start: [['R', 'G', 'B', 'Y'], ['Y', 'R', 'G', 'B'], ['B', 'Y', 'R', 'G'], ['G', 'B', 'Y', 'R'], [], []] },
   normal: { num: 24, theme: 'navy', tag: '', unit: 4, shapes: 'classic',
     start: [['R', 'B', 'G', 'Y'], ['Y', 'R', 'P', 'B'], ['G', 'C', 'R', 'P'], ['B', 'P', 'C', 'C'], ['P', 'G', 'Y', 'R'], ['C', 'Y', 'B', 'G'], [], []] },
   special: { num: 30, theme: 'violet', tag: '★ ОСОБЫЙ УРОВЕНЬ', unit: 4, shapes: 'mixed',
@@ -202,6 +215,9 @@ const LEVELS = {
 };
 
 const HUD = {
+  tut1: ['ОБУЧЕНИЕ', 'linear-gradient(180deg, #4FD8FF, #1E9A8C)', ''],
+  tut2: ['ОБУЧЕНИЕ', 'linear-gradient(180deg, #4FD8FF, #1E9A8C)', ''],
+  tut3: ['ОБУЧЕНИЕ', 'linear-gradient(180deg, #4FD8FF, #1E9A8C)', ''],
   normal: ['ОБЫЧНЫЙ', 'linear-gradient(180deg, #7BE84A, #1E9A2C)', 'Собери каждый цвет в свою бутылку'],
   special: ['★ ОСОБЫЙ', 'linear-gradient(180deg, #FF8BCB, #D81B60)', 'Особый уровень: бутылки разной формы'],
   big: ['БОЛЬШАЯ КОЛБА', 'linear-gradient(180deg, #4FD8FF, #0870E8)', 'Большая колба вмещает 8 слоёв'],
@@ -301,7 +317,7 @@ class Component extends DCLogic {
     }
     if (sel === i) { this.setState({ sel: null, hintTo: null }); return; }
     if (!this.canPour(st, sel, i)) {
-      this.setState({ sel: null, hintTo: null });
+      this.setState({ sel: null, hintTo: null, mistake: true });
       this.flash('shake', i, 450);
       return;
     }
@@ -309,6 +325,7 @@ class Component extends DCLogic {
     let run = 0;
     for (let k = src.length - 1; k >= 0 && src[k] === top; k--) run++;
     const n = Math.min(run, st.caps[i] - st.bottles[i].length);
+    this.setState({ mistake: false });
     this.startPour(sel, i, n, top, e);
   }
 
@@ -431,6 +448,20 @@ class Component extends DCLogic {
     this.setState({ sel: best[0], hintTo: best[1], hintLeft: st.hintLeft - 1 });
   }
 
+  nextMove(st) {
+    const bs = st.bottles;
+    for (let f = 0; f < bs.length; f++) {
+      if (!bs[f].length || this.isDone(bs[f])) continue;
+      for (let t = 0; t < bs.length; t++) if (this.canPour(st, f, t) && bs[t].length) return [f, t];
+    }
+    for (let f = 0; f < bs.length; f++) {
+      const s = bs[f];
+      if (!s.length || s.every((c) => c === s[0])) continue;
+      for (let t = 0; t < bs.length; t++) if (this.canPour(st, f, t)) return [f, t];
+    }
+    return null;
+  }
+
   addBottle() {
     const st = this.state;
     const L = this.lvl(this.props.mode);
@@ -449,6 +480,16 @@ class Component extends DCLogic {
     const L = this.lvl(this.props.mode);
     const st = this.state;
     const { bottles, caps, sel, hintTo, shake, pour, agit, history } = st;
+    let handAt = -1;
+    let tutText = '';
+    if (L.tutorial && !pour) {
+      const show = L.tutorial === 'always' || (L.tutorial === 'first3' && history.length < 3) || (L.tutorial === 'onError' && st.mistake);
+      const mv = this.nextMove(st);
+      if (mv && show) handAt = sel === null ? mv[0] : (sel === mv[0] ? mv[1] : -1);
+      if (L.tutorial === 'always') tutText = sel === null ? 'Нажми на бутылку, из которой нальём' : 'Теперь нажми, куда налить';
+      else if (L.tutorial === 'first3') tutText = history.length < 3 ? 'Верхний цвет переливается целиком' : 'Отлично! Дальше сам';
+      else tutText = st.mistake ? 'Наливать можно только на тот же цвет или в пустую' : 'Собери каждый цвет в свою бутылку';
+    }
     const grid = L.layout === 'grid';
     const n = bottles.length;
     const doneCount = bottles.filter((b) => this.isDone(b)).length;
@@ -493,6 +534,7 @@ class Component extends DCLogic {
         label: 'Бутылка ' + (i + 1) + (big ? ' (большая)' : '') + ': ' + (b.length ? desc.join(', ') : 'пустая'),
         transform, trans,
         anim: i === shake ? 'shake 0.42s ease' : 'none',
+        hand: i === handAt,
         tap: (e) => this.tap(i, e)
       };
     });
@@ -522,7 +564,7 @@ class Component extends DCLogic {
     const streamOn = !!(pour && pour.phase === 'pour' && pour.stream);
     return {
       theme: L.theme, levelNum: L.num,
-      tag: (HUD[this.props.mode] || HUD.normal)[0], tagBg: (HUD[this.props.mode] || HUD.normal)[1], info: (HUD[this.props.mode] || HUD.normal)[2],
+      tag: (HUD[this.props.mode] || HUD.normal)[0], tagBg: (HUD[this.props.mode] || HUD.normal)[1], info: tutText || (HUD[this.props.mode] || HUD.normal)[2],
       isRows: !grid, isGrid: grid, rows, flat: view, zoom: zoom.toFixed(3), rowGap,
       boosters, toast: st.toast, won, moves, doneCount, colorCount: cc,
       donePct: Math.round((doneCount / cc) * 100),
