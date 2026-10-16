@@ -1,0 +1,159 @@
+# ключ	ru	en
+splash_caption	Расставь цвета по местам	Put every color in its place
+splash_loading	Загрузка... {0}%	Loading... {0}%
+studio	CODEAFM GAMES	CODEAFM GAMES
+menu_play	ИГРАТЬ	PLAY
+menu_play_level	Уровень {0}	Level {0}
+menu_levels	Уровни	Levels
+menu_levels_progress	{0} / {1}	{0} / {1}
+menu_shop	Магазин	Shop
+menu_gift	Подарок	Gift
+menu_bonus	Бонус	Bonus
+menu_luck	Удача	Lucky spin
+toast_soon	Скоро!	Coming soon!
+hud_level	УРОВЕНЬ	LEVEL
+hud_moves	ХОДЫ	MOVES
+hud_collected	Собрано {0} / {1}	Sorted {0} / {1}
+hud_loading	Готовим уровень…	Preparing the level…
+tag_tutorial	ОБУЧЕНИЕ {0}/{1}	TUTORIAL {0}/{1}
+tag_normal	ОБЫЧНЫЙ	NORMAL
+tag_special	ОСОБЫЙ	SPECIAL
+tag_flask	БОЛЬШАЯ КОЛБА	BIG FLASK
+tag_rescue	СПАСЕНИЕ	RESCUE
+tag_boss	БОСС	BOSS
+tag_chapter_boss	ФИНАЛ ГЛАВЫ	CHAPTER FINALE
+info_normal	Собери каждый цвет в свою бутылку	Sort each color into its own bottle
+info_special	Особый уровень: бутылки разной формы	Special level: bottles of different shapes
+info_flask	Большая колба вмещает {0} слоёв	The big flask holds {0} layers
+info_rescue	Спасение: собери цвета и выручи друга	Rescue: sort the colors to save a friend
+info_boss	Босс: этот уровень потруднее	Boss: this one is tougher
+info_hidden	Слои «?» откроются, когда станут верхними	“?” layers open when they reach the top
+booster_undo	Отмена	Undo
+booster_restart	Заново	Restart
+booster_hint	Подсказка	Hint
+booster_bottle	+Бутылка	+Bottle
+badge_ad	AD	AD
+toast_color_done	Цвет собран: {0}!	Color sorted: {0}!
+toast_unlocked	Замок открыт!	Lock opened!
+toast_thawed	Лёд растаял!	The ice melted!
+toast_locked	Закрыто — собери любой цвет	Locked — sort any color first
+toast_frozen	Лёд: осталось ходов — {0}	Ice: moves left — {0}
+toast_out_of_moves	Ходы закончились — начни заново	Out of moves — try again
+toast_nothing_to_undo	Нечего отменять	Nothing to undo
+toast_ad_undo	Реклама просмотрена: +1 отмена	Ad watched: +1 undo
+toast_ad_hint	Реклама просмотрена: +1 подсказка	Ad watched: +1 hint
+toast_ad_bottle	Реклама просмотрена: +1 бутылка	Ad watched: +1 bottle
+toast_no_moves	Ходов нет — добавь бутылку	No moves — add a bottle
+toast_flask_helps	Здесь помогает большая колба	The big flask helps here
+toast_bottle_already	Бутылка уже добавлена	Bottle already added
+toast_level_failed	Не удалось собрать уровень	Couldn't build the level
+toast_level_locked	Сначала пройди предыдущие уровни	Finish the previous levels first
+err_full	Сюда нельзя: бутылка полная	Can't pour here: the bottle is full
+err_color	Сюда нельзя: сверху другой цвет	Can't pour here: a different color is on top
+err_tint	Эта бутылка принимает только свой цвет	This bottle takes only its own color
+err_locked	Бутылка заперта	The bottle is locked
+err_frozen	Бутылка во льду	The bottle is frozen
+tut1_take	Нажми на бутылку, чтобы взять из неё воду	Tap a bottle to pick up its water
+tut1_pick_empty	Теперь нажми на пустую бутылку	Now tap the empty bottle
+tut1_step2	Синий перелился весь сразу. Теперь налей красный на красный	All the blue moved at once. Now pour red onto red
+tut1_red_done	Красный собран!	Red is sorted!
+tut1_step3	Осталось собрать синий	Now sort the blue
+tut1_follow_finger	Нажми туда, куда показывает палец	Tap where the finger points
+tut2_step1	Налить можно в пустую бутылку…	You can pour into an empty bottle…
+tut2_step2	…или на такой же цвет. Синий — на синий	…or onto the same color. Blue onto blue
+tut2_step3	Одинаковые слои переливаются вместе	Matching layers pour together
+tut2_own	Отлично, дальше сам	Great, carry on yourself
+tut2_free	Дальше сам. Собери каждый цвет в свою бутылку	Your turn. Sort each color into its own bottle
+tut3_start	Собери все жёлтые в одну бутылку	Gather all the yellow in one bottle
+tut3_error	Не выйдет: бутылка полная, и сверху красный. Сначала убери красный в пустую	That won't work: the bottle is full and red is on top. Move the red to an empty bottle first
+tut3_good	Точно! Красный мешал. Теперь налей жёлтый	Right! The red was in the way. Now pour the yellow
+tut3_yellow_done	Жёлтый собран! Остальное — сам	Yellow is sorted! The rest is up to you
+tut3_color_done	Цвет собран! Остальное — сам	Color sorted! The rest is up to you
+win_title	ОТЛИЧНО!	GREAT!
+win_level_done	Уровень {0} пройден	Level {0} complete
+win_moves	Ходы: {0}	Moves: {0}
+win_best	Лучший результат	New best
+win_reward	НАГРАДА	REWARD
+win_double	×2 = {0}	×2 = {0}
+win_next	Следующий уровень	Next level
+win_menu	В главное меню	Main menu
+gift_title	Обучение пройдено!	Tutorial complete!
+gift_text	Стартовый подарок	Your starter gift
+gift_count	×{0}	×{0}
+gift_claim	Забрать	Claim
+map_title	Уровни	Levels
+map_chapter	ГЛАВА {0} · УРОВНИ {1}–{2}	CHAPTER {0} · LEVELS {1}–{2}
+map_play	Играть!	Play!
+map_tutorial	Обучение	Tutorial
+shop_title	Магазин	Shop
+shop_tab_bottles	Бутылки	Bottles
+shop_tab_themes	Фоны	Backgrounds
+shop_hint_bottles	Купленные модели появляются на уровнях	Bought models appear in levels
+shop_hint_themes	Фон игрового поля и меню	Background for the board and menu
+shop_selected	Выбрано	Selected
+shop_select	Выбрать	Select
+shop_from_level	ур. {0}	lvl {0}
+shop_new	НОВИНКА	NEW
+toast_shop_locked	Откроется на уровне {0}	Unlocks at level {0}
+toast_no_coins	Не хватает монет	Not enough coins
+toast_bought	Куплено: {0}	Bought: {0}
+shape_classic	Классическая	Classic
+shape_wine	Длинная	Tall
+shape_glass	Стакан	Glass
+shape_flask	Колба	Flask
+shape_jug	Кувшин	Jug
+shape_jar	Банка	Jar
+shape_teapot	Чайник	Teapot
+shape_potion	Зелье	Potion
+theme_auto	Авто	Auto
+theme_navy	Ночь	Night
+theme_violet	Аметист	Amethyst
+theme_teal	Лагуна	Lagoon
+theme_rose	Роза	Rose
+theme_emerald	Изумруд	Emerald
+theme_amber	Янтарь	Amber
+settings_title	Настройки	Settings
+settings_music	Музыка	Music
+settings_sounds	Звуки	Sounds
+settings_vibration	Вибрация	Vibration
+settings_notifications	Уведомления	Notifications
+settings_language	Язык	Language
+lang_ru	Русский	Русский
+lang_en	English	English
+color_0	красный	red
+color_1	синий	blue
+color_2	жёлтый	yellow
+color_3	зелёный	green
+color_4	фиолетовый	purple
+color_5	бирюзовый	turquoise
+color_6	оранжевый	orange
+color_7	розовый	pink
+color_8	лайм	lime
+color_9	коричневый	brown
+color_10	белый	white
+color_11	тёмно-синий	navy
+chapter_1	Первые капли	First Drops
+chapter_2	Лагуна	Lagoon
+chapter_3	Аметистовый грот	Amethyst Grotto
+chapter_4	Изумрудный сад	Emerald Garden
+chapter_5	Розовый рассвет	Pink Dawn
+chapter_6	Янтарная лавка	Amber Shop
+chapter_7	Ночной порт	Night Harbor
+chapter_8	Лаборатория	Laboratory
+chapter_9	Сумеречная башня	Twilight Tower
+chapter_10	Розарий	Rose Garden
+chapter_11	Малахитовые копи	Malachite Mines
+chapter_12	Пустыня миражей	Desert of Mirages
+chapter_13	Звёздная обсерватория	Star Observatory
+chapter_14	Коралловый риф	Coral Reef
+chapter_15	Золотой дворец	Golden Palace
+chapter_16	Аметистовые часы	Amethyst Clock
+chapter_17	Жемчужный берег	Pearl Shore
+chapter_18	Сад роз	Garden of Roses
+chapter_19	Изумрудный лес	Emerald Forest
+chapter_20	Лиловые туманы	Lilac Mists
+chapter_21	Янтарные дюны	Amber Dunes
+chapter_22	Чернильная ночь	Ink Night
+chapter_23	Северное сияние	Northern Lights
+chapter_24	Рубиновый закат	Ruby Sunset
+chapter_25	Хрустальный океан	Crystal Ocean
