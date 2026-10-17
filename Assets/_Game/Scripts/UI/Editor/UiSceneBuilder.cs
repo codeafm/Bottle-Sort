@@ -263,16 +263,16 @@ namespace BottleSort.UI.Editor
             return label;
         }
 
-        // Стеклянная полка: box-shadow 0 12px 22px rgba(0,0,0,.35) и 0 0 22px rgba(140,200,255,.25) под ней.
-        // unit — сколько единиц в pt: на экранах K, внутри доски поля 1 (доска масштабируется целиком).
+        // Стеклянная полка на uGUI (заставка, меню): box-shadow 0 12px 22px rgba(0,0,0,.35)
+        // и 0 0 22px rgba(140,200,255,.25) под ней. unit — сколько единиц Canvas в pt.
         static RectTransform Shelf(Transform parent, string name, float width, float unit = K)
         {
             var root = Node(name, parent);
             root.sizeDelta = new Vector2(width, 12f) * unit;
             float blur = 22f * unit;
             // Полка тоньше размытия, поэтому у CSS-тени пик заметно ниже заявленной альфы: берём примерно половину.
-            ShelfHalo(root, "Shadow", new Color(0f, 0f, 0f, 0.16f), blur, 12f * unit);
-            ShelfHalo(root, "Glow", Hex("#8CC8FF", 0.12f), blur, 0f);
+            ShelfHalo(root, "Shadow", new Color(0f, 0f, 0f, 0.1f), blur, 12f * unit);
+            ShelfHalo(root, "Glow", Hex("#8CC8FF", 0.18f), blur, 0f);
             var bar = Image(root, "Bar", "shelf", Color.white);
             bar.type = UnityEngine.UI.Image.Type.Sliced;
             bar.pixelsPerUnitMultiplier = 16f / (6f * unit);

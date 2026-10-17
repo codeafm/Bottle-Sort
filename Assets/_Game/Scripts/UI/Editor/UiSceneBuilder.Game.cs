@@ -142,8 +142,11 @@ namespace BottleSort.UI.Editor
             board.anchorMin = board.anchorMax = new Vector2(0.5f, 0.5f);
             board.sizeDelta = new Vector2(358, 420);
             var slot = BuildSlotTemplate(fieldRect);
-            // Полки строятся в пикселях макета внутри доски, которая уже масштабирована.
-            var shelf = Shelf(fieldRect, "ShelfTemplate", 200, 1f);
+            // Полки поля рисует мировой ShelfView позади бутылок, здесь только место и ширина
+            // (в пикселях макета внутри доски, которая уже масштабирована).
+            var shelf = Node("ShelfTemplate", fieldRect);
+            shelf.sizeDelta = new Vector2(200, 12);
+            shelf.gameObject.AddComponent<ShelfViewAdapter>();
             shelf.anchorMin = shelf.anchorMax = new Vector2(0.5f, 0.5f);
             shelf.pivot = new Vector2(0.5f, 0f);
             shelf.gameObject.SetActive(false);
