@@ -222,7 +222,7 @@ namespace BottleSort.Services
         }
 
         // Музыка — фон: в меню тише эффектов, в игре ещё тише, чтобы не надоедала.
-        static float TrackGain(MusicTrack track) => track == MusicTrack.Game ? 0.35f : 0.45f;
+        static float TrackGain(MusicTrack track) => track == MusicTrack.Game ? 0.25f : 0.45f;
 
         void Update()
         {
