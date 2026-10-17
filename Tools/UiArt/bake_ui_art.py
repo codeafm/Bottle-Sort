@@ -604,11 +604,145 @@ def bake_inset_bottom():
     cv.save("inset_bottom.png")
 
 
+# Колесо удачи из Wheel.dc.html (viewBox 340). Вращается только лицо (сектора + разделители),
+# обод, штырьки, ступица и подсветка выигрыша стоят на месте, лампочки мигают отдельными картинками.
+WHEEL_PX = 1024
+WHEEL_VIEW = (0, 0, 340, 340)
+SECTOR_COLORS = [("#4A1F9E", "#8C5CF0"), ("#0B4FB0", "#3FA8FF"), ("#11743A", "#43C96A"),
+                 ("#A3134F", "#F0478E"), ("#0A6E79", "#2CC6D4"), ("#B4520A", "#FF9C3A")]
+SECTOR_PATH = "M170 170 L97.00 43.56 A146 146 0 0 1 243.00 43.56 Z"
+
+
+def linear(stops, x0, y0, x1, y1):
+    def f(cv):
+        x, y = cv.pixel_coords()
+        dx, dy = x1 - x0, y1 - y0
+        t = np.clip(((x - x0) * dx + (y - y0) * dy) / (dx * dx + dy * dy), 0, 1)
+        return gradient(t, stops)
+    return f
+
+
+def rotate_shape(shape, degrees, cx=170, cy=170):
+    a = math.radians(degrees)
+    c, s = math.cos(a), math.sin(a)
+    return [([(cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c) for x, y in pts], closed)
+            for pts, closed in shape]
+
+
+def rotate_point(x, y, degrees, cx=170, cy=170):
+    a = math.radians(degrees)
+    return cx + (x - cx) * math.cos(a) - (y - cy) * math.sin(a), cy + (x - cx) * math.sin(a) + (y - cy) * math.cos(a)
+
+
+def bake_wheel():
+    out = os.path.join(OUT, "Wheel")
+    os.makedirs(out, exist_ok=True)
+
+    def save(cv, name):
+        img = np.clip(cv.rgba * 255 + 0.5, 0, 255).astype(np.uint8)
+        Image.fromarray(img, "RGBA").save(os.path.join(out, name))
+        print("baked Wheel/" + name)
+
+    # Тень, золотой обод и тёмная подложка под секторами.
+    cv = Canvas(WHEEL_PX, WHEEL_PX, WHEEL_VIEW)
+    cv.fill(circle(170, 178, 172), radial([(0, hex_rgba("#000000", 0.5)), (0.7, hex_rgba("#000000", 0.5)),
+                                           (1, hex_rgba("#000000", 0))], 170, 178, 172))
+    cv.fill(circle(170, 170, 166), linear([(0, hex_rgba("#FFF1B0")), (0.3, hex_rgba("#FFC233")), (0.55, hex_rgba("#C77700")),
+                                            (0.8, hex_rgba("#FFD24A")), (1, hex_rgba("#A85A00"))], 4, 4, 336, 336))
+    cv.fill(circle(170, 170, 151), hex_rgba("#3A1A00"))
+    save(cv, "wheel_base.png")
+
+    # Лицо: сектора с радиальным градиентом и бликом, золотые разделители.
+    cv = Canvas(WHEEL_PX, WHEEL_PX, WHEEL_VIEW)
+    sector = parse_path(SECTOR_PATH)
+    for i, (dark, light) in enumerate(SECTOR_COLORS):
+        shape = rotate_shape(sector, 60 * i)
+        cv.fill(shape, radial([(0, hex_rgba(dark)), (0.18, hex_rgba(dark)), (0.75, hex_rgba(light)), (1, hex_rgba(dark))],
+                              170, 170, 146))
+        sx, sy = rotate_point(140, 110, 60 * i)
+        cv.fill(shape, radial([(0, hex_rgba("#FFFFFF", 0.22)), (0.5, hex_rgba("#FFFFFF", 0.04)), (1, hex_rgba("#000000", 0.12))],
+                              sx, sy, 190))
+    for i in range(6):
+        x, y = rotate_point(170, 24, 30 + 60 * i)
+        cv.stroke(line(170, 170, x, y), hex_rgba("#FFC531"), 4)
+        cv.stroke(line(170, 170, x, y), hex_rgba("#FFF4C2", 0.45), 1.3)
+    save(cv, "wheel_face.png")
+
+    # Неподвижное поверх лица: тонкое кольцо, штырьки, ступица со звездой.
+    cv = Canvas(WHEEL_PX, WHEEL_PX, WHEEL_VIEW)
+    cv.stroke(circle(170, 170, 146), hex_rgba("#FFE68A", 0.5), 1.5)
+    for i in range(6):
+        x, y = rotate_point(170, 23, 30 + 60 * i)
+        peg = circle(x, y, 5.5)
+        cv.fill(peg, radial([(0, hex_rgba("#FFFBE0")), (0.5, hex_rgba("#FFD24A")), (1, hex_rgba("#B86A00"))],
+                            x - 1.6, y - 2.2, 7.7))
+        cv.stroke(peg, hex_rgba("#7A4A00"), 1)
+    cv.fill(circle(170, 174, 38), hex_rgba("#7A4A00", 0.6))
+    hub = circle(170, 170, 38)
+    cv.fill(hub, radial([(0, hex_rgba("#FFF6C9")), (0.45, hex_rgba("#FFCA3A")), (1, hex_rgba("#C77700"))], 161, 159, 57))
+    cv.stroke(hub, hex_rgba("#FFF1B0"), 2)
+    inner = circle(170, 170, 28)
+    cv.fill(inner, radial([(0, hex_rgba("#B07BFF")), (1, hex_rgba("#3A1490"))], 164, 162, 45))
+    cv.stroke(inner, hex_rgba("#FFD24A"), 2)
+    star = parse_path("M170 152 L175.3 163.2 L187.4 164.6 L178.4 172.9 L180.9 184.9 L170 178.9 L159.1 184.9 "
+                      "L161.6 172.9 L152.6 164.6 L164.7 163.2 Z")
+    cv.fill(star, hex_rgba("#FFD957"))
+    cv.stroke(star, hex_rgba("#FFF6C9"), 1.2)
+    cv.stroke(parse_path("M146 150 C150 140 158 134 168 132"), hex_rgba("#FFFFFF", 0.7), 3)
+    save(cv, "wheel_overlay.png")
+
+    # Подсветка выигравшего сектора под стрелкой.
+    cv = Canvas(WHEEL_PX, WHEEL_PX, WHEEL_VIEW)
+    win = parse_path("M170 170 L96.73 43.56 A146 146 0 0 1 243.27 43.56 Z")
+    cv.fill(win, hex_rgba("#FFFFFF", 0.25))
+    cv.stroke(win, hex_rgba("#FFF1A0"), 4)
+    save(cv, "wheel_win.png")
+
+    # Стрелка: золотая капля с рубином и тенью (drop-shadow 0 4px 4px).
+    view = (-6, -4, 58, 72)
+    cv = Canvas(174, 216, view)
+    drop = parse_path("M23 58 L6 22 A17 17 0 1 1 40 22 Z")
+    shadow = Canvas(174, 216, view)
+    shadow.fill([([(x, y + 4) for x, y in pts], c) for pts, c in drop], hex_rgba("#000000"))
+    cv.paint(blur(shadow, 4) * 0.5, hex_rgba("#000000"))
+    cv.fill(drop, linear([(0, hex_rgba("#B86400")), (0.4, hex_rgba("#FFE27A")), (0.7, hex_rgba("#FFC233")),
+                          (1, hex_rgba("#A85A00"))], 6, 0, 40, 0))
+    cv.stroke(drop, hex_rgba("#7A4A00"), 1.5)
+    gem = circle(23, 17, 9)
+    cv.fill(gem, radial([(0, hex_rgba("#FFB3C8")), (0.45, hex_rgba("#E8214F")), (1, hex_rgba("#7A0A22"))], 19.3, 14.3, 14.4))
+    cv.stroke(gem, hex_rgba("#FFF1B0"), 1.5)
+    cv.fill(circle(20, 14, 2.6), hex_rgba("#FFFFFF", 0.85))
+    save(cv, "wheel_pointer.png")
+
+    # Золотые лучи за колесом: 9° луч, 13° просвет, гаснут к краю (mask 25% → 68%).
+    cv = Canvas(1024, 1024)
+    x, y = cv.pixel_coords()
+    ang = (np.degrees(np.arctan2(y - 512, x - 512)) + 360) % 22
+    on = np.clip(np.minimum(ang, 9 - ang) * 3 + 0.5, 0, 1) * (ang < 9.5)
+    r = np.hypot(x - 512, y - 512) / (512 * math.sqrt(2))
+    mask = np.clip((0.68 - r) / (0.68 - 0.25), 0, 1)
+    cv.rgba[..., :3] = hex_rgba("#FFD66E")[:3]
+    cv.rgba[..., 3] = on * 0.16 * mask
+    save(cv, "wheel_rays.png")
+
+    # Затемнение меню под колесом: ellipse at 50% 45% от экрана 390×844, от тёмно-фиолетового к почти чёрному.
+    # С запасом 200 pt по бокам и 400 pt сверху и снизу, чтобы на длинных экранах края были такими же тёмными.
+    cv = Canvas(198, 411)
+    x, y = cv.pixel_coords()
+    u, v = (x * 4 - 200) / 390, (y * 4 - 400) / 844
+    d = np.hypot((u - 0.5) / 0.5, (v - 0.45) / 0.55) / math.sqrt(2)
+    t = np.clip(d / 0.7, 0, 1)[..., None]
+    a = hex_rgba("#140A3C", 0.55)
+    b = hex_rgba("#030516", 0.88)
+    cv.rgba[...] = a * (1 - t) + b * t
+    save(cv, "wheel_dim.png")
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     only = set(sys.argv[1:])
     steps = [("icons", bake_icons), ("stars", bake_stars), ("hand", bake_hand), ("crown", bake_crown),
-             ("primitives", bake_primitives), ("shadow", bake_shadow), ("ribbon", bake_ribbon_tail), ("inset", bake_inset_bottom), ("nodes", bake_nodes), ("bottles", bake_bottles)]
+             ("primitives", bake_primitives), ("shadow", bake_shadow), ("ribbon", bake_ribbon_tail), ("inset", bake_inset_bottom), ("wheel", bake_wheel), ("nodes", bake_nodes), ("bottles", bake_bottles)]
     for name, fn in steps:
         if not only or name in only:
             fn()

@@ -31,6 +31,8 @@ namespace BottleSort.UI
         [SerializeField] Toast toast;
 
         public override ScreenId Id => ScreenId.Menu;
+        // Куда летят монеты из наград (колесо, подарок дня).
+        public RectTransform CoinsTarget => (RectTransform)coinsButton.transform;
         public override Theme? BackdropTheme => LevelPlan.PlayerTheme ?? Theme.Navy;
 
         void Awake()

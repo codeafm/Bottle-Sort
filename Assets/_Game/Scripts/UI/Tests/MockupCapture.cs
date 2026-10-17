@@ -128,6 +128,49 @@ namespace BottleSort.UI.Tests
                 yield return Level(router, generated[i], names[i]);
         }
 
+        // Три кадра Wheel.dc.html: покой (1 попытка), вращение (rotate 1290°) и выигрыш джекпота (сектор +150 под стрелкой).
+        [UnityTest]
+        public IEnumerator CaptureWheel()
+        {
+            var data = PlayerData.Current;
+            data.coins = 1250;
+            data.highestUnlocked = 24;
+            data.tutorialGiftTaken = true;
+            data.wheelSpins = 1;
+            data.wheelDate = "";
+            data.Save();
+
+            float top = TopInsetPoints * PointsToPixels / Height;
+            SafeAreaFitter.Simulated = new Rect(0f, 0f, Screen.width, Screen.height * (1f - top));
+
+            SceneManager.LoadScene("Main");
+            yield return null;
+            ScreenRouter router = null;
+            float deadline = Time.realtimeSinceStartup + 5f;
+            while ((router = FindRouter()) == null && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.IsNotNull(router, "router");
+            RenderToPhone();
+            yield return null;
+
+            router.Show(ScreenId.Menu, false);
+            yield return Settle(0.6f);
+            data.wheelSpins = 1;
+            router.ShowPopup(ScreenId.Wheel);
+            yield return Settle(1f);
+            yield return Shot("06_wheel_live");
+
+            var wheel = router.Get<WheelPopup>();
+            data.wheelSpins = 0;
+            wheel.ShowSpinningFrame(-1290f);
+            yield return Settle(0.3f);
+            yield return Shot("06_wheel_spin");
+
+            wheel.ShowRewardFrame(4);
+            yield return Settle(0.9f);
+            yield return Shot("06_wheel_reward");
+        }
+
         IEnumerator Level(ScreenRouter router, GeneratedLevel level, string name)
         {
             LevelLoader.Put(level.Spec.Number, level);
