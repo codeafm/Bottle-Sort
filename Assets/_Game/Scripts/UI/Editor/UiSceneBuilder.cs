@@ -20,7 +20,6 @@ namespace BottleSort.UI.Editor
         const string BottleStubPath = PrefabsDir + "/BottleStub.prefab";
         const string BottleAdapterPath = PrefabsDir + "/BottleViewAdapter.prefab";
         const string VfxBottlePath = "Assets/_Game/Art/Bottles/Bottle.prefab";
-        const string AudioDir = "Assets/_Game/Audio";
 
         static BottleStubView _bottlePrefab;
         // Бутылка для игрового поля: настоящая от vfx-art, если она есть, иначе заглушка.
@@ -58,14 +57,16 @@ namespace BottleSort.UI.Editor
                 BuildWin(safeArea),
                 BuildShop(safeArea),
                 BuildSettings(safeArea),
-                BuildGift(safeArea)
+                BuildGift(safeArea),
+                BuildRewardPopup(safeArea),
+                BuildCalendar(safeArea),
+                BuildWheel(safeArea)
             };
 
             var routerObject = new GameObject("ScreenRouter");
             var router = routerObject.AddComponent<ScreenRouter>();
             Set(router, "screens", screens);
             Set(router, "backdrop", backdrop);
-            BuildSounds();
 
             foreach (var screen in screens)
             {
@@ -140,35 +141,6 @@ namespace BottleSort.UI.Editor
             }
             Set(backdrop, "worldBackground", world);
             return backdrop;
-        }
-
-        static void BuildSounds()
-        {
-            var go = new GameObject("UiSounds", typeof(AudioSource));
-            var source = go.GetComponent<AudioSource>();
-            source.playOnAwake = false;
-            var player = go.AddComponent<UiSoundPlayer>();
-
-            var entries = new (UiSound sound, string file, float volume)[]
-            {
-                (UiSound.Pour, "pour_water.wav", 0.7f),
-                (UiSound.Wrong, "wrong_move.wav", 0.8f),
-                (UiSound.BottleComplete, "bottle_complete.wav", 0.9f),
-                (UiSound.Win, "level_win.mp3", 1f),
-                (UiSound.Reward, "reward_popup.wav", 0.9f)
-            };
-            var so = new SerializedObject(player);
-            var clips = so.FindProperty("clips");
-            clips.arraySize = entries.Length;
-            for (int i = 0; i < entries.Length; i++)
-            {
-                var element = clips.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("sound").intValue = (int)entries[i].sound;
-                element.FindPropertyRelative("clip").objectReferenceValue =
-                    AssetDatabase.LoadAssetAtPath<AudioClip>($"{AudioDir}/{entries[i].file}");
-                element.FindPropertyRelative("volume").floatValue = entries[i].volume;
-            }
-            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static T ScreenRoot<T>(Transform safeArea, string name, out RectTransform content) where T : UiScreen

@@ -1,4 +1,6 @@
+using System;
 using BottleSort.Core;
+using BottleSort.Services;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,10 +37,9 @@ namespace BottleSort.UI
             shopButton.onClick.AddListener(() => Router.Show(ScreenId.Shop));
             levelsButton.onClick.AddListener(() => Router.Show(ScreenId.Levels));
             playButton.onClick.AddListener(() => Router.PlayLevel(PlayerData.Current.highestUnlocked));
-            // Подарок, бонус и колесо — зона services, пока только заглушка.
-            giftButton.onClick.AddListener(ComingSoon);
-            bonusButton.onClick.AddListener(ComingSoon);
-            luckButton.onClick.AddListener(ComingSoon);
+            giftButton.onClick.AddListener(OpenDailyGift);
+            bonusButton.onClick.AddListener(() => Router.ShowPopup(ScreenId.Calendar));
+            luckButton.onClick.AddListener(() => Router.ShowPopup(ScreenId.Wheel));
         }
 
         void OnEnable() => PlayerData.Changed += Refresh;
@@ -64,6 +65,22 @@ namespace BottleSort.UI
             levelsProgress.SetKey("menu_levels_progress", data.highestUnlocked, TotalLevels);
         }
 
-        void ComingSoon() => toast.ShowKey("toast_soon", 1.2f);
+        void OpenDailyGift()
+        {
+            var data = PlayerData.Current;
+            if (!DailyRewards.GiftAvailable(data, DateTime.Now))
+            {
+                toast.ShowKey("toast_gift_taken", 1.8f);
+                return;
+            }
+
+            var popup = Router.Get<RewardPopup>();
+            popup.Setup("daily_gift_title", "daily_gift_text", EconomyRules.DailyGift, "gift_claim", () =>
+            {
+                if (DailyRewards.TryClaimGift(PlayerData.Current, DateTime.Now, out _))
+                    UiFeedback.Play(UiSound.Reward);
+            });
+            Router.ShowPopup(ScreenId.Reward);
+        }
     }
 }

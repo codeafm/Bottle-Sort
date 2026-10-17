@@ -1,3 +1,4 @@
+using BottleSort.Services;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,10 +8,10 @@ namespace BottleSort.UI
     // «Обучение пройдено!» после третьего уровня: стартовый подарок из LEVEL_DESIGN §3.4 и сразу уровень 4.
     public sealed class GiftPopup : UiScreen
     {
-        public const int Coins = 200;
-        public const int Undo = 5;
-        public const int Hints = 3;
-        public const int ExtraBottles = 1;
+        public static readonly int Coins = EconomyRules.TutorialGift.Coins;
+        public static readonly int Undo = EconomyRules.TutorialGift.Undo;
+        public static readonly int Hints = EconomyRules.TutorialGift.Hints;
+        public static readonly int ExtraBottles = EconomyRules.TutorialGift.Bottles;
 
         [SerializeField] Button claimButton;
         // Монеты, отмены, подсказки, бутылки - в этом порядке.
@@ -37,16 +38,8 @@ namespace BottleSort.UI
 
         void Claim()
         {
-            var data = PlayerData.Current;
-            if (!data.tutorialGiftTaken)
-            {
-                data.tutorialGiftTaken = true;
-                data.undoCount += Undo;
-                data.hintCount += Hints;
-                data.extraBottleCount += ExtraBottles;
-                data.AddCoins(Coins);
+            if (Economy.TryClaimTutorialGift(PlayerData.Current))
                 UiFeedback.Play(UiSound.Reward);
-            }
             Router.PlayLevel(4);
         }
     }

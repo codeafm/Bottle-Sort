@@ -42,7 +42,7 @@ namespace BottleSort.UI
         }
     }
 
-    // Награда за рекламу. Пока сервиса нет — сразу «просмотрено»; services подменит Handler.
+    // Награда за рекламу. Handler подменяет Services.Ads при запуске; по умолчанию сразу «просмотрено».
     public static class RewardedAds
     {
         public static Action<Action<bool>> Handler = done => done(true);

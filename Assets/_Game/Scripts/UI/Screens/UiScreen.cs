@@ -11,7 +11,10 @@ namespace BottleSort.UI
         Win,
         Shop,
         Settings,
-        Gift
+        Gift,
+        Reward,
+        Calendar,
+        Wheel
     }
 
     // Экран — панель в сцене Main. Переход: fade + лёгкий scale за 0.25 с.

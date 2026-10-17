@@ -1,3 +1,4 @@
+using BottleSort.Services;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -63,6 +64,10 @@ namespace BottleSort.UI
             doubleButton.interactable = true;
             doubleLabel.SetKey("win_double", Loc.Number(_result.Reward * 2));
 
+            Ads.LevelCompleted();
+            PlayStarSounds();
+            ScheduleChests();
+
             for (int i = 0; i < stars.Length; i++)
             {
                 var star = stars[i];
@@ -84,6 +89,52 @@ namespace BottleSort.UI
                 var piece = (RectTransform)confetti.GetChild(i);
                 piece.anchoredPosition = new Vector2(piece.anchoredPosition.x, Random.Range(-_fallHeight * 0.5f, 200f));
             }
+        }
+
+        float StarDelay(int index) => 0.1f + 0.25f * index;
+
+        // Звук звезды — в момент, когда она «приземлилась», примерно на середине OutBack.
+        void PlayStarSounds()
+        {
+            for (int i = 0; i < _result.Stars && i < stars.Length; i++)
+            {
+                var sound = i == 0 ? UiSound.Star1 : i == 1 ? UiSound.Star2 : UiSound.Star3;
+                Tweens.Delay(stars[i].transform, "sound", StarDelay(i) + 0.2f, () => UiFeedback.Play(sound));
+            }
+            if (_result.Reward > 0)
+                Tweens.Delay(reward, "sound", StarDelay(_result.Stars) + 0.35f, () => UiFeedback.Play(UiSound.Coin));
+        }
+
+        // Сундук начисляем сразу, а карточку показываем после звёзд. Если игрок успел уйти — монеты всё равно у него.
+        void ScheduleChests()
+        {
+            if (_result.IsTutorial)
+                return;
+            var chests = Economy.CollectChests(PlayerData.Current, _result.Level, LevelPlan.TypeOf(_result.Level));
+            if (chests.Count == 0)
+                return;
+
+            var total = new RewardBundle();
+            int chapter = 0;
+            foreach (var chest in chests)
+            {
+                total += chest.Reward;
+                if (chest.Kind == ChestKind.Chapter)
+                    chapter = chest.Number;
+            }
+
+            Tweens.Delay(this, "chest", StarDelay(stars.Length) + 0.9f, () =>
+            {
+                if (!IsOpen)
+                    return;
+                var popup = Router.Get<RewardPopup>();
+                if (chapter > 0)
+                    popup.Setup("chest_chapter_title", "chest_chapter_text", total, "chest_ok", null, chapter);
+                else
+                    popup.Setup("chest_stars_title", "chest_stars_text", total, "chest_ok", null);
+                Router.ShowPopup(ScreenId.Reward);
+                UiFeedback.Play(UiSound.Reward);
+            });
         }
 
         void Update()
@@ -115,7 +166,7 @@ namespace BottleSort.UI
                 }
                 PlayerData.Current.AddCoins(_result.Reward);
                 reward.text = "+" + Loc.Number(_result.Reward * 2);
-                UiFeedback.Play(UiSound.Reward);
+                UiFeedback.Play(UiSound.Coin);
                 doubleButton.gameObject.SetActive(false);
             });
         }
@@ -128,7 +179,13 @@ namespace BottleSort.UI
                 Router.ShowPopup(ScreenId.Gift);
                 return;
             }
-            Router.PlayLevel(_result.Level + 1);
+            int next = _result.Level + 1;
+            nextButton.interactable = false;
+            Ads.ShowInterstitialIfDue(_result.Level, LevelPlan.TypeOf(_result.Level), () =>
+            {
+                nextButton.interactable = true;
+                Router.PlayLevel(next);
+            });
         }
     }
 }

@@ -1,48 +1,46 @@
 using System.Collections.Generic;
 using BottleSort.Core;
+using BottleSort.Services;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace BottleSort.UI
 {
-    // Магазин из Shop.dc.html: модели бутылок и фоны. Цены и уровни открытия — BOTTLE_MODELS.md §4 и LEVEL_DESIGN.md §6.4.
-    // Покупки пока в PlayerData; когда появится экономика в services, логика pick переедет туда.
+    // Магазин из Shop.dc.html: модели бутылок и фоны. Цены, открытие и покупка — Services.ShopCatalog и Shop,
+    // здесь только картинка карточек.
     public sealed class ShopScreen : UiScreen
     {
         sealed class Item
         {
             public string Id;
             public string NameKey;
-            public int Price;
-            public int UnlockLevel;
             public string Colors;
             public Theme? Theme;
+            public ShopItem Data;
         }
-
-        const string AutoTheme = "auto";
 
         static readonly Item[] Bottles =
         {
-            new Item { Id = "classic", NameKey = "shape_classic", Price = 0, UnlockLevel = 1, Colors = "RYBG" },
-            new Item { Id = "wine", NameKey = "shape_wine", Price = 0, UnlockLevel = 30, Colors = "BCKY" },
-            new Item { Id = "glass", NameKey = "shape_glass", Price = 300, UnlockLevel = 30, Colors = "ROYL" },
-            new Item { Id = "flask", NameKey = "shape_flask", Price = 500, UnlockLevel = 45, Colors = "CBPK" },
-            new Item { Id = "jug", NameKey = "shape_jug", Price = 700, UnlockLevel = 60, Colors = "PKOY" },
-            new Item { Id = "jar", NameKey = "shape_jar", Price = 900, UnlockLevel = 80, Colors = "NOYL" },
-            new Item { Id = "teapot", NameKey = "shape_teapot", Price = 1100, UnlockLevel = 110, Colors = "GLYO" },
-            new Item { Id = "potion", NameKey = "shape_potion", Price = 1300, UnlockLevel = 140, Colors = "PKRO" }
+            new Item { Id = "classic", NameKey = "shape_classic", Colors = "RYBG" },
+            new Item { Id = "wine", NameKey = "shape_wine", Colors = "BCKY" },
+            new Item { Id = "glass", NameKey = "shape_glass", Colors = "ROYL" },
+            new Item { Id = "flask", NameKey = "shape_flask", Colors = "CBPK" },
+            new Item { Id = "jug", NameKey = "shape_jug", Colors = "PKOY" },
+            new Item { Id = "jar", NameKey = "shape_jar", Colors = "NOYL" },
+            new Item { Id = "teapot", NameKey = "shape_teapot", Colors = "GLYO" },
+            new Item { Id = "potion", NameKey = "shape_potion", Colors = "PKRO" }
         };
 
         static readonly Item[] Themes =
         {
-            new Item { Id = AutoTheme, NameKey = "theme_auto", Price = 0, UnlockLevel = 1, Colors = "BCB" },
-            new Item { Id = "navy", NameKey = "theme_navy", Price = 0, UnlockLevel = 1, Colors = "BCB", Theme = UI.Theme.Navy },
-            new Item { Id = "violet", NameKey = "theme_violet", Price = 500, UnlockLevel = 51, Colors = "PKP", Theme = UI.Theme.Violet },
-            new Item { Id = "teal", NameKey = "theme_teal", Price = 600, UnlockLevel = 101, Colors = "CGC", Theme = UI.Theme.Teal },
-            new Item { Id = "emerald", NameKey = "theme_emerald", Price = 700, UnlockLevel = 151, Colors = "GLG", Theme = UI.Theme.Emerald },
-            new Item { Id = "rose", NameKey = "theme_rose", Price = 800, UnlockLevel = 201, Colors = "KRK", Theme = UI.Theme.Rose },
-            new Item { Id = "amber", NameKey = "theme_amber", Price = 1000, UnlockLevel = 251, Colors = "OYO", Theme = UI.Theme.Amber }
+            new Item { Id = ShopCatalog.AutoTheme, NameKey = "theme_auto", Colors = "BCB" },
+            new Item { Id = "navy", NameKey = "theme_navy", Colors = "BCB", Theme = UI.Theme.Navy },
+            new Item { Id = "violet", NameKey = "theme_violet", Colors = "PKP", Theme = UI.Theme.Violet },
+            new Item { Id = "teal", NameKey = "theme_teal", Colors = "CGC", Theme = UI.Theme.Teal },
+            new Item { Id = "emerald", NameKey = "theme_emerald", Colors = "GLG", Theme = UI.Theme.Emerald },
+            new Item { Id = "rose", NameKey = "theme_rose", Colors = "KRK", Theme = UI.Theme.Rose },
+            new Item { Id = "amber", NameKey = "theme_amber", Colors = "OYO", Theme = UI.Theme.Amber }
         };
 
         [SerializeField] Button backButton;
@@ -64,6 +62,14 @@ namespace BottleSort.UI
 
         public override ScreenId Id => ScreenId.Shop;
         public override Theme? BackdropTheme => LevelPlan.PlayerTheme ?? Theme.Navy;
+
+        static ShopScreen()
+        {
+            foreach (var item in Bottles)
+                item.Data = ShopCatalog.Find(ShopCategory.Bottle, item.Id);
+            foreach (var item in Themes)
+                item.Data = ShopCatalog.Find(ShopCategory.Theme, item.Id);
+        }
 
         void Awake()
         {
@@ -123,7 +129,7 @@ namespace BottleSort.UI
                     _cards[i].ShowBottle(item.NameKey, item.Colors);
                 else
                     _cards[i].ShowTheme(item.NameKey, item.Theme ?? LevelPlan.ThemeOf(PlayerData.Current.highestUnlocked), item.Colors);
-                _cards[i].SetState(StateOf(item), item.Price, item.UnlockLevel, IsNew(item));
+                _cards[i].SetState(StateOf(item), item.Data.Price, item.Data.UnlockLevel, IsNew(item));
             }
 
             var bottle = new Bottle(4);
@@ -134,33 +140,24 @@ namespace BottleSort.UI
             Router.RefreshBackdrop();
         }
 
-        ShopCard.State StateOf(Item item)
+        static ShopCard.State StateOf(Item item)
         {
-            var data = PlayerData.Current;
-            string selected = _bottlesTab ? data.bottleSkin : data.theme;
-            if (item.Id == selected)
-                return ShopCard.State.Selected;
-            if (Owns(item))
-                return ShopCard.State.Owned;
-            if (data.highestUnlocked < item.UnlockLevel)
-                return ShopCard.State.Locked;
-            return data.coins >= item.Price ? ShopCard.State.Affordable : ShopCard.State.TooExpensive;
-        }
-
-        static bool Owns(Item item)
-        {
-            var data = PlayerData.Current;
-            if (item.Id == AutoTheme || data.Owns(item.Id))
-                return true;
-            // Бесплатное (classic, ночь, подарочная «Длинная») открывается само по уровню.
-            return item.Price == 0 && item.UnlockLevel <= data.highestUnlocked;
+            switch (Shop.StateOf(PlayerData.Current, item.Data))
+            {
+                case ShopItemState.Selected: return ShopCard.State.Selected;
+                case ShopItemState.Owned: return ShopCard.State.Owned;
+                case ShopItemState.Affordable: return ShopCard.State.Affordable;
+                case ShopItemState.TooExpensive: return ShopCard.State.TooExpensive;
+                default: return ShopCard.State.Locked;
+            }
         }
 
         // «Новинка» — модель открылась в последние 30 уровней.
         static bool IsNew(Item item)
         {
             int level = PlayerData.Current.highestUnlocked;
-            return item.UnlockLevel > 1 && level >= item.UnlockLevel && level < item.UnlockLevel + 30;
+            int unlock = item.Data.UnlockLevel;
+            return unlock > 1 && level >= unlock && level < unlock + 30;
         }
 
         void Pick(int index)
@@ -174,35 +171,23 @@ namespace BottleSort.UI
             switch (StateOf(item))
             {
                 case ShopCard.State.Locked:
-                    toast.Show(Loc.Format("toast_shop_locked", item.UnlockLevel));
+                    toast.Show(Loc.Format("toast_shop_locked", item.Data.UnlockLevel));
                     break;
                 case ShopCard.State.TooExpensive:
                     toast.ShowKey("toast_no_coins");
                     break;
                 case ShopCard.State.Affordable:
-                    if (data.TrySpend(item.Price))
+                    if (Shop.TryBuy(data, item.Data) == PurchaseResult.Bought)
                     {
-                        data.owned.Add(item.Id);
-                        Select(item);
-                        UiFeedback.Play(UiSound.Reward);
+                        UiFeedback.Play(UiSound.Coin);
                         toast.Show(Loc.Format("toast_bought", Loc.Get(item.NameKey)));
                     }
                     break;
                 default:
-                    Select(item);
+                    Shop.TrySelect(data, item.Data);
                     break;
             }
             Rebuild();
-        }
-
-        void Select(Item item)
-        {
-            var data = PlayerData.Current;
-            if (_bottlesTab)
-                data.bottleSkin = item.Id;
-            else
-                data.theme = item.Id;
-            data.Save();
         }
 
         static Item Find(Item[] items, string id)

@@ -1,5 +1,6 @@
 using BottleSort.Core;
 using BottleSort.Gameplay;
+using BottleSort.Services;
 using UnityEngine;
 
 namespace BottleSort.UI
@@ -65,8 +66,11 @@ namespace BottleSort.UI
 
         public void Show(Bottle bottle, int unit)
         {
-            _view.SetShape(bottle.Shape);
             _view.Show(bottle);
+            // Модель из магазина подменяет классическую бутылку только на картинке, правила не меняются.
+            string skin = ShopCatalog.BottleShapeFor(bottle.Shape, bottle.Capacity, PlayerData.Current.bottleSkin);
+            if (skin != bottle.Shape)
+                _view.SetShape(skin);
         }
 
         public void SetGlow(BottleGlow glow)

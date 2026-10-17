@@ -13,6 +13,9 @@ namespace BottleSort.UI
         readonly List<UiScreen> _popups = new List<UiScreen>();
         UiScreen _current;
 
+        // Смену экрана слушают музыка и реклама (баннер только на некоторых экранах).
+        public static event System.Action<UiScreen, bool> ScreenShown;
+
         public UiScreen Current => _current;
 
         void Awake()
@@ -45,6 +48,7 @@ namespace BottleSort.UI
             _current = next;
             next.Open(animated);
             RefreshBackdrop();
+            ScreenShown?.Invoke(next, animated);
         }
 
         public void ShowPopup(ScreenId id)

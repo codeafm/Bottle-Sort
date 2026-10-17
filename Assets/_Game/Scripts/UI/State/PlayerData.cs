@@ -1,19 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
+using BottleSort.Services;
 using UnityEngine;
 
 namespace BottleSort.UI
 {
-    // Временное хранилище прогресса и настроек, пока нет сервиса сохранений.
-    // Формат — JSON в persistentDataPath, как и задумано для services; поля можно будет перенести как есть.
+    // Всё, что сохраняется между запусками. Читает и пишет файл SaveService, правила начисления — Economy.
     [Serializable]
     public sealed class PlayerData
     {
-        const string FileName = "player.json";
-
-        public int version = 1;
-        public int coins;
+        public int version = SaveService.FormatVersion;
+        public int coins = EconomyRules.StartCoins;
         public int highestUnlocked = 1;
         public List<int> stars = new List<int>();
         public int undoCount;
@@ -28,14 +25,31 @@ namespace BottleSort.UI
         public bool soundsOn = true;
         public bool vibrationOn = true;
         public bool notificationsOn = true;
+        public float musicVolume = 0.6f;
+        public float soundVolume = 1f;
         public string language = "";
 
+        // Даты в виде yyyy-MM-dd по местному времени.
+        public string giftDate = "";
+        public string calendarDate = "";
+        public int calendarDay = 1;
+        public string wheelDate = "";
+        public int wheelSpins = 1;
+
+        public int starChestsOpened;
+        public List<int> chapterChests = new List<int>();
+        public bool noAds;
+
+        [NonSerialized] SaveService _storage;
+
         static PlayerData _current;
+        static SaveService _defaultStorage;
 
         public static event Action Changed;
 
-        public static PlayerData Current => _current ?? (_current = Load());
-        public static string SavePath => Path.Combine(Application.persistentDataPath, FileName);
+        public static PlayerData Current => _current ?? (_current = DefaultStorage.Load());
+        public static string SavePath => DefaultStorage.Path;
+        static SaveService DefaultStorage => _defaultStorage ?? (_defaultStorage = SaveService.CreateDefault());
 
         public bool IsFirstLaunch => highestUnlocked <= 1 && StarsOf(1) == 0;
 
@@ -69,7 +83,7 @@ namespace BottleSort.UI
 
         public bool TrySpend(int amount)
         {
-            if (coins < amount)
+            if (amount < 0 || coins < amount)
                 return false;
             coins -= amount;
             Save();
@@ -78,35 +92,12 @@ namespace BottleSort.UI
 
         public bool Owns(string id) => owned.Contains(id);
 
+        public void AttachStorage(SaveService storage) => _storage = storage;
+
         public void Save()
         {
-            try
-            {
-                string temp = SavePath + ".tmp";
-                File.WriteAllText(temp, JsonUtility.ToJson(this));
-                if (File.Exists(SavePath))
-                    File.Delete(SavePath);
-                File.Move(temp, SavePath);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[PlayerData] Save failed: {e.Message}");
-            }
+            _storage?.Save(this);
             Changed?.Invoke();
-        }
-
-        static PlayerData Load()
-        {
-            try
-            {
-                if (File.Exists(SavePath))
-                    return JsonUtility.FromJson<PlayerData>(File.ReadAllText(SavePath)) ?? new PlayerData();
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[PlayerData] Load failed, starting fresh: {e.Message}");
-            }
-            return new PlayerData();
         }
 
         // Перечитать файл при следующем обращении (после восстановления сохранения в тестах).
@@ -119,8 +110,7 @@ namespace BottleSort.UI
         // Начать с чистого листа: первый запуск, ноль монет. Для отладки и тестов.
         public static void DeleteSave()
         {
-            if (File.Exists(SavePath))
-                File.Delete(SavePath);
+            DefaultStorage.Delete();
             Reload();
         }
 

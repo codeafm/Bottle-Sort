@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BottleSort.Core;
+using BottleSort.Services;
 using UnityEngine;
 
 namespace BottleSort.UI
@@ -129,23 +130,8 @@ namespace BottleSort.UI
             }
         }
 
-        // LEVEL_DESIGN §6.2.
-        public static int Reward(int level, int stars)
-        {
-            int baseCoins;
-            switch (TypeOf(level))
-            {
-                case LevelType.Special:
-                case LevelType.BigFlask: baseCoins = 25; break;
-                case LevelType.Rescue: baseCoins = 35; break;
-                case LevelType.Boss: baseCoins = 40; break;
-                case LevelType.ChapterBoss: baseCoins = 75; break;
-                default: baseCoins = 15; break;
-            }
-            double multiplier = stars >= 3 ? 1.5 : stars == 2 ? 1.2 : 1.0;
-            double raw = baseCoins * (1 + level / 4000.0) * multiplier;
-            return (int)Math.Floor(raw / 5 + 0.5) * 5;
-        }
+        // LEVEL_DESIGN §6.2, формула в EconomyRules.
+        public static int Reward(int level, int stars) => EconomyRules.LevelReward(TypeOf(level), level, stars);
 
         public static bool BoosterUnlocked(Booster booster, int level)
         {
