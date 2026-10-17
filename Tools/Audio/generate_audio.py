@@ -429,6 +429,22 @@ def sfx_reveal():
     return normalize(reverb(fade(out), 0.25, tail=0.5), -5)
 
 
+def sfx_wheel_tick():
+    # пластиковый язычок стрелки цепляет штырёк
+    out = tone(2900, 0.06, WOOD, attack=0.0003, decay=0.006)
+    add(out, click(0.008, 121, 2500, 0.0012), 0, 0.7)
+    add(out, tone(950, 0.04, ((1.0, 1.0, 1.0),), attack=0.0005, decay=0.008), 0, 0.35)
+    return normalize(fade(out, 0.0003, 0.004), -9)
+
+
+def sfx_wheel_stop():
+    out = buf(0.9)
+    add(out, thud(170, 0.14, 0.03, 131), 0, 0.8)
+    add(out, click(0.01, 132, 1800, 0.002), 0, 0.4)
+    add(out, tone(note('E7'), 0.7, GLOCK, attack=0.0005, decay=0.3), 0.05, 0.3)
+    return normalize(reverb(fade(out), 0.15, tail=0.4), -6)
+
+
 def music_loop(chords, bpm, bars_per_chord, seed, melody_density, pad_gain, root_oct):
     beat = 60.0 / bpm
     bar = beat * 4
@@ -497,6 +513,8 @@ def main():
         'ice_crack': sfx_ice,
         'unlock': sfx_unlock,
         'reveal': sfx_reveal,
+        'wheel_tick': sfx_wheel_tick,
+        'wheel_stop': sfx_wheel_stop,
     }
     only = set(sys.argv[2:])
     for name, fn in jobs.items():
