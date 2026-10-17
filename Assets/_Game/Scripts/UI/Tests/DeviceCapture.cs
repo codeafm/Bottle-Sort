@@ -9,8 +9,9 @@ using Object = UnityEngine.Object;
 
 namespace BottleSort.UI.Tests
 {
-    // Уровни 6 и 24 на разных телефонах с их вырезом и полосой жестов: снимки в Docs/Screens/devices
-    // и проверка, что шапка не слипается, а поле не наезжает на бустеры.
+    // Уровни 6 и 24 и главное меню на разных телефонах с их вырезом и полосой жестов, вместе с плашкой баннера:
+    // снимки в Docs/Screens/devices и проверка, что шапка не слипается, поле не наезжает на бустеры,
+    // а баннер не закрывает ни бустеры, ни нижние кнопки меню.
     // Запуск: -runTests -testPlatform PlayMode -testFilter DeviceCapture (без -nographics).
     [Explicit, Category("Devices")]
     public sealed class DeviceCapture
@@ -19,6 +20,8 @@ namespace BottleSort.UI.Tests
         // Минимальные зазоры в pt: между элементами шапки и между полкой поля и бейджами бустеров.
         const float HeaderGap = 2f;
         const float FieldGap = 8f;
+        // Баннер 50 pt у низа safe area, кнопки начинаются не ниже 71 pt (как в макете).
+        const float BannerGap = 8f;
 
         struct Device
         {
@@ -87,11 +90,7 @@ namespace BottleSort.UI.Tests
             deadline = Time.realtimeSinceStartup + 20f;
             while ((router.Current != startLevel || startLevel.IsBusy) && Time.realtimeSinceStartup < deadline)
                 yield return null;
-            _camera = Camera.main;
-            var canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.worldCamera = _camera;
-            canvas.planeDistance = 1f;
+            var canvas = RenderCanvasToCamera();
 
             var problems = new List<string>();
             foreach (var device in Devices)
@@ -107,11 +106,87 @@ namespace BottleSort.UI.Tests
                     float settle = Time.realtimeSinceStartup + 0.8f;
                     while (Time.realtimeSinceStartup < settle)
                         yield return null;
+                    RenderBannerToCamera();
                     yield return Shot($"{device.Name}_level{level}", device);
                     Check(device.Name + " L" + level, canvas, game, problems);
+                    CheckBanner(device.Name + " L" + level, canvas, game.transform.Find("Content"), new[] { "Boosters" }, problems);
                 }
             }
             Assert.IsEmpty(problems, string.Join("\n", problems));
+        }
+
+        [UnityTest]
+        public IEnumerator MenuOnPhones()
+        {
+            var data = PlayerData.Current;
+            data.coins = 1250;
+            data.highestUnlocked = 24;
+            data.tutorialGiftTaken = true;
+            data.Save();
+
+            SceneManager.LoadScene(SceneLoader.MenuScene);
+            yield return null;
+            ScreenRouter router = null;
+            float deadline = Time.realtimeSinceStartup + 5f;
+            while ((router = FindRouter()) == null && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.IsNotNull(router, "router");
+            var canvas = RenderCanvasToCamera();
+            // Меню появляется по частям: ждём, пока всё встанет на место.
+            float settle = Time.realtimeSinceStartup + 1.6f;
+            while (Time.realtimeSinceStartup < settle)
+                yield return null;
+
+            var problems = new List<string>();
+            var content = router.Get<MainMenuScreen>().transform.Find("Content");
+            foreach (var device in Devices)
+            {
+                UseDevice(device);
+                yield return null;
+                yield return null;
+                RenderBannerToCamera();
+                yield return Shot($"{device.Name}_menu", device);
+                CheckBanner(device.Name + " menu", canvas, content, new[] { "Levels", "Shop", "Play", "RoundButtons" }, problems);
+            }
+            Assert.IsEmpty(problems, string.Join("\n", problems));
+        }
+
+        Canvas RenderCanvasToCamera()
+        {
+            _camera = Camera.main;
+            var canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = _camera;
+            canvas.planeDistance = 1f;
+            return canvas;
+        }
+
+        // Плашку баннера (EditorAdsService) рисуем той же камерой поверх интерфейса, чтобы она попала в снимок.
+        void RenderBannerToCamera()
+        {
+            var stub = GameObject.Find("Banner Stub");
+            Assert.IsNotNull(stub, "banner stub is not shown");
+            var canvas = stub.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = _camera;
+            canvas.planeDistance = 0.5f;
+            Canvas.ForceUpdateCanvases();
+        }
+
+        // Низ каждого элемента (с «дном» кнопки, без мягкой тени и пульсирующего ореола) — выше верха баннера хотя бы на BannerGap.
+        static void CheckBanner(string label, Canvas canvas, Transform content, string[] names, List<string> problems)
+        {
+            var root = (RectTransform)canvas.transform;
+            var banner = Bounds(root, (RectTransform)GameObject.Find("Banner Stub").transform.Find("SafeArea/Banner 320x50"));
+            float lowest = float.MaxValue;
+            foreach (string name in names)
+                foreach (var graphic in content.Find(name).GetComponentsInChildren<UnityEngine.UI.Graphic>())
+                    if (!graphic.name.EndsWith("Shadow") && graphic.name != "Pulse" && graphic.enabled && graphic.color.a > 0.01f)
+                        lowest = Mathf.Min(lowest, Bounds(root, graphic.rectTransform).yMin);
+            float gap = (lowest - banner.yMax) / 2.5f;
+            Debug.Log($"[DeviceCapture] {label}: buttons above banner {gap:0.0} pt");
+            if (gap < BannerGap)
+                problems.Add($"{label}: кнопки в {gap:0.0} pt от баннера");
         }
 
         void UseDevice(Device device)

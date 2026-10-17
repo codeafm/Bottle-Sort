@@ -165,6 +165,7 @@ namespace BottleSort.UI.Editor
             var heroRow = Node("Row", heroArea);
             heroRow.anchorMin = heroRow.anchorMax = new Vector2(0.5f, 0.5f);
             heroRow.sizeDelta = M(320, 134 + 6);
+            Set(heroArea.gameObject.AddComponent<FitInParent>(), "content", heroRow);
             var sizes = new[] { 44f, 52f, 56f, 52f, 44f };
             var periods = new[] { 3.4f, 3.0f, 3.6f, 3.2f, 3.8f };
             var phases = new[] { 0.4f, 1.2f, 2.0f, 0.8f, 1.6f };
