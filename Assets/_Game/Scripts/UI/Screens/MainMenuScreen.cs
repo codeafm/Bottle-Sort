@@ -115,6 +115,13 @@ namespace BottleSort.UI
                     return;
             }
 
+            // Ролик ещё не пришёл (или после прошлого показа грузится следующий) — говорим об этом сразу.
+            if (!RewardedAds.EnsureReady())
+            {
+                toast.ShowKey("toast_ad_loading", 2f);
+                return;
+            }
+
             var popup = Router.Get<RewardPopup>();
             popup.Setup("coins_ad_title", "coins_ad_text", new RewardBundle(CoinAdOffer.Coins), "coins_ad_watch",
                 () => WatchAdForCoins(popup));
@@ -126,6 +133,11 @@ namespace BottleSort.UI
         {
             var from = popup.CoinIcon.position;
             var icon = popup.CoinIcon.Find("Icon");
+            if (!RewardedAds.EnsureReady())
+            {
+                toast.ShowKey("toast_ad_loading", 2f);
+                return;
+            }
             RewardedAds.Show(watched =>
             {
                 var data = PlayerData.Current;

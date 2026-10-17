@@ -41,6 +41,8 @@ namespace BottleSort.Services
                     _banners.OnLoaded(placement, loaded);
                 }));
             RewardedAds.Handler = ShowRewarded;
+            RewardedAds.IsReady = () => _service != null && _service.IsRewardedReady;
+            RewardedAds.Prepare = () => _service?.LoadRewarded();
             ScreenRouter.ScreenShown -= OnScreenShown;
             ScreenRouter.ScreenShown += OnScreenShown;
             ScreenRouter.PopupsChanged -= OnPopupsChanged;

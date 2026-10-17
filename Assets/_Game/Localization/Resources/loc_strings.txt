@@ -218,3 +218,4 @@ deadend_text_restart	Отмени ход или начни заново	Undo a m
 deadend_bottle_ad	+1 бутылка	+1 bottle
 toast_extra_moves	+{0} ходов!	+{0} moves!
 toast_reward_ad_failed	Реклама не загрузилась или не досмотрена. Попробуй ещё раз	The ad didn't load or wasn't finished. Try again
+toast_ad_loading	Реклама загружается, попробуй через пару секунд	The ad is loading, try again in a couple of seconds

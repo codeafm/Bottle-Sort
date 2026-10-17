@@ -75,7 +75,19 @@ namespace BottleSort.UI
     public static class RewardedAds
     {
         public static Action<Action<bool>> Handler = done => done(true);
+        // Загружен ли ролик прямо сейчас; если нет — Prepare запускает загрузку заново.
+        public static Func<bool> IsReady = () => true;
+        public static Action Prepare = () => { };
 
         public static void Show(Action<bool> done) => Handler(done);
+
+        // Для кнопок, которые не должны молча ждать: ролик готов — true, иначе догружаем и false.
+        public static bool EnsureReady()
+        {
+            if (IsReady())
+                return true;
+            Prepare();
+            return false;
+        }
     }
 }

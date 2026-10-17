@@ -76,9 +76,11 @@ namespace BottleSort.Integrations
                     _interstitial?.Destroy();
                     _interstitial = ad;
                     _interstitialLoadedAt = Time.realtimeSinceStartup;
+                    Debug.Log("[Ads] Interstitial loaded");
                 },
                 error =>
                 {
+                    Debug.Log($"[Ads] Interstitial failed to load: {error.Message}");
                     _interstitialLoading = false;
                     _thread.After(RetrySeconds, LoadInterstitial);
                 });
@@ -96,9 +98,11 @@ namespace BottleSort.Integrations
                     _rewarded?.Destroy();
                     _rewarded = ad;
                     _rewardedLoadedAt = Time.realtimeSinceStartup;
+                    Debug.Log("[Ads] Rewarded loaded");
                 },
                 error =>
                 {
+                    Debug.Log($"[Ads] Rewarded failed to load: {error.Message}");
                     _rewardedLoading = false;
                     _thread.After(RetrySeconds, LoadRewarded);
                 });
@@ -229,7 +233,11 @@ namespace BottleSort.Integrations
             var banner = new Banner(BannerAdSize.Inline(BannerWidth, BannerHeight), AdPosition.BottomCenter);
             banner.Hide();
             banner.OnAdLoaded += (sender, args) => _thread.Post(loaded);
-            banner.OnAdFailedToLoad += (sender, args) => _thread.Post(failed);
+            banner.OnAdFailedToLoad += (sender, args) => _thread.Post(() =>
+            {
+                Debug.Log($"[Ads] Banner {placement} failed to load: {args.Message}");
+                failed();
+            });
             banner.LoadAd(new AdRequest(_config.BannerIdFor(placement)));
             return banner;
         }
