@@ -45,6 +45,7 @@ namespace BottleSort.UI
         readonly List<UiGradient> _layerShades = new List<UiGradient>();
         readonly List<TMP_Text> _hiddenMarks = new List<TMP_Text>();
         int _shape = -1;
+        float _layerHeight;
         BottleGlow _glow;
         bool _completed;
 
@@ -59,6 +60,7 @@ namespace BottleSort.UI
             float top = art.liquidTop / ViewBoxHeight * height;
             float bottom = art.liquidBottom / ViewBoxHeight * height;
             float layerHeight = (bottom - top) / bottle.Capacity;
+            _layerHeight = layerHeight;
             float bottomFromBase = height - bottom;
 
             EnsureLayers(bottle.Count);
@@ -99,6 +101,44 @@ namespace BottleSort.UI
             if (bottle.IsFrozen)
                 frozenCount.text = bottle.FrozenTurns.ToString();
             lockBadge.SetActive(bottle.IsLocked);
+        }
+
+        // Непрерывный уровень одного цвета (заставка): level в слоях, верхний слой может быть неполным;
+        // alpha — для мягкой смены цвета.
+        public void ShowLiquid(byte color, int capacity, float level, float alpha = 1f)
+        {
+            int whole = Mathf.Clamp(Mathf.CeilToInt(level - 0.001f), 0, capacity);
+            var bottle = new Bottle(capacity);
+            for (int i = 0; i < whole; i++)
+                bottle.Push(color);
+            Show(bottle, capacity);
+            if (whole == 0)
+                return;
+
+            var top = _layerImages[whole - 1].rectTransform;
+            float fraction = Mathf.Clamp01(level - (whole - 1));
+            top.sizeDelta = new Vector2(0f, _layerHeight * fraction + 1f);
+            shade.sizeDelta = new Vector2(shade.sizeDelta.x, _layerHeight * Mathf.Min(level, capacity));
+            var shadeImage = shade.GetComponent<Image>();
+            var shadeColor = shadeImage.color;
+            shadeColor.a = alpha;
+            shadeImage.color = shadeColor;
+            if (alpha >= 1f)
+                return;
+            var tint = UiColors.Liquid(color);
+            tint.a = alpha;
+            for (int i = 0; i < whole; i++)
+                _layerShades[i].SetColors(Color.Lerp(tint, new Color(1f, 1f, 1f, alpha), 0.12f), tint, 0.14f,
+                    Color.Lerp(tint, new Color(0f, 0f, 0f, alpha), 0.07f));
+        }
+
+        // Свечение «бутылка собрана» с плавным появлением и угасанием (0 — нет, 1 — полностью).
+        public void SetCompletedGlow(float amount)
+        {
+            _completed = amount > 0.001f;
+            ApplyGlow();
+            if (_completed && _glow == BottleGlow.None)
+                glow.color = UiColors.DoneGlow * new Color(1f, 1f, 1f, 0.9f * Mathf.Clamp01(amount));
         }
 
         public void SetGlow(BottleGlow state)

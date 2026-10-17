@@ -132,6 +132,43 @@ namespace BottleSort.UI.Tests
             Assert.AreEqual(ScreenId.Menu, FindRouter().Current.Id);
         }
 
+        // Один круг налива на заставке, каждые 0.15 с времени самой заставки: pour_*.jpg.
+        [UnityTest]
+        public IEnumerator WaterPourOnSplash()
+        {
+            foreach (string old in Directory.GetFiles(OutputDir, "pour_*.jpg"))
+                File.Delete(old);
+            SceneManager.LoadScene(SceneLoader.SplashScene);
+            yield return null;
+            float deadline = Time.realtimeSinceStartup + 12f;
+            SplashScreen splash = null;
+            while ((FindRouter() == null || (splash = FindRouter().Get<SplashScreen>()) == null || splash.IsPlayingIntro)
+                   && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.IsNotNull(splash, "splash");
+
+            float next = -0.3f;
+            deadline = Time.realtimeSinceStartup + 12f;
+            while (next <= 4.35f && !splash.IsReady && Time.realtimeSinceStartup < deadline)
+            {
+                if (splash.PourTime >= next)
+                {
+                    Shot("pour", splash.PourTime);
+                    next += 0.15f;
+                }
+                yield return null;
+            }
+            Assert.Greater(next, 4f, "the pour did not reach the full bottle");
+
+            // Смена цвета на втором круге: прошлый тает, новый проявляется, бутылка снова наклоняется.
+            foreach (float time in new[] { 4.5f, 4.6f, 4.7f, 4.8f, 4.95f, 5.1f, 5.25f })
+            {
+                splash.ShowPourFrame(time);
+                yield return null;
+                Shot("pour", time);
+            }
+        }
+
         // Каждый кадр заново: после смены сцены свои камера и канвас; шторку SceneLoader рисуем той же камерой поверх.
         void Shot(string prefix, float time)
         {

@@ -14,6 +14,28 @@ namespace BottleSort.UI.Editor
         const string ScreensDir = "Assets/_Game/Prefabs/UI/Screens";
         const string LoaderPath = "Assets/_Game/Prefabs/UI/Resources/SceneLoader.prefab";
 
+        // Подпись студии внизу заставки убрана по просьбе заказчика (интро CODEAFM осталось):
+        // -executeMethod BottleSort.UI.Editor.ScreenMotionSetup.RemoveSplashStudioLabel
+        public static void RemoveSplashStudioLabel()
+        {
+            string path = $"{ScreensDir}/SplashScreen.prefab";
+            var root = PrefabUtility.LoadPrefabContents(path);
+            var studio = root.transform.Find("Content/Studio");
+            if (studio != null)
+                Object.DestroyImmediate(studio.gameObject);
+            // Шаг ухода заставки, который гасил эту подпись, остался бы с пустой ссылкой.
+            var outro = root.transform.Find("Outro").GetComponent<ScreenMotion>();
+            var so = new SerializedObject(outro);
+            var steps = so.FindProperty("steps");
+            for (int i = steps.arraySize - 1; i >= 0; i--)
+                if (steps.GetArrayElementAtIndex(i).FindPropertyRelative("target").objectReferenceValue == null)
+                    steps.DeleteArrayElementAtIndex(i);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            PrefabUtility.UnloadPrefabContents(root);
+            Debug.Log("[ScreenMotionSetup] studio label removed from the splash");
+        }
+
         public static void ApplyToPrefabs()
         {
             Patch<SplashScreen>($"{ScreensDir}/SplashScreen.prefab", SplashOutro);
@@ -45,7 +67,6 @@ namespace BottleSort.UI.Editor
             Add(steps, stage, "Caption", Vector2.zero, 1f, 0f, 0.45f);
             Add(steps, stage, "Progress", Vector2.zero, 1f, 0.05f, 0.45f);
             Add(steps, stage, "Loading", Vector2.zero, 1f, 0.05f, 0.45f);
-            Add(steps, screen.transform.Find("Content"), "Studio", Vector2.zero, 1f, 0.1f, 0.45f);
 
             var motion = MotionOn(screen.gameObject, "Outro", false, steps);
             Set(screen, "outro", motion);

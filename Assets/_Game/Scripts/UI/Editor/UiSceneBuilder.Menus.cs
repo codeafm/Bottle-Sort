@@ -113,10 +113,6 @@ namespace BottleSort.UI.Editor
             var loading = Text(stage, "Loading", BodyFont, 13, Hex("#E1DCFF", 0.8f), TextAlignmentOptions.Center, "splash_loading");
             At(loading.rectTransform, 0, 734, 390, 20);
 
-            var studio = Text(content, "Studio", HeavyFont, 12, Hex("#DCD7FF", 0.55f), TextAlignmentOptions.Center, "studio");
-            studio.characterSpacing = Spacing(2f, 12);
-            studio.rectTransform.BottomBand(34, 16);
-
             Set(screen, "logo", logoRoot);
             Set(screen, "logoGroup", logoGroup);
             Set(screen, "pourer", pourer);

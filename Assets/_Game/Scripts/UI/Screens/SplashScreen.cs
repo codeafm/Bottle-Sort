@@ -6,17 +6,35 @@ using UnityEngine.UI;
 
 namespace BottleSort.UI
 {
-    // Заставка из Splash.dc.html: логотип влетает, наклонённая бутылка наливает в бутылку на полке,
-    // слой за слоем, потом золотое свечение и звёздочки. При запуске игры сначала идёт интро студии (BrandIntro),
-    // потом заставка не меньше одного полного цикла налива (4.5 с), пока грузятся меню и уровень игрока;
-    // полоса идёт в такт этому времени, «Готово!», и заставка спокойно уходит (outro), а не обрывается.
+    // Заставка из Splash.dc.html: логотип влетает, бутылка наклоняется и непрерывно наливает в бутылку на полке,
+    // потом золотое свечение и звёздочки. При запуске игры сначала идёт интро студии (BrandIntro), потом заставка
+    // не меньше одного полного круга налива (4.5 с), пока грузятся меню и уровень игрока; полоса идёт в такт
+    // этому времени, на полной бутылке — «Готово!», и заставка спокойно уходит (outro), а не обрывается.
     public sealed class SplashScreen : UiScreen
     {
-        const float MinTime = 6 * StepTime;
+        // Круг налива: новый цвет проявляется, бутылка наклоняется, струя бежит вниз, уровень растёт,
+        // струя отрывается, бутылка выпрямляется и вспыхивает, короткая пауза на полной бутылке. Секунды от начала круга.
+        const float CycleTime = 4.5f;
+        const float RefillEnd = 0.35f;
+        const float TiltStart = 0.35f;
+        const float TiltEnd = 0.75f;
+        const float StreamStart = 0.6f;
+        const float StreamGrow = 0.25f;
+        const float FillStart = 0.75f;
+        const float FillEnd = 3.45f;
+        const float StreamDrop = 0.25f;
+        const float UntiltEnd = 3.85f;
+        const float GlowIn = 0.3f;
+        // Круг начинается чуть раньше заставки, чтобы к концу минимального показа бутылка стояла полной.
+        const float StartOffset = -0.3f;
+        // На сколько градусов бутылка в покое прямее, чем при наливе (угол налива — тот, что в префабе).
+        const float RestTilt = 34f;
+        const int Capacity = 4;
+
+        const float MinTime = CycleTime;
         // Подвисание при загрузке не должно съедать время показа: шаг кадра не больше 1/20 с.
         const float MaxFrameStep = 0.05f;
         const float ReadyPause = 0.35f;
-        const float StepTime = 0.75f;
         const float StreamTop = 330f;
 
         static readonly byte[] Order =
@@ -45,8 +63,10 @@ namespace BottleSort.UI
         [SerializeField] float mockupScale = 2.5f;
 
         float _elapsed;
-        float _stepTimer;
-        int _step;
+        float _pourTime;
+        int _burstCycle = -1;
+        float _pourAngle = float.NaN;
+        float _streamY = float.NaN;
         float _shownProgress;
         Task _loading;
         bool _leaving;
@@ -54,6 +74,12 @@ namespace BottleSort.UI
         bool _waitingIntro;
 
         public bool IsReady => _leaving;
+        // Для снимков налива: идёт ли ещё интро студии и сколько секунд прошло от начала круга налива.
+        public bool IsPlayingIntro => _waitingIntro;
+        public float PourTime => _pourTime;
+
+        // Для снимков: кадр налива на любой момент, в том числе смена цвета на втором круге.
+        public void ShowPourFrame(float time) => Pose(time, false);
 
         public override ScreenId Id => ScreenId.Splash;
         public override Theme? BackdropTheme => Theme.Violet;
@@ -61,8 +87,6 @@ namespace BottleSort.UI
         protected override void OnOpen()
         {
             _elapsed = 0f;
-            _step = 0;
-            _stepTimer = 0f;
             _shownProgress = 0.06f;
             _leaving = false;
 
@@ -89,10 +113,10 @@ namespace BottleSort.UI
         {
             _waitingIntro = false;
             _elapsed = 0f;
-            _stepTimer = 0f;
-            _step = 0;
+            _pourTime = StartOffset;
+            _burstCycle = -1;
             AnimateLogo();
-            ShowStep();
+            Pose(_pourTime, false);
             if (AudioService.Instance != null)
                 AudioService.Instance.PlayMusic(MusicTrack.Menu);
         }
@@ -119,13 +143,8 @@ namespace BottleSort.UI
             if (_leaving)
                 return;
 
-            _stepTimer += dt;
-            if (_stepTimer >= StepTime)
-            {
-                _stepTimer -= StepTime;
-                _step++;
-                ShowStep();
-            }
+            _pourTime += dt;
+            Pose(_pourTime, true);
 
             // Полоса идёт в такт показу и лишь к концу мягко замедляется; быстрая загрузка её не подгоняет.
             float time = Mathf.Clamp01(_elapsed / MinTime);
@@ -138,14 +157,14 @@ namespace BottleSort.UI
             progressFill.anchorMax = new Vector2(Mathf.Max(_shownProgress, 0.06f), 1f);
             loadingLabel.SetArgs(Mathf.RoundToInt(_shownProgress * 100f));
 
-            if (_shownProgress >= 1f)
+            // «Готово!» — когда и полоса дошла, и бутылка стоит полной (обычно это совпадает: круг = минимальный показ).
+            if (_shownProgress >= 1f && _pourTime >= 0f && Phase(_pourTime) >= UntiltEnd)
                 Ready();
         }
 
         public override void FillForEditor()
         {
-            _step = 2;
-            ShowStep(false);
+            Pose((FillStart + FillEnd) / 2f, false);
             logoGroup.alpha = 1f;
             logo.localScale = Vector3.one;
             progressFill.anchorMax = new Vector2(0.41f, 1f);
@@ -159,10 +178,12 @@ namespace BottleSort.UI
             _waitingIntro = false;
             if (brandIntro != null)
                 brandIntro.Skip();
-            _step = step;
             foreach (var motion in GetComponentsInChildren<IdleMotion>())
                 motion.enabled = false;
-            ShowStep();
+            // Шаги старой заставки: 0–3 — налито столько слоёв и льётся, 4–5 — полная.
+            int k = step % 6;
+            float phase = k >= 4 ? UntiltEnd + 0.1f : Mathf.Lerp(FillStart, FillEnd, k / (float)Capacity);
+            Pose(step / 6 * CycleTime + phase, false);
             Tweens.Kill(logo, "logo");
             logo.localScale = Vector3.one;
             logoGroup.alpha = 1f;
@@ -175,9 +196,6 @@ namespace BottleSort.UI
         {
             _leaving = true;
             loadingLabel.SetKey("splash_ready");
-            // Полная бутылка того цвета, что наливался; если цикл только что начался заново — прошлого.
-            _step = Mathf.Max(0, (_step - 1) / 6) * 6 + 4;
-            ShowStep();
             SweepBar();
             Tweens.Delay(this, "leave", ReadyPause, () => outro.Play(1f, Leave));
         }
@@ -194,43 +212,74 @@ namespace BottleSort.UI
         // После заставки всегда меню, и в первый запуск тоже (решение заказчика).
         void Leave() => Router.Show(ScreenId.Menu);
 
-        void ShowStep(bool animated = true)
+        static float Phase(float time) => time < 0f ? 0f : time - Mathf.Floor(time / CycleTime) * CycleTime;
+
+        static float Smooth(float from, float to, float value) => Easing.Apply(Ease.InOutSine, Mathf.InverseLerp(from, to, value));
+
+        // Поверхность жидкости в целевой бутылке, в пикселях макета от верха экрана; level — в слоях.
+        static float SurfaceAt(float level) => 404f + 216f * ((226f - level * 40f) / 240f);
+
+        // Кадр налива на момент time от начала первого круга. live — идёт сама заставка (тогда вспыхивают звёздочки).
+        void Pose(float time, bool live)
         {
-            int k = _step % 6;
-            int filled = Mathf.Min(k, 4);
-            bool full = k >= 4;
-            byte color = Order[(_step / 6) % Order.Length];
-
-            var bottle = new Bottle(4);
-            for (int i = 0; i < filled; i++)
-                bottle.Push(color);
-            target.Show(bottle, 4);
-
-            var source = new Bottle(4);
-            if (!full)
+            var pourerRoot = pourer.transform.parent;
+            if (float.IsNaN(_pourAngle))
             {
-                source.Push(color);
-                source.Push(color);
+                _pourAngle = Mathf.DeltaAngle(0f, pourerRoot.localEulerAngles.z);
+                _streamY = stream.anchoredPosition.y;
             }
-            pourer.Show(source, 4);
 
-            // Поверхность жидкости в целевой бутылке, в пикселях макета от верха экрана.
-            float surface = 404f + 216f * ((226f - filled * 40f) / 240f);
-            stream.gameObject.SetActive(!full);
-            ripple.gameObject.SetActive(!full);
-            streamColors.SetColors(UiColors.Liquid(color, 1), UiColors.Liquid(color, 0), true);
-            float height = Mathf.Max(surface - StreamTop, 10f) * mockupScale;
-            float from = stream.sizeDelta.y;
-            if (animated)
-                Tweens.Run(stream, "height", 0.5f, t => stream.sizeDelta = new Vector2(stream.sizeDelta.x, Mathf.Lerp(from, height, t)));
+            int cycle = time < 0f ? 0 : Mathf.FloorToInt(time / CycleTime);
+            float p = Phase(time);
+            byte color = Order[cycle % Order.Length];
+            // Уровень растёт почти равномерно, мягко только в самом начале и в конце: струя уже льётся — вода прибывает.
+            float linear = Mathf.InverseLerp(FillStart, FillEnd, p);
+            float fill = Mathf.Lerp(linear, Smooth(FillStart, FillEnd, p), 0.3f) * Capacity;
+            float tilt = p < FillEnd ? Smooth(TiltStart, TiltEnd, p) : 1f - Smooth(FillEnd, UntiltEnd, p);
+            pourerRoot.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(_pourAngle + RestTilt, _pourAngle, tilt));
+
+            if (cycle > 0 && p < RefillEnd)
+            {
+                // Смена цвета: прошлый цвет в полной бутылке тает, наливающая наполняется новым.
+                float k = Smooth(0f, RefillEnd, p);
+                target.ShowLiquid(Order[(cycle - 1) % Order.Length], Capacity, Capacity, 1f - k);
+                target.SetCompletedGlow(1f - k);
+                pourer.ShowLiquid(color, Capacity, Capacity, k);
+            }
             else
-                stream.sizeDelta = new Vector2(stream.sizeDelta.x, height);
-            ripple.anchoredPosition = new Vector2(ripple.anchoredPosition.x, -(surface - 4f) * mockupScale);
-            ripple.GetComponent<Image>().color = UiColors.Liquid(color, 1);
+            {
+                target.ShowLiquid(color, Capacity, fill);
+                pourer.ShowLiquid(color, Capacity, Capacity - fill);
+                target.SetCompletedGlow(Mathf.InverseLerp(FillEnd, FillEnd + GlowIn, p));
+            }
 
-            target.SetCompleted(full, false);
-            if (k == 4 && animated)
+            // Струя: голова бежит от горлышка вниз к поверхности, в конце хвост отрывается и догоняет её.
+            float surface = SurfaceAt(fill);
+            float head = Mathf.Lerp(StreamTop, surface, Easing.Apply(Ease.OutCubic, Mathf.InverseLerp(StreamStart, StreamStart + StreamGrow, p)));
+            float tail = Mathf.Lerp(StreamTop, surface, Easing.Apply(Ease.InCubic, Mathf.InverseLerp(FillEnd, FillEnd + StreamDrop, p)));
+            bool flowing = p >= StreamStart && tail < surface - 0.5f;
+            stream.gameObject.SetActive(flowing);
+            if (flowing)
+            {
+                streamColors.SetColors(UiColors.Liquid(color, 1), UiColors.Liquid(color, 0), true);
+                stream.anchoredPosition = new Vector2(stream.anchoredPosition.x, _streamY - (tail - StreamTop) * mockupScale);
+                stream.sizeDelta = new Vector2(stream.sizeDelta.x, Mathf.Max(head - tail, 0f) * mockupScale);
+            }
+
+            // Круги на поверхности — пока струя касается воды, и вместе с уровнем.
+            bool splashing = flowing && head >= surface - 0.5f;
+            ripple.gameObject.SetActive(splashing);
+            if (splashing)
+            {
+                ripple.anchoredPosition = new Vector2(ripple.anchoredPosition.x, -(surface - 4f) * mockupScale);
+                ripple.GetComponent<Image>().color = UiColors.Liquid(color, 1);
+            }
+
+            if (live && p >= FillEnd && _burstCycle != cycle)
+            {
+                _burstCycle = cycle;
                 Burst();
+            }
         }
 
         void Burst()
