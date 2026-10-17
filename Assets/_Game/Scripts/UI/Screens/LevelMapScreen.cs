@@ -33,12 +33,11 @@ namespace BottleSort.UI
         [SerializeField] Button nextChapter;
         [SerializeField] ScrollRect scroll;
         [SerializeField] RectTransform content;
-        [SerializeField] LevelNode nodeTemplate;
-        [SerializeField] Image dotTemplate;
+        // Узлы и точки дорожки лежат в сцене заранее (на первую главу), длинным главам пул доращивается.
+        [SerializeField] List<LevelNode> nodes = new List<LevelNode>();
+        [SerializeField] List<Image> dots = new List<Image>();
         [SerializeField] Toast toast;
 
-        readonly List<LevelNode> _nodePool = new List<LevelNode>();
-        readonly List<Image> _dotPool = new List<Image>();
         int _chapter = 1;
 
         public override ScreenId Id => ScreenId.Levels;
@@ -49,6 +48,14 @@ namespace BottleSort.UI
             backButton.onClick.AddListener(() => Router.Show(ScreenId.Menu));
             previousChapter.onClick.AddListener(() => ShowChapter(_chapter - 1));
             nextChapter.onClick.AddListener(() => ShowChapter(_chapter + 1));
+            foreach (var node in nodes)
+                node.Pressed += OnNodePressed;
+        }
+
+        public override void FillForEditor()
+        {
+            totalStars.text = Loc.Number(PlayerData.Current.TotalStars);
+            ShowChapter(LevelPlan.ChapterOf(PlayerData.Current.highestUnlocked));
         }
 
         public override bool OnBack()
@@ -60,7 +67,7 @@ namespace BottleSort.UI
         // Позиции узлов зависят от ширины экрана: при повороте или смене разрешения строим дорожку заново.
         void OnRectTransformDimensionsChange()
         {
-            if (IsOpen && nodeTemplate != null)
+            if (IsOpen && nodes.Count > 0)
                 ShowChapter(_chapter);
         }
 
@@ -75,7 +82,8 @@ namespace BottleSort.UI
             var data = PlayerData.Current;
             int lastOpenChapter = LevelPlan.ChapterOf(data.highestUnlocked);
             _chapter = Mathf.Clamp(chapter, 1, lastOpenChapter + 1);
-            Router.RefreshBackdrop();
+            if (Router != null)
+                Router.RefreshBackdrop();
 
             int first = LevelSchedule.ChapterStart(_chapter);
             int last = LevelPlan.ChapterEnd(_chapter);
@@ -92,9 +100,9 @@ namespace BottleSort.UI
 
         void BuildPath(int first, int last)
         {
-            foreach (var node in _nodePool)
+            foreach (var node in nodes)
                 node.gameObject.SetActive(false);
-            foreach (var dot in _dotPool)
+            foreach (var dot in dots)
                 dot.gameObject.SetActive(false);
 
             Canvas.ForceUpdateCanvases();
@@ -146,7 +154,7 @@ namespace BottleSort.UI
                 node.Setup(level, state, data.StarsOf(level), HandmadeLevels.IsTutorial(level));
             }
             // Текущий узел с пузырём «Играть!» рисуем поверх соседей.
-            _nodePool[currentIndex].transform.SetAsLastSibling();
+            nodes[currentIndex].transform.SetAsLastSibling();
 
             Canvas.ForceUpdateCanvases();
             float viewport = scroll.viewport.rect.height;
@@ -162,13 +170,15 @@ namespace BottleSort.UI
 
         LevelNode NodeAt(int index)
         {
-            while (_nodePool.Count <= index)
+            while (nodes.Count <= index)
             {
-                var node = Instantiate(nodeTemplate, content);
-                node.Pressed += OnNodePressed;
-                _nodePool.Add(node);
+                var node = Instantiate(nodes[0], content);
+                node.name = "Level Node " + (nodes.Count + 1);
+                if (Application.isPlaying)
+                    node.Pressed += OnNodePressed;
+                nodes.Add(node);
             }
-            var result = _nodePool[index];
+            var result = nodes[index];
             result.gameObject.SetActive(true);
             result.transform.SetAsLastSibling();
             return result;
@@ -176,9 +186,13 @@ namespace BottleSort.UI
 
         Image DotAt(int index)
         {
-            while (_dotPool.Count <= index)
-                _dotPool.Add(Instantiate(dotTemplate, content));
-            var dot = _dotPool[index];
+            while (dots.Count <= index)
+            {
+                var extra = Instantiate(dots[0], content);
+                extra.name = "Path Dot " + (dots.Count + 1);
+                dots.Add(extra);
+            }
+            var dot = dots[index];
             dot.gameObject.SetActive(true);
             dot.transform.SetAsFirstSibling();
             return dot;

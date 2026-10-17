@@ -33,6 +33,8 @@ namespace BottleSort.UI
 
         protected override void OnOpen() => Refresh();
 
+        public override void FillForEditor() => Refresh();
+
         void Close() => Router.ClosePopup(this);
 
         void Refresh()

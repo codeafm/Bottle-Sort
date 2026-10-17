@@ -110,6 +110,13 @@ namespace BottleSort.UI
                 _confettiSpeed[i] = new Vector2(Random.Range(150f, 260f) * 2.5f, Random.Range(-260f, 260f));
         }
 
+        public override void FillForEditor()
+        {
+            spinsLeft.SetKey("wheel_spins_left", 1);
+            for (int sector = 0; sector < sectorLabels.Length; sector++)
+                sectorLabels[sector].text = AmountText(EconomyRules.WheelPrizes[PrizeOfSector[sector]]);
+        }
+
         protected override void OnOpen()
         {
             backdropBlur.Grab(contentGroup);

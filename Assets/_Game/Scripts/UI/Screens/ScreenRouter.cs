@@ -20,6 +20,7 @@ namespace BottleSort.UI
         public static event System.Action<UiScreen, bool> ScreenShown;
 
         public UiScreen Current => _current;
+        public IReadOnlyList<UiScreen> Screens => screens;
 
         void Awake()
         {

@@ -26,6 +26,7 @@ namespace BottleSort.UI
 
         readonly List<BottleSlot> _slots = new List<BottleSlot>();
         readonly List<RectTransform> _shelves = new List<RectTransform>();
+        readonly List<Vector3> _shelfPlan = new List<Vector3>();
         Vector2 _boardSize;
 
         public event Action<int> BottleTapped;
@@ -40,9 +41,24 @@ namespace BottleSort.UI
             public float Height;
         }
 
-        public void Build(LevelState state)
+        public void Build(LevelState state) => Spawn(state, bottleTemplate, shelfTemplate, false);
+
+        // Для FieldPreview: та же раскладка в редакторе, но с бутылками и полками на uGUI,
+        // и всё созданное не сохраняется в сцену.
+        public void BuildPreview(LevelState state, MonoBehaviour bottle, RectTransform shelf) => Spawn(state, bottle, shelf, true);
+
+        public void ClearPreview() => Clear();
+
+        public void Refit()
+        {
+            if (_boardSize != Vector2.zero)
+                Fit();
+        }
+
+        void Spawn(LevelState state, MonoBehaviour bottlePrefab, RectTransform shelfPrefab, bool preview)
         {
             Clear();
+            _shelfPlan.Clear();
             var placements = new Placement[state.BottleCount];
             int flask = FindFlask(state);
             // Сетка с колбой посередине — как уровень 45 в макете; когда бутылок больше, колба просто стоит в ряду (L1500).
@@ -50,6 +66,8 @@ namespace BottleSort.UI
                 LayoutGrid(state, flask, placements);
             else
                 LayoutRows(state, placements);
+            foreach (var shelf in _shelfPlan)
+                AddShelf(shelfPrefab, shelf.x, shelf.y, shelf.z);
 
             for (int i = 0; i < placements.Length; i++)
             {
@@ -61,17 +79,31 @@ namespace BottleSort.UI
                 rect.sizeDelta = new Vector2(place.Width, place.Height);
                 rect.anchoredPosition = ToBoard(place.CenterX, place.Bottom);
 
-                var viewObject = Instantiate(bottleTemplate);
+                var viewObject = Instantiate(bottlePrefab);
                 viewObject.gameObject.SetActive(true);
                 var view = (IBottleView)viewObject;
                 view.Root.sizeDelta = new Vector2(place.Width - 2f, place.Height - 4f);
                 slot.Init(i, view);
-                slot.Tapped += OnSlotTapped;
+                if (!preview)
+                    slot.Tapped += OnSlotTapped;
                 _slots.Add(slot);
             }
 
             Refresh(state, false);
             Fit();
+            if (!preview)
+                return;
+            foreach (var slot in _slots)
+                DontSave(slot.transform);
+            foreach (var shelf in _shelves)
+                DontSave(shelf);
+        }
+
+        static void DontSave(Transform root)
+        {
+            root.gameObject.hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+            foreach (Transform child in root)
+                DontSave(child);
         }
 
         public void Refresh(LevelState state, bool animated = true)
@@ -117,11 +149,21 @@ namespace BottleSort.UI
         void Clear()
         {
             foreach (var slot in _slots)
-                Destroy(slot.gameObject);
+                if (slot != null)
+                    Discard(slot.gameObject);
             foreach (var shelf in _shelves)
-                Destroy(shelf.gameObject);
+                if (shelf != null)
+                    Discard(shelf.gameObject);
             _slots.Clear();
             _shelves.Clear();
+        }
+
+        static void Discard(GameObject target)
+        {
+            if (Application.isPlaying)
+                Destroy(target);
+            else
+                DestroyImmediate(target);
         }
 
         static int FindFlask(LevelState state)
@@ -179,7 +221,7 @@ namespace BottleSort.UI
                     result[i].Bottom = bottom;
                     x += result[i].Width + Gap;
                 }
-                AddShelf(boardWidth / 2f, bottom - ShelfOverlap, rowWidths[r] + 16f);
+                _shelfPlan.Add(new Vector3(boardWidth / 2f, bottom - ShelfOverlap, rowWidths[r] + 16f));
                 y = bottom + ShelfHeight - ShelfOverlap + rowGap;
             }
         }
@@ -230,15 +272,16 @@ namespace BottleSort.UI
             result[flask].Height = Mathf.Round(112f * 2.4f) + 4f;
             result[flask].CenterX = ColumnCenter(left);
             result[flask].Bottom = gridTop + cellHeight * 2f + cellGap;
-            AddShelf(shelfWidth / 2f, result[flask].Bottom - ShelfOverlap, shelfWidth);
+            _shelfPlan.Add(new Vector3(shelfWidth / 2f, result[flask].Bottom - ShelfOverlap, shelfWidth));
         }
 
         static float SizeOf(Bottle bottle, int unit, float baseSize) =>
             bottle.Capacity > unit ? Mathf.Round(baseSize * 1.35f) : baseSize;
 
-        void AddShelf(float centerX, float top, float width)
+        void AddShelf(RectTransform template, float centerX, float top, float width)
         {
-            var shelf = Instantiate(shelfTemplate, board);
+            var shelf = Instantiate(template, board);
+            shelf.name = "Shelf " + (_shelves.Count + 1);
             shelf.gameObject.SetActive(true);
             shelf.SetAsFirstSibling();
             shelf.sizeDelta = new Vector2(width, ShelfHeight);

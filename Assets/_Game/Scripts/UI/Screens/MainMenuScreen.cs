@@ -53,6 +53,17 @@ namespace BottleSort.UI
         protected override void OnOpen()
         {
             Refresh();
+            ShowHeroBottles();
+        }
+
+        public override void FillForEditor()
+        {
+            Refresh();
+            ShowHeroBottles();
+        }
+
+        void ShowHeroBottles()
+        {
             for (int i = 0; i < heroBottles.Length && i < HeroLayouts.Length; i++)
             {
                 var bottle = new Bottle(4);

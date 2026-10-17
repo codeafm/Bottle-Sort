@@ -32,8 +32,9 @@ namespace BottleSort.UI
         [SerializeField] Image mask;
         [SerializeField] RectTransform layers;
         [SerializeField] RectTransform shade;
-        [SerializeField] Image layerTemplate;
-        [SerializeField] TMP_Text hiddenTemplate;
+        // Слои жидкости и знаки «?» лежат в префабе заранее, по одному на место в бутылке (колба 5×2 — до 10).
+        [SerializeField] Image[] layerSlots;
+        [SerializeField] TMP_Text[] hiddenSlots;
         [SerializeField] GameObject frozenBadge;
         [SerializeField] TMP_Text frozenCount;
         [SerializeField] Image frozenTint;
@@ -158,15 +159,23 @@ namespace BottleSort.UI
 
         void EnsureLayers(int count)
         {
+            if (_layerImages.Count == 0)
+                for (int i = 0; i < layerSlots.Length; i++)
+                {
+                    _layerImages.Add(layerSlots[i]);
+                    _layerShades.Add(layerSlots[i].GetComponent<UiGradient>());
+                    _hiddenMarks.Add(hiddenSlots[i]);
+                }
+            // Запас на случай бутылки больше, чем мест в префабе.
             while (_layerImages.Count < count)
             {
-                var image = Instantiate(layerTemplate, layers);
+                var image = Instantiate(layerSlots[0], layers);
                 image.gameObject.name = "Layer " + _layerImages.Count;
                 image.gameObject.SetActive(true);
                 image.color = Color.white;
                 _layerImages.Add(image);
                 _layerShades.Add(image.GetComponent<UiGradient>());
-                var mark = Instantiate(hiddenTemplate, layers);
+                var mark = Instantiate(hiddenSlots[0], layers);
                 mark.gameObject.name = "Hidden " + _hiddenMarks.Count;
                 _hiddenMarks.Add(mark);
             }

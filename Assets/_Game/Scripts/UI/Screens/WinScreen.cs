@@ -52,7 +52,13 @@ namespace BottleSort.UI
             _result = result;
         }
 
-        protected override void OnOpen()
+        public override void FillForEditor()
+        {
+            _result = new WinResult { Level = 24, Stars = 3, Moves = 18, Reward = 170, IsBest = true };
+            ShowResult();
+        }
+
+        void ShowResult()
         {
             levelDone.SetKey("win_level_done", _result.Level);
             movesChip.SetActive(!_result.IsTutorial);
@@ -63,6 +69,11 @@ namespace BottleSort.UI
             doubleButton.gameObject.SetActive(!_result.IsTutorial && _result.Reward > 0);
             doubleButton.interactable = true;
             doubleLabel.SetKey("win_double", Loc.Number(_result.Reward * 2));
+        }
+
+        protected override void OnOpen()
+        {
+            ShowResult();
 
             Ads.LevelCompleted();
             PlayStarSounds();

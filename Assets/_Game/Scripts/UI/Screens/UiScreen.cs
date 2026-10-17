@@ -87,6 +87,10 @@ namespace BottleSort.UI
         protected virtual void OnOpen() { }
         protected virtual void OnClose() { }
 
+        // Примерные данные, чтобы экран в сцене выглядел как в игре и без Play. Зовёт UiSceneBuilder;
+        // здесь нельзя трогать роутер и твины — они есть только в игре.
+        public virtual void FillForEditor() { }
+
         // Системная «назад» (Android). true — экран обработал сам.
         public virtual bool OnBack() => false;
     }

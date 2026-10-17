@@ -54,12 +54,14 @@ namespace BottleSort.UI
         [SerializeField] UiGradient themesTabBackground;
         [SerializeField] LocalizedText tabHint;
         [SerializeField] RectTransform grid;
-        [SerializeField] ShopCard cardTemplate;
+        // Карточки лежат в сетке заранее, по числу моделей; на вкладке фонов лишние прячутся.
+        [SerializeField] ShopCard[] cards;
         [SerializeField] Toast toast;
 
-        readonly List<ShopCard> _cards = new List<ShopCard>();
         bool _bottlesTab = true;
         Item _previewItem;
+
+        public static int CardCount => Mathf.Max(Bottles.Length, Themes.Length);
 
         public override ScreenId Id => ScreenId.Shop;
         public override Theme? BackdropTheme => LevelPlan.PlayerTheme ?? Theme.Navy;
@@ -77,6 +79,18 @@ namespace BottleSort.UI
             backButton.onClick.AddListener(() => Router.Show(ScreenId.Menu));
             bottlesTab.onClick.AddListener(() => SwitchTab(true));
             themesTab.onClick.AddListener(() => SwitchTab(false));
+            for (int i = 0; i < cards.Length; i++)
+            {
+                int index = i;
+                cards[i].Pressed += () => Pick(index);
+            }
+        }
+
+        public override void FillForEditor()
+        {
+            RefreshCoins();
+            _previewItem = Bottles[0];
+            SwitchTab(true);
         }
 
         void OnEnable() => PlayerData.Changed += RefreshCoins;
@@ -111,26 +125,18 @@ namespace BottleSort.UI
         void Rebuild()
         {
             var items = _bottlesTab ? Bottles : Themes;
-            while (_cards.Count < items.Length)
-            {
-                var card = Instantiate(cardTemplate, grid);
-                int index = _cards.Count;
-                card.Pressed += () => Pick(index);
-                _cards.Add(card);
-            }
-
-            for (int i = 0; i < _cards.Count; i++)
+            for (int i = 0; i < cards.Length; i++)
             {
                 bool used = i < items.Length;
-                _cards[i].gameObject.SetActive(used);
+                cards[i].gameObject.SetActive(used);
                 if (!used)
                     continue;
                 var item = items[i];
                 if (_bottlesTab)
-                    _cards[i].ShowBottle(item.NameKey, item.Id, item.Colors);
+                    cards[i].ShowBottle(item.NameKey, item.Id, item.Colors);
                 else
-                    _cards[i].ShowTheme(item.NameKey, item.Theme ?? LevelPlan.ThemeOf(PlayerData.Current.highestUnlocked), item.Colors);
-                _cards[i].SetState(StateOf(item), item.Data.Price, item.Data.UnlockLevel, IsNew(item));
+                    cards[i].ShowTheme(item.NameKey, item.Theme ?? LevelPlan.ThemeOf(PlayerData.Current.highestUnlocked), item.Colors);
+                cards[i].SetState(StateOf(item), item.Data.Price, item.Data.UnlockLevel, IsNew(item));
             }
 
             var bottle = new Bottle(4, _previewItem.Id);
@@ -138,7 +144,8 @@ namespace BottleSort.UI
                 bottle.Push(Palette.FromLetter(letter));
             preview.Show(bottle, 4);
             previewName.SetKey(_previewItem.NameKey);
-            Router.RefreshBackdrop();
+            if (Router != null)
+                Router.RefreshBackdrop();
         }
 
         static ShopCard.State StateOf(Item item)

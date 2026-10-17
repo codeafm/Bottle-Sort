@@ -328,10 +328,11 @@ namespace BottleSort.UI.Editor
             scroll.viewport = viewport;
             scroll.content = mapContent;
 
-            var dot = Image(mapContent, "DotTemplate", "circle", Color.white);
+            var dot = Image(mapContent, "Path Dot 1", "circle", Color.white);
             dot.rectTransform.anchorMin = dot.rectTransform.anchorMax = new Vector2(0.5f, 1f);
             dot.gameObject.SetActive(false);
             var node = BuildLevelNode(mapContent);
+            node.name = "Level Node 1";
 
             var back = BackButton(content);
             ((RectTransform)back.transform.parent).Place(new Vector2(0f, 1f), new Vector2(20, -10),
@@ -389,8 +390,8 @@ namespace BottleSort.UI.Editor
             Set(screen, "nextChapter", next);
             Set(screen, "scroll", scroll);
             Set(screen, "content", mapContent);
-            Set(screen, "nodeTemplate", node);
-            Set(screen, "dotTemplate", dot);
+            Set(screen, "nodes", new List<LevelNode> { node });
+            Set(screen, "dots", new List<Image> { dot });
             Set(screen, "toast", toast);
             return screen;
         }

@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace BottleSort.UI
 {
@@ -14,14 +13,13 @@ namespace BottleSort.UI
         public const string MenuScene = "Menu";
         public const string GameScene = "Game";
 
-        const float FadeTime = 0.28f;
-        static readonly Color CurtainColor = new Color(0.03f, 0.04f, 0.1f, 1f);
+        [SerializeField] CanvasGroup curtain;
+        [SerializeField] float fadeTime = 0.28f;
 
         static SceneLoader _instance;
         static ScreenId? _pendingScreen;
         static int? _pendingLevel;
 
-        CanvasGroup _curtain;
         AsyncOperation _preload;
         string _preloadScene;
 
@@ -90,33 +88,20 @@ namespace BottleSort.UI
             return level;
         }
 
+        // Шторка — префаб Prefabs/UI/Resources/SceneLoader: цвет и время перехода правятся там.
         static void Create()
         {
-            var root = new GameObject("SceneLoader", typeof(RectTransform));
-            DontDestroyOnLoad(root);
-            _instance = root.AddComponent<SceneLoader>();
-
-            var canvas = root.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = short.MaxValue;
-            root.AddComponent<GraphicRaycaster>();
-
-            var curtain = new GameObject("Curtain", typeof(RectTransform));
-            var rect = (RectTransform)curtain.transform;
-            rect.SetParent(root.transform, false);
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-            curtain.AddComponent<Image>().color = CurtainColor;
-            _instance._curtain = curtain.AddComponent<CanvasGroup>();
-            _instance._curtain.alpha = 0f;
-            _instance._curtain.blocksRaycasts = false;
+            _instance = Instantiate(Resources.Load<SceneLoader>("SceneLoader"));
+            _instance.name = "SceneLoader";
+            DontDestroyOnLoad(_instance.gameObject);
+            _instance.curtain.alpha = 0f;
+            _instance.curtain.blocksRaycasts = false;
         }
 
         IEnumerator Switch(string scene)
         {
             IsBusy = true;
-            _curtain.blocksRaycasts = true;
+            curtain.blocksRaycasts = true;
             yield return Fade(1f);
 
             // Unity не начнёт новую загрузку, пока не включена отложенная: если заставка грузила другую сцену, пропускаем её.
@@ -134,19 +119,19 @@ namespace BottleSort.UI
             yield return null;
 
             yield return Fade(0f);
-            _curtain.blocksRaycasts = false;
+            curtain.blocksRaycasts = false;
             IsBusy = false;
         }
 
         IEnumerator Fade(float to)
         {
-            float from = _curtain.alpha;
-            for (float time = 0f; time < FadeTime; time += Time.unscaledDeltaTime)
+            float from = curtain.alpha;
+            for (float time = 0f; time < fadeTime; time += Time.unscaledDeltaTime)
             {
-                _curtain.alpha = Mathf.Lerp(from, to, time / FadeTime);
+                curtain.alpha = Mathf.Lerp(from, to, time / fadeTime);
                 yield return null;
             }
-            _curtain.alpha = to;
+            curtain.alpha = to;
         }
     }
 }

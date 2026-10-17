@@ -40,7 +40,17 @@ namespace BottleSort.UI.Editor
             BuildScenes();
         }
 
-        [MenuItem("BottleSort/UI/3. Build Scenes UI")]
+        // Сцены после первой сборки правятся руками в редакторе (см. Docs/UI_EDITING.md),
+        // пересборка всё это затрёт, поэтому только с подтверждением.
+        [MenuItem("BottleSort/UI/Rebuild Scenes From Scratch (erases manual edits)")]
+        static void RebuildScenesFromMenu()
+        {
+            if (EditorUtility.DisplayDialog("Пересобрать сцены?",
+                    "Splash, Menu и Game и префабы экранов будут созданы заново. Все ручные правки в них пропадут.",
+                    "Пересобрать", "Отмена"))
+                BuildScenes();
+        }
+
         public static void BuildScenes()
         {
             LoadFonts();
@@ -49,6 +59,8 @@ namespace BottleSort.UI.Editor
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             _bottlePrefab = BuildBottleStub();
             _fieldBottlePrefab = BuildBottleAdapter() ?? (MonoBehaviour)_bottlePrefab;
+            UseDemoProgress();
+            BuildSceneLoader();
 
             var paths = new[]
             {
@@ -79,6 +91,7 @@ namespace BottleSort.UI.Editor
             // Только список сцен, остальные настройки сборки не трогаем.
             EditorBuildSettings.scenes = paths.Select(path => new EditorBuildSettingsScene(path, true)).ToArray();
             AssetDatabase.SaveAssets();
+            PlayerData.Reload();
             EditorSceneManager.OpenScene(paths[0], OpenSceneMode.Single);
             Debug.Log("[UiSceneBuilder] Splash, Menu and Game scenes built");
         }
@@ -95,6 +108,9 @@ namespace BottleSort.UI.Editor
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var screens = buildScreens(safeArea);
+            foreach (var screen in screens)
+                if (!PrefabUtility.IsPartOfPrefabInstance(screen))
+                    screen.FillForEditor();
             var router = new GameObject("ScreenRouter").AddComponent<ScreenRouter>();
             Set(router, "screens", screens);
             Set(router, "backdrop", backdrop);
@@ -114,6 +130,38 @@ namespace BottleSort.UI.Editor
 
             EditorSceneManager.SaveScene(scene, path);
             return path;
+        }
+
+        // Экраны заполняются как у игрока на 24-м уровне из макетов; сохранение на диске не трогаем.
+        static void UseDemoProgress()
+        {
+            var data = PlayerData.Current;
+            data.coins = 1250;
+            data.highestUnlocked = 24;
+            data.wheelSpins = 2;
+            data.giftDate = "";
+            data.bottleSkin = "classic";
+            data.theme = "auto";
+            data.stars = new List<int> { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 1 };
+        }
+
+        // Шторка переходов между сценами: префаб в Resources, его поднимает SceneLoader при первом переходе.
+        static void BuildSceneLoader()
+        {
+            const string dir = PrefabsDir + "/Resources";
+            Directory.CreateDirectory(dir);
+            var root = new GameObject("SceneLoader", typeof(RectTransform));
+            var canvas = root.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = short.MaxValue;
+            root.AddComponent<GraphicRaycaster>();
+            var loader = root.AddComponent<SceneLoader>();
+            var curtain = Image(root.transform, "Curtain", null, new Color(0.03f, 0.04f, 0.1f, 1f));
+            curtain.rectTransform.Fill();
+            var group = Group(curtain.gameObject, 0f, false);
+            Set(loader, "curtain", group);
+            PrefabUtility.SaveAsPrefabAsset(root, dir + "/SceneLoader.prefab");
+            Object.DestroyImmediate(root);
         }
 
         static T Reuse<T>(Transform safeArea) where T : UiScreen
@@ -199,6 +247,11 @@ namespace BottleSort.UI.Editor
                 world.TargetCamera = Camera.main;
             }
             Set(backdrop, "worldBackground", world);
+            // Фон рисует мировой BackgroundView, свой UI-фон в игре всё равно выключается — прячем и в редакторе.
+            gradientRect.gameObject.SetActive(false);
+            halo.gameObject.SetActive(false);
+            foreach (var spark in sparks)
+                spark.gameObject.SetActive(false);
             return backdrop;
         }
 
@@ -403,6 +456,8 @@ namespace BottleSort.UI.Editor
             return rect;
         }
 
+        const int BottleStubLayers = 10;
+
         static BottleStubView BuildBottleStub()
         {
             var root = Node("BottleStub", null);
@@ -436,18 +491,28 @@ namespace BottleSort.UI.Editor
             shade.rectTransform.pivot = new Vector2(0.5f, 0f);
             shade.rectTransform.sizeDelta = Vector2.zero;
 
-            var layer = Image(layers, "LayerTemplate", null, Color.white);
-            layer.rectTransform.anchorMin = new Vector2(0f, 0f);
-            layer.rectTransform.anchorMax = new Vector2(1f, 0f);
-            layer.rectTransform.pivot = new Vector2(0.5f, 0f);
-            Gradient(layer, Color.white, Color.white);
-            layer.gameObject.SetActive(false);
-
-            var hidden = Text(layers, "HiddenTemplate", DisplayFont, 16, White(0.85f));
-            hidden.text = "?";
-            hidden.rectTransform.anchorMin = hidden.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            hidden.rectTransform.sizeDelta = M(40, 30);
-            hidden.gameObject.SetActive(false);
+            var layerSlots = new List<Image>();
+            for (int i = 0; i < BottleStubLayers; i++)
+            {
+                var layer = Image(layers, "Layer " + (i + 1), null, Color.white);
+                layer.rectTransform.anchorMin = new Vector2(0f, 0f);
+                layer.rectTransform.anchorMax = new Vector2(1f, 0f);
+                layer.rectTransform.pivot = new Vector2(0.5f, 0f);
+                Gradient(layer, Color.white, Color.white);
+                layer.gameObject.SetActive(false);
+                layerSlots.Add(layer);
+            }
+            var hiddenSlots = new List<TMP_Text>();
+            for (int i = 0; i < BottleStubLayers; i++)
+            {
+                var hidden = Text(layers, "Hidden " + (i + 1), DisplayFont, 16, White(0.85f));
+                hidden.text = "?";
+                hidden.rectTransform.anchorMin = hidden.rectTransform.anchorMax = new Vector2(0.5f, 0f);
+                hidden.rectTransform.sizeDelta = M(40, 30);
+                hidden.gameObject.SetActive(false);
+                hiddenSlots.Add(hidden);
+            }
+            shade.transform.SetAsLastSibling();
 
             var front = Node("Front", root);
             FillArtArea(front);
@@ -487,8 +552,8 @@ namespace BottleSort.UI.Editor
             Set(view, "mask", mask);
             Set(view, "layers", layers);
             Set(view, "shade", shade.rectTransform);
-            Set(view, "layerTemplate", layer);
-            Set(view, "hiddenTemplate", hidden);
+            Set(view, "layerSlots", layerSlots);
+            Set(view, "hiddenSlots", hiddenSlots);
             Set(view, "frozenBadge", frozenBadge.gameObject);
             Set(view, "frozenCount", frozenCount);
             Set(view, "frozenTint", frozenTint);

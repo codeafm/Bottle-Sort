@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Globalization;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -132,19 +133,33 @@ namespace BottleSort.UI.Editor
         }
 
         // box-shadow из макета: мягкая тень за элементом, со смещением вниз и размытием в pt.
-        // Ставится соседом перед target, поэтому target должен быть уже размещён.
+        // Если у target нет своей картинки, тень ложится внутрь него первым ребёнком и двигается вместе с ним;
+        // иначе — соседом перед ним (target должен быть уже размещён).
         public static Image SoftShadow(RectTransform target, float offsetY, float blur, Color color)
         {
-            var shadow = Image(target.parent, target.name + " Shadow", "shadow", color);
+            bool inside = target.GetComponent<Graphic>() == null;
+            var shadow = Image(inside ? target : target.parent, inside ? "Shadow" : target.name + " Shadow", "shadow", color);
             shadow.type = UnityEngine.UI.Image.Type.Sliced;
             float extent = M(blur);
             shadow.pixelsPerUnitMultiplier = 64f / extent;
             var rect = shadow.rectTransform;
+            var grow = new Vector2(-extent, -extent - M(offsetY));
+            var shrink = new Vector2(extent, extent - M(offsetY));
+            if (inside)
+            {
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = grow;
+                rect.offsetMax = shrink;
+                rect.SetAsFirstSibling();
+                shadow.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+                return shadow;
+            }
             rect.anchorMin = target.anchorMin;
             rect.anchorMax = target.anchorMax;
             rect.pivot = target.pivot;
-            rect.offsetMin = target.offsetMin + new Vector2(-extent, -extent - M(offsetY));
-            rect.offsetMax = target.offsetMax + new Vector2(extent, extent - M(offsetY));
+            rect.offsetMin = target.offsetMin + grow;
+            rect.offsetMax = target.offsetMax + shrink;
             rect.SetSiblingIndex(target.GetSiblingIndex());
             return shadow;
         }
@@ -205,12 +220,48 @@ namespace BottleSort.UI.Editor
             return text;
         }
 
+        // Тени и обводки текста — материалы-ассеты в Fonts/Effects, по одному на шрифт и параметры:
+        // так их видно в редакторе, их можно править, а одинаковые тексты батчатся.
+        const string TextEffectsDir = "Assets/_Game/Fonts/Effects";
+
+        // text-shadow из макета: underlay шрифта.
         public static void Shadow(TMP_Text text, Color color, float offset = -0.6f)
         {
-            var shadow = text.gameObject.AddComponent<TextShadow>();
-            Set(shadow, "color", color);
-            Set(shadow, "offsetY", offset);
+            text.fontSharedMaterial = TextEffect(text, $"Shadow {ColorUtility.ToHtmlStringRGBA(color)} {Number(offset)}", material =>
+            {
+                material.EnableKeyword("UNDERLAY_ON");
+                material.SetColor("_UnderlayColor", color);
+                material.SetFloat("_UnderlayOffsetY", offset);
+                material.SetFloat("_UnderlayDilate", 0.1f);
+            });
         }
+
+        public static void Outline(TMP_Text text, Color color, float width)
+        {
+            text.fontSharedMaterial = TextEffect(text, $"Outline {ColorUtility.ToHtmlStringRGBA(color)} {Number(width)}", material =>
+            {
+                material.EnableKeyword("OUTLINE_ON");
+                material.SetColor("_OutlineColor", color);
+                material.SetFloat("_OutlineWidth", width);
+            });
+        }
+
+        static Material TextEffect(TMP_Text text, string effect, Action<Material> setup)
+        {
+            var source = text.font.material;
+            string name = $"{source.name} {effect}";
+            string path = $"{TextEffectsDir}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null)
+                return material;
+            System.IO.Directory.CreateDirectory(TextEffectsDir);
+            material = new Material(source) { name = name };
+            setup(material);
+            AssetDatabase.CreateAsset(material, path);
+            return material;
+        }
+
+        static string Number(float value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
         // Кнопка с нажатием scale 0.95. Зона касания — сам объект, минимум 44 pt выдерживается размерами из макета.
         public static Button Button(GameObject target, Transform visual = null)

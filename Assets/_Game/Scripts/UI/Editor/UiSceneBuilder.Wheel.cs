@@ -84,8 +84,7 @@ namespace BottleSort.UI.Editor
                 // Надпись и иконка в координатах макета: центр (170, 170), надпись на y 66, иконка на y 104.
                 var label = Text(spoke, "Amount", DisplayFont, 32, Color.white);
                 label.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 170 - 55), new Vector2(110, 40));
-                label.outlineWidth = 0.18f;
-                label.outlineColor = new Color32(0, 0, 0, 85);
+                Outline(label, new Color32(0, 0, 0, 85), 0.18f);
                 label.text = "+1";
                 labels.Add(label);
                 string icon = iconOfPrize[WheelPopup.PrizeOfSector[sector]];

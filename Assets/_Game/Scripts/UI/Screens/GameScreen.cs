@@ -56,6 +56,15 @@ namespace BottleSort.UI
         public int Level => _level;
         public int Selected => _selected;
         public BottleField Field => field;
+
+        // Шапка как у 24-го уровня из макета; само поле в редакторе рисует FieldPreview.
+        public override void FillForEditor()
+        {
+            hud.SetLevel(24);
+            hud.SetProgress(0, 6, false);
+            hud.SetMoves(0, true);
+            hud.SetStars(3);
+        }
         public bool IsBusy => !_ready || _finished;
         public bool IsAnimating => _active.Count > 0;
         public GameSession Session => _session;

@@ -159,6 +159,11 @@ namespace BottleSort.UI.Editor
             shelf.anchorMin = shelf.anchorMax = new Vector2(0.5f, 0.5f);
             shelf.pivot = new Vector2(0.5f, 0f);
             shelf.gameObject.SetActive(false);
+            // Для превью в редакторе — полка на uGUI той же формы, что в меню; в игре не используется.
+            var previewShelf = Shelf(fieldRect, "ShelfPreviewTemplate", 200, 1f);
+            previewShelf.anchorMin = previewShelf.anchorMax = new Vector2(0.5f, 0.5f);
+            previewShelf.pivot = new Vector2(0.5f, 0f);
+            previewShelf.gameObject.SetActive(false);
 
             var toast = BuildToast(fieldRect, 0);
 
@@ -197,6 +202,9 @@ namespace BottleSort.UI.Editor
             Set(field, "slotTemplate", slot);
             Set(field, "shelfTemplate", shelf);
             Set(field, "bottleTemplate", _fieldBottlePrefab);
+            var preview = fieldRect.gameObject.AddComponent<FieldPreview>();
+            Set(preview, "bottle", _bottlePrefab);
+            Set(preview, "shelf", previewShelf);
 
             Set(screen, "hud", hud);
             Set(screen, "field", field);

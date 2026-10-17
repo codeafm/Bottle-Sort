@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -64,7 +65,14 @@ namespace BottleSort.UI.Editor
             grid.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             scroll.viewport = viewport;
             scroll.content = grid;
-            var card = BuildShopCard(grid);
+            var cards = new List<ShopCard>();
+            for (int i = 0; i < ShopScreen.CardCount; i++)
+            {
+                var card = BuildShopCard(grid);
+                card.name = "Card " + (i + 1);
+                card.gameObject.SetActive(true);
+                cards.Add(card);
+            }
 
             var toast = BuildToast(content, 380);
 
@@ -78,7 +86,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "themesTabBackground", themesBackground);
             Set(screen, "tabHint", hint.GetComponent<LocalizedText>());
             Set(screen, "grid", grid);
-            Set(screen, "cardTemplate", card);
+            Set(screen, "cards", cards);
             Set(screen, "toast", toast);
             return screen;
         }

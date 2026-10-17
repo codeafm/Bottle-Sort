@@ -97,6 +97,16 @@ namespace BottleSort.UI
                 Leave();
         }
 
+        public override void FillForEditor()
+        {
+            _step = 2;
+            ShowStep(false);
+            logoGroup.alpha = 1f;
+            logo.localScale = Vector3.one;
+            progressFill.anchorMax = new Vector2(0.41f, 1f);
+            loadingLabel.SetArgs(41);
+        }
+
         // Остановить заставку на нужном шаге налива и проценте загрузки: для сравнения с макетом.
         public void Freeze(int step, float progress)
         {
@@ -122,7 +132,7 @@ namespace BottleSort.UI
                 Router.Show(ScreenId.Menu);
         }
 
-        void ShowStep()
+        void ShowStep(bool animated = true)
         {
             int k = _step % 6;
             int filled = Mathf.Min(k, 4);
@@ -149,12 +159,15 @@ namespace BottleSort.UI
             streamColors.SetColors(UiColors.Liquid(color, 1), UiColors.Liquid(color, 0), true);
             float height = Mathf.Max(surface - StreamTop, 10f) * mockupScale;
             float from = stream.sizeDelta.y;
-            Tweens.Run(stream, "height", 0.5f, t => stream.sizeDelta = new Vector2(stream.sizeDelta.x, Mathf.Lerp(from, height, t)));
+            if (animated)
+                Tweens.Run(stream, "height", 0.5f, t => stream.sizeDelta = new Vector2(stream.sizeDelta.x, Mathf.Lerp(from, height, t)));
+            else
+                stream.sizeDelta = new Vector2(stream.sizeDelta.x, height);
             ripple.anchoredPosition = new Vector2(ripple.anchoredPosition.x, -(surface - 4f) * mockupScale);
             ripple.GetComponent<Image>().color = UiColors.Liquid(color, 1);
 
             target.SetCompleted(full, false);
-            if (k == 4)
+            if (k == 4 && animated)
                 Burst();
         }
 
