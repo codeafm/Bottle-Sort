@@ -22,6 +22,22 @@ namespace BottleSort.UI
         [SerializeField] Button dimmer;
         // Вторая (синяя) кнопка и иконка видео для «за рекламу или обычно».
         [SerializeField] AdChoiceButtons adChoice;
+        // Крупная иконка по центру вместо ряда наград: для предложений «+5 ходов», «+1 бутылка» и т. п.
+        // Какая иконка к какому предложению — в списке highlights (ключ зелёной кнопки → иконка и подпись).
+        [SerializeField] GameObject highlight;
+        [SerializeField] Image highlightIcon;
+        [SerializeField] TMP_Text highlightCaption;
+        [SerializeField] Highlight[] highlights;
+        // Насколько карточка с крупной иконкой ниже обычной, единицы Canvas.
+        [SerializeField] float highlightTrim = 40f;
+
+        [Serializable]
+        public struct Highlight
+        {
+            public string adKey;
+            public Sprite icon;
+            public string caption;
+        }
 
         Action _onClaim;
         Action _onSecondary;
@@ -64,6 +80,8 @@ namespace BottleSort.UI
             _dismissible = false;
             if (adChoice != null)
                 adChoice.ShowSingle();
+            if (highlight != null)
+                highlight.SetActive(false);
 
             int[] amounts = { reward.Coins, reward.Undo, reward.Hints, reward.Bottles, reward.Spins };
             int shown = 0;
@@ -94,10 +112,32 @@ namespace BottleSort.UI
         {
             Setup(titleKey, subtitleKey, reward, adKey, onWatchAd, titleArgs);
             _onSecondary = onSecondary;
+            bool highlighted = ShowHighlight(adKey);
             if (adChoice != null)
-                adChoice.ShowPair(secondaryKey, Secondary);
+                adChoice.ShowPair(secondaryKey, Secondary, highlighted ? highlightTrim : 0f);
             else
                 Debug.LogWarning("[RewardPopup] No AdChoiceButtons in the card, only the ad button is shown");
+        }
+
+        bool ShowHighlight(string adKey)
+        {
+            if (highlight == null || highlights == null)
+                return false;
+            foreach (var entry in highlights)
+            {
+                if (entry.adKey != adKey)
+                    continue;
+                foreach (var item in items)
+                    item.gameObject.SetActive(false);
+                foreach (var count in counts)
+                    count.gameObject.SetActive(false);
+                highlightIcon.sprite = entry.icon;
+                highlightCaption.text = entry.caption;
+                highlightCaption.gameObject.SetActive(!string.IsNullOrEmpty(entry.caption));
+                highlight.SetActive(true);
+                return true;
+            }
+            return false;
         }
 
         void Secondary()

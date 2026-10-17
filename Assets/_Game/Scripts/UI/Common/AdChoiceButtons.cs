@@ -45,7 +45,8 @@ namespace BottleSort.UI
             Place(0f);
         }
 
-        public void ShowPair(string secondaryKey, Action onSecondary)
+        // trim — на сколько единиц Canvas карточка ниже обычной (например, когда вместо ряда наград одна крупная иконка).
+        public void ShowPair(string secondaryKey, Action onSecondary, float trim = 0f)
         {
             Prepare();
             _onSecondary = onSecondary;
@@ -53,12 +54,12 @@ namespace BottleSort.UI
             secondary.gameObject.SetActive(true);
             secondary.interactable = true;
             videoIcon.SetActive(true);
-            Place(_primaryMax.y - _primaryMin.y + gap);
+            Place(_primaryMax.y - _primaryMin.y + gap, trim);
         }
 
-        void Place(float lift)
+        void Place(float lift, float trim = 0f)
         {
-            panel.sizeDelta = _panelSize + new Vector2(0f, lift);
+            panel.sizeDelta = _panelSize + new Vector2(0f, lift - trim);
             var rect = (RectTransform)primary.transform;
             rect.offsetMin = _primaryMin + new Vector2(0f, lift);
             rect.offsetMax = _primaryMax + new Vector2(0f, lift);

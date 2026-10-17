@@ -46,6 +46,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "counts", counts);
             Set(screen, "itemSpacing", M(70));
             AddAdChoice(screen);
+            AddCardHighlight(screen);
             return screen;
         }
 
