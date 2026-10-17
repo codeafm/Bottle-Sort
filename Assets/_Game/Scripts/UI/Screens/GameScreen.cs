@@ -180,7 +180,17 @@ namespace BottleSort.UI
             bool tutorialLevel = HandmadeLevels.IsTutorial(_level);
             foreach (var button in boosters)
             {
-                button.SetVisible(!tutorialLevel && LevelPlan.BoosterUnlocked(button.Kind, _level));
+                if (tutorialLevel)
+                {
+                    button.SetVisible(false);
+                    continue;
+                }
+                if (!LevelPlan.BoosterUnlocked(button.Kind, _level))
+                {
+                    button.SetLocked(LevelPlan.BoosterUnlockLevel(button.Kind));
+                    continue;
+                }
+                button.SetVisible(true);
                 switch (button.Kind)
                 {
                     case Booster.Undo: button.SetCount(data.undoCount); break;

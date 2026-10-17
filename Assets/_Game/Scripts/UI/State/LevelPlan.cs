@@ -133,14 +133,16 @@ namespace BottleSort.UI
         // LEVEL_DESIGN §6.2, формула в EconomyRules.
         public static int Reward(int level, int stars) => EconomyRules.LevelReward(TypeOf(level), level, stars);
 
-        public static bool BoosterUnlocked(Booster booster, int level)
+        public static bool BoosterUnlocked(Booster booster, int level) => level >= BoosterUnlockLevel(booster);
+
+        public static int BoosterUnlockLevel(Booster booster)
         {
             switch (booster)
             {
-                case Booster.Undo: return level >= 4;
-                case Booster.Restart: return level >= 6;
-                case Booster.Hint: return level >= 8;
-                default: return level >= 12;
+                case Booster.Undo: return 4;
+                case Booster.Restart: return 6;
+                case Booster.Hint: return 8;
+                default: return 12;
             }
         }
     }

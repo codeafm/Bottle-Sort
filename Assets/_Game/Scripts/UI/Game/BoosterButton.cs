@@ -27,6 +27,18 @@ namespace BottleSort.UI
             group.interactable = visible;
         }
 
+        // Ещё не открытый бустер виден приглушённым, на бейдже уровень, с которого он появится.
+        public void SetLocked(int unlockLevel)
+        {
+            group.alpha = 0.4f;
+            group.blocksRaycasts = false;
+            group.interactable = false;
+            badge.SetActive(true);
+            badgeLabel.text = string.Format(Loc.Get("badge_level"), unlockLevel);
+            badgeLabel.color = Color.white;
+            badgeBackground.SetColors(UiColors.Hex("#6B7390"), UiColors.Hex("#454C66"));
+        }
+
         // count < 0 — у бустера нет счётчика (Заново). 0 — бейдж «AD»: можно получить за рекламу.
         public void SetCount(int count)
         {
