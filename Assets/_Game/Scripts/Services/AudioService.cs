@@ -18,6 +18,8 @@ namespace BottleSort.Services
         const float CrossfadeTime = 1f;
         const float SameClipInterval = 0.05f;
         const int SfxVoices = 6;
+        // Громкость музыки между экранами меняется за пару секунд, а не скачком.
+        const float GainChangeSpeed = 0.1f;
 
         static readonly Dictionary<UiSound, string> UiClips = new Dictionary<UiSound, string>
         {
@@ -77,6 +79,8 @@ namespace BottleSort.Services
         AudioSource _activeMusic;
         MusicTrack _track = MusicTrack.None;
         float _fade = 1f;
+        float _gain = 0.25f;
+        bool _onSplash;
 
         public MusicTrack Track => _track;
 
@@ -158,18 +162,19 @@ namespace BottleSort.Services
 
         void OnUiSound(UiSound sound, float pitch) => Play(sound, pitch);
 
-        public void Play(UiSound sound, float pitch = 1f)
+        // share — доля от обычной громкости звука: например, тихий налив на заставке.
+        public void Play(UiSound sound, float pitch = 1f, float share = 1f)
         {
             if (UiClips.TryGetValue(sound, out string name))
-                Play(name, pitch);
+                Play(name, pitch, share);
         }
 
         // Пока идёт интро студии, слышен только его фирменный звук.
         public static bool Silenced { get; set; }
 
-        public void Play(string clipName, float pitch = 1f)
+        public void Play(string clipName, float pitch = 1f, float share = 1f)
         {
-            float volume = SfxVolume;
+            float volume = SfxVolume * share;
             if (volume <= 0f || Silenced)
                 return;
             float now = Time.unscaledTime;
@@ -222,11 +227,18 @@ namespace BottleSort.Services
         }
 
         // Музыка — фон: в меню тише эффектов, в игре ещё тише, чтобы не надоедала.
-        static float TrackGain(MusicTrack track) => track == MusicTrack.Game ? 0.25f : 0.45f;
+        // На заставке та же мелодия, что в меню, только тише; к меню она плавно становится громче.
+        float TrackGain(MusicTrack track)
+        {
+            if (_onSplash)
+                return 0.25f;
+            return track == MusicTrack.Game ? 0.25f : 0.45f;
+        }
 
         void Update()
         {
-            float target = MusicVolume * TrackGain(_track);
+            _gain = Mathf.MoveTowards(_gain, TrackGain(_track), Time.unscaledDeltaTime * GainChangeSpeed);
+            float target = MusicVolume * _gain;
             var other = _activeMusic == _musicA ? _musicB : _musicA;
             if (_fade < 1f)
             {
@@ -258,8 +270,9 @@ namespace BottleSort.Services
 
         void OnScreenShown(UiScreen screen, bool animated)
         {
+            _onSplash = screen.Id == ScreenId.Splash;
             // На заставке музыку включает она сама, когда закончится интро студии.
-            if (screen.Id == ScreenId.Splash)
+            if (_onSplash)
                 return;
             if (animated)
                 Play(UiSound.Whoosh);
