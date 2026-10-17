@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using BottleSort.Core;
+using BottleSort.Gameplay;
 using UnityEngine;
 
 namespace BottleSort.UI
 {
-    // Игровой экран. Пока у gameplay нет GameController, ходы идут прямо в GameSession / TutorialGuide.
-    // Анимации переливания нет: слои обновляются сразу, полёт и наклон бутылки — следующий этап gameplay.
+    // Игровой экран. Ходы идут прямо в GameSession / TutorialGuide, ядро меняется сразу,
+    // а картинка догоняет его через PourAnimator. Пока бутылка летит или в неё льют, её не трогаем;
+    // остальные бутылки можно брать — правила это не ломает, потому что ход уже применён.
     public sealed class GameScreen : UiScreen
     {
         const float WinDelay = 0.8f;
@@ -26,6 +29,27 @@ namespace BottleSort.UI
         bool _ready;
         bool _hintPending;
         bool _finished;
+        bool _winScheduled;
+
+        sealed class ActivePour
+        {
+            public Move Move;
+            public MoveOutcome Outcome;
+            public MoveChanges Changes;
+            public BottleView Source;
+            public BottleView Target;
+        }
+
+        // Что ход поменял у бутылок, кроме слоёв: события об этом уходят, когда налив закончился.
+        sealed class MoveChanges
+        {
+            public readonly List<int> Unlocked = new List<int>();
+            public readonly List<(int bottle, int layers)> Revealed = new List<(int bottle, int layers)>();
+        }
+
+        PourAnimator _pour;
+        readonly List<ActivePour> _active = new List<ActivePour>();
+        readonly HashSet<int> _pouring = new HashSet<int>();
 
         public override ScreenId Id => ScreenId.Game;
         public override Theme? BackdropTheme => LevelPlan.PlayerTheme ?? LevelPlan.ThemeOf(_level);
@@ -33,6 +57,8 @@ namespace BottleSort.UI
         public int Selected => _selected;
         public BottleField Field => field;
         public bool IsBusy => !_ready || _finished;
+        public bool IsAnimating => _active.Count > 0;
+        public GameSession Session => _session;
 
         void Awake()
         {
@@ -40,6 +66,14 @@ namespace BottleSort.UI
             field.BottleTapped += OnBottleTapped;
             foreach (var button in boosters)
                 button.Pressed += OnBooster;
+            _pour = new GameObject("Pour Animator").AddComponent<PourAnimator>();
+            _pour.StreamStarted += OnStreamStarted;
+        }
+
+        void OnDestroy()
+        {
+            if (_pour != null)
+                Destroy(_pour.gameObject);
         }
 
         public void Prepare(int level)
@@ -54,6 +88,7 @@ namespace BottleSort.UI
 
         protected override void OnClose()
         {
+            SkipPours();
             tutorial.Stop();
             toast.HideNow();
         }
@@ -69,8 +104,10 @@ namespace BottleSort.UI
         async void StartLevel(int level)
         {
             int version = ++_loadVersion;
+            SkipPours();
             _ready = false;
             _finished = false;
+            _winScheduled = false;
             _selected = -1;
             _hintTarget = -1;
             hud.SetLevel(level);
@@ -156,7 +193,7 @@ namespace BottleSort.UI
 
         void OnBottleTapped(int index)
         {
-            if (IsBusy)
+            if (IsBusy || _pouring.Contains(index))
                 return;
             tutorial.OnTap();
             var state = _session.State;
@@ -186,6 +223,7 @@ namespace BottleSort.UI
             }
 
             var move = Move.Pour(_selected, index);
+            var before = _session.State.Clone();
             MoveOutcome outcome;
             var error = _guide != null ? _guide.TryMove(move, out outcome) : _session.TryMove(move, out outcome);
             if (error == MoveError.NotRecommended)
@@ -196,7 +234,7 @@ namespace BottleSort.UI
             if (error != MoveError.None)
             {
                 field.SlotAt(index).Shake();
-                UiFeedback.Play(UiSound.Wrong);
+                GameEvents.RaiseInvalidMove(error);
                 Deselect();
                 if (_guide == null && (error == MoveError.TargetLocked || error == MoveError.TargetFrozen))
                     ShowBlockedToast(index, error);
@@ -205,21 +243,101 @@ namespace BottleSort.UI
             }
 
             Deselect();
-            AfterMove(move, outcome);
+            AfterMove(move, outcome, CompareBottles(before));
         }
 
-        void AfterMove(Move move, MoveOutcome outcome)
+        MoveChanges CompareBottles(LevelState before)
         {
-            field.Refresh(_session.State);
+            var state = _session.State;
+            var changes = new MoveChanges();
+            for (int i = 0; i < before.BottleCount; i++)
+            {
+                if (before[i].FrozenTurns != state[i].FrozenTurns)
+                    GameEvents.RaiseIceChanged(i, state[i].FrozenTurns);
+                if (before[i].IsLocked && !state[i].IsLocked)
+                    changes.Unlocked.Add(i);
+                if (before[i].HiddenCount > state[i].HiddenCount)
+                    changes.Revealed.Add((i, before[i].HiddenCount - state[i].HiddenCount));
+            }
+            return changes;
+        }
+
+        void AfterMove(Move move, MoveOutcome outcome, MoveChanges changes)
+        {
+            hud.SetMoves(_session.MovesMade, !_session.IsTutorial);
+            hud.SetStars(_session.Stars);
+            // Лёд тает с каждым ходом сразу, а замки и галочки — когда налив закончится.
+            MeltIdleIce();
+            tutorial.OnMove(move, outcome);
+
+            if (_session.IsWon)
+                _finished = true;
+            else if (_session.IsOutOfMoves)
+                toast.ShowKey("toast_out_of_moves", 2.5f);
+
+            if (!StartPour(move, outcome, changes))
+            {
+                GameEvents.RaisePourStarted(move, outcome);
+                FinishMove(move, outcome, changes);
+            }
+        }
+
+        bool StartPour(Move move, MoveOutcome outcome, MoveChanges changes)
+        {
+            var source = WorldViewAt(move.From);
+            var target = WorldViewAt(move.To);
+            if (move.Kind != MoveKind.Pour || source == null || target == null)
+                return false;
+
+            var pour = new ActivePour { Move = move, Outcome = outcome, Changes = changes, Source = source, Target = target };
+            _active.Add(pour);
+            _pouring.Add(move.From);
+            _pouring.Add(move.To);
+            var state = _session.State;
+            _pour.Play(source, target, state[move.From], state[move.To], () => OnPourFinished(pour));
+            return true;
+        }
+
+        void OnStreamStarted(BottleView source, BottleView target)
+        {
+            foreach (var pour in _active)
+            {
+                if (pour.Source != source || pour.Target != target)
+                    continue;
+                GameEvents.RaisePourStarted(pour.Move, pour.Outcome);
+                return;
+            }
+        }
+
+        void OnPourFinished(ActivePour pour)
+        {
+            _active.Remove(pour);
+            _pouring.Remove(pour.Move.From);
+            _pouring.Remove(pour.Move.To);
+            GameEvents.RaisePourFinished(pour.Move, pour.Outcome);
+            FinishMove(pour.Move, pour.Outcome, pour.Changes);
+        }
+
+        void FinishMove(Move move, MoveOutcome outcome, MoveChanges changes)
+        {
+            var state = _session.State;
+            for (int i = 0; i < field.Slots.Count && i < state.BottleCount; i++)
+                if (!_pouring.Contains(i))
+                    SyncSlot(i, true);
             RefreshHud();
-            UiFeedback.Play(UiSound.Pour);
 
             if (outcome.CompletedBottle)
             {
-                UiFeedback.Play(UiSound.BottleComplete);
+                int completed = state[move.To].IsCompleted(state.Unit) ? move.To : move.From;
+                GameEvents.RaiseBottleCompleted(completed, outcome.Color);
                 if (_guide == null)
                     toast.Show(Loc.Format("toast_color_done", Loc.Get("color_" + outcome.Color)));
             }
+            foreach (int bottle in changes.Unlocked)
+                GameEvents.RaiseBottleUnlocked(bottle);
+            foreach (var (bottle, layers) in changes.Revealed)
+                GameEvents.RaiseHiddenRevealed(bottle, layers);
+
             if (_guide == null)
             {
                 if (outcome.UnlockedAny)
@@ -228,17 +346,48 @@ namespace BottleSort.UI
                     toast.ShowKey("toast_thawed", 1.3f);
             }
 
-            tutorial.OnMove(move, outcome);
+            TryScheduleWin();
+        }
 
-            if (_session.IsWon)
-            {
-                _finished = true;
-                Tweens.Delay(this, "win", WinDelay, ShowWin);
-            }
-            else if (_session.IsOutOfMoves)
-            {
-                toast.ShowKey("toast_out_of_moves", 2.5f);
-            }
+        // Победа — только когда долита последняя бутылка.
+        void TryScheduleWin()
+        {
+            if (!_finished || _winScheduled || _active.Count > 0 || !_session.IsWon)
+                return;
+            _winScheduled = true;
+            Tweens.Delay(this, "win", WinDelay, ShowWin);
+        }
+
+        void SyncSlot(int index, bool animated)
+        {
+            var slot = field.SlotAt(index);
+            var bottle = _session.State[index];
+            bool completed = bottle.IsCompleted(_session.State.Unit);
+            slot.View.Show(bottle, _session.State.Unit);
+            slot.View.SetCompleted(completed, animated);
+            slot.SetDone(completed, animated);
+        }
+
+        void MeltIdleIce()
+        {
+            var state = _session.State;
+            for (int i = 0; i < field.Slots.Count && i < state.BottleCount; i++)
+                if (!_pouring.Contains(i))
+                    WorldViewAt(i)?.SetFrozen(state[i].FrozenTurns);
+        }
+
+        BottleView WorldViewAt(int index) => (field.SlotAt(index)?.View as BottleViewAdapter)?.View;
+
+        // Отмена, «Заново», подсказка и +бутылка не ждут анимацию: доигрываем её мгновенно и рисуем поле по ядру.
+        void SkipPours()
+        {
+            if (_active.Count == 0)
+                return;
+            _pour.SkipAll();
+            _active.Clear();
+            _pouring.Clear();
+            if (_session != null)
+                field.Refresh(_session.State, false);
         }
 
         void RejectSelection(int index, MoveError error)
@@ -247,7 +396,7 @@ namespace BottleSort.UI
             if (error != MoveError.SourceLocked && error != MoveError.SourceFrozen)
                 return;
             field.SlotAt(index).Shake();
-            UiFeedback.Play(UiSound.Wrong);
+            GameEvents.RaiseInvalidMove(error);
             if (_guide == null)
                 ShowBlockedToast(index, error);
             else
@@ -315,10 +464,12 @@ namespace BottleSort.UI
                 return;
             }
 
+            SkipPours();
             Deselect();
             if (_guide != null) _guide.Undo(); else _session.Undo();
             data.undoCount--;
             data.Save();
+            GameEvents.RaiseUndoUsed();
             // Бутылка от бустера переживает отмену, так что число бутылок не меняется.
             field.Refresh(_session.State, false);
             RefreshHud();
@@ -328,8 +479,10 @@ namespace BottleSort.UI
 
         void Restart()
         {
+            SkipPours();
             Deselect();
             if (_guide != null) _guide.Restart(); else _session.Restart();
+            GameEvents.RaiseRestartUsed();
             field.Build(_session.State, _generated.IsTutorial);
             hud.SetInfo(DefaultInfo());
             RefreshHud();
@@ -361,8 +514,10 @@ namespace BottleSort.UI
             data.hintCount--;
             data.Save();
             RefreshBoosters();
+            SkipPours();
             Deselect();
             Select(hint.Value.From);
+            GameEvents.RaiseHintShown(hint.Value);
             _hintTarget = hint.Value.To;
             field.SlotAt(_hintTarget).View.SetGlow(BottleGlow.Hint);
         }
@@ -389,6 +544,8 @@ namespace BottleSort.UI
                 return;
             data.extraBottleCount--;
             data.Save();
+            GameEvents.RaiseExtraBottleAdded();
+            SkipPours();
             Deselect();
             field.Build(_session.State, _generated.IsTutorial);
             RefreshHud();
@@ -426,7 +583,7 @@ namespace BottleSort.UI
 
             data.RecordWin(_level, stars);
             data.AddCoins(reward);
-            UiFeedback.Play(UiSound.Win);
+            GameEvents.RaiseLevelWon(_level, stars);
 
             var result = new WinResult
             {

@@ -15,10 +15,34 @@ namespace BottleSort.Gameplay
         const float CssToWorld = 2f / 70f;
         const int SortingBoost = 30;
 
-        PourStream stream;
-        int playing;
+        sealed class Run
+        {
+            public BottleView Source;
+            public BottleView Target;
+            public int BaseOrder;
+            public IReadOnlyList<int> SourceAfter;
+            public int SourceHiddenAfter;
+            public IReadOnlyList<int> TargetAfter;
+            public int TargetHiddenAfter;
+            public PourStream Stream;
+            public Coroutine Routine;
+        }
 
-        public bool IsPlaying => playing > 0;
+        readonly List<Run> runs = new List<Run>();
+        PourStream stream;
+
+        public bool IsPlaying => runs.Count > 0;
+
+        // Струя пошла — момент для звука переливания (в макете он стартует не сразу, а после перелёта)
+        public event Action<BottleView, BottleView> StreamStarted;
+
+        public bool IsPouring(BottleView view)
+        {
+            foreach (var run in runs)
+                if (run.Source == view || run.Target == view)
+                    return true;
+            return false;
+        }
 
         public static float DurationFor(int layers) => 0.76f + layers * BottleView.LayerStepSeconds + 0.04f + 0.56f;
 
@@ -30,19 +54,59 @@ namespace BottleSort.Gameplay
         public Coroutine Play(BottleView source, BottleView target, IReadOnlyList<int> sourceAfter, int sourceHiddenAfter,
             IReadOnlyList<int> targetAfter, int targetHiddenAfter, Action onFinished = null)
         {
-            return StartCoroutine(Run(source, target, sourceAfter, sourceHiddenAfter, targetAfter, targetHiddenAfter, onFinished));
+            var run = new Run
+            {
+                Source = source,
+                Target = target,
+                BaseOrder = source.SortingOrder,
+                SourceAfter = sourceAfter,
+                SourceHiddenAfter = sourceHiddenAfter,
+                TargetAfter = targetAfter,
+                TargetHiddenAfter = targetHiddenAfter
+            };
+            runs.Add(run);
+            run.Routine = StartCoroutine(Animate(run, onFinished));
+            return run.Routine;
         }
 
-        IEnumerator Run(BottleView source, BottleView target, IReadOnlyList<int> sourceAfter, int sourceHiddenAfter,
-            IReadOnlyList<int> targetAfter, int targetHiddenAfter, Action onFinished)
+        // Мгновенно доигрывает все переливания: бутылки на местах, слои конечные, onFinished не зовётся.
+        // Нужно перед отменой, «Заново» и пересборкой поля.
+        public void SkipAll()
         {
-            playing++;
+            foreach (var run in runs.ToArray())
+            {
+                if (run.Routine != null)
+                    StopCoroutine(run.Routine);
+                Finish(run);
+                run.Source.SetLayers(run.SourceAfter, run.Source.Capacity, run.SourceHiddenAfter);
+                run.Target.SetLayers(run.TargetAfter, run.Target.Capacity, run.TargetHiddenAfter);
+            }
+        }
+
+        void Finish(Run run)
+        {
+            runs.Remove(run);
+            if (run.Stream != null)
+                run.Stream.End();
+            if (run.Source == null)
+                return;
+            run.Source.SortingOrder = run.BaseOrder;
+            run.Source.EndExternalMotion();
+        }
+
+        IEnumerator Animate(Run run, Action onFinished)
+        {
+            var source = run.Source;
+            var target = run.Target;
+            var sourceAfter = run.SourceAfter;
+            var targetAfter = run.TargetAfter;
             int layers = Mathf.Max(1, targetAfter.Count - target.LayerCount);
             int color = targetAfter.Count > 0 ? targetAfter[targetAfter.Count - 1] : 0;
 
             var body = source.Body;
-            int baseOrder = source.SortingOrder;
-            source.SetState(BottleVisualState.Normal, true);
+            int baseOrder = run.BaseOrder;
+            // Без instant: выбранная бутылка уже приподнята, летим из этой точки, а не прыгаем вниз.
+            source.SetState(BottleVisualState.Normal);
             source.BeginExternalMotion();
             source.SortingOrder = baseOrder + SortingBoost;
 
@@ -59,9 +123,11 @@ namespace BottleSort.Gameplay
             yield return Tilt(body, pose.center, pose.pivotOffset, 0f, pose.angle, 0.22f, Ease.Tilt);
 
             var pourStream = Stream;
+            run.Stream = pourStream;
             pourStream.SortingOrder = Mathf.Max(baseOrder, target.SortingOrder) + SortingBoost - 5;
             pourStream.SetEndpoints(source.MouthPosition, target.SurfacePosition);
             pourStream.Begin(LiquidPalette.Get(color), scale);
+            StreamStarted?.Invoke(source, target);
 
             float pourTime = 0f;
             bool levelsStarted = false;
@@ -72,21 +138,20 @@ namespace BottleSort.Gameplay
                 if (!levelsStarted && pourTime >= 0.07f)
                 {
                     levelsStarted = true;
-                    source.AnimateLevelChange(sourceAfter, sourceHiddenAfter);
-                    target.AnimateLevelChange(targetAfter, targetHiddenAfter);
+                    source.AnimateLevelChange(sourceAfter, run.SourceHiddenAfter);
+                    target.AnimateLevelChange(targetAfter, run.TargetHiddenAfter);
                 }
                 pourStream.SetEndpoints(source.MouthPosition, target.SurfacePosition);
                 yield return null;
             }
 
             pourStream.End();
+            run.Stream = null;
             yield return Tilt(body, pose.center, pose.pivotOffset, pose.angle, 0f, 0.2f, Ease.InOut);
             yield return Wait(0.01f);
             yield return Move(body, body.position, restPos, Quaternion.identity, Quaternion.identity, 0.34f, Ease.Glide);
 
-            source.SortingOrder = baseOrder;
-            source.EndExternalMotion();
-            playing--;
+            Finish(run);
             onFinished?.Invoke();
         }
 

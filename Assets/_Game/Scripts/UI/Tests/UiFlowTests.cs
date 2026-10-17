@@ -39,6 +39,8 @@ namespace BottleSort.UI.Tests
         public IEnumerator BootSplashMenuTutorialWinNextLevel()
         {
             SceneManager.LoadScene("Boot");
+            // Сцена сменится только в конце кадра; без этого найдётся роутер сцены от прошлого теста.
+            yield return null;
             ScreenRouter router = null;
             yield return WaitUntil(() => (router = FindRouter()) != null, 5f, "router");
             yield return WaitUntil(() => router.Current != null, 2f, "first screen");
@@ -73,15 +75,17 @@ namespace BottleSort.UI.Tests
             yield return new WaitForSecondsRealtime(0.8f);
             yield return Capture("ui_level1_selected");
             Tap(game, 2);
-            yield return new WaitForSecondsRealtime(0.4f);
+            // Ходы теперь с анимацией переливания: следующий ход — когда бутылки вернулись на место.
+            yield return WaitUntil(() => !game.IsAnimating, 4f, "first pour");
             Tap(game, 1);
             Tap(game, 0);
+            yield return WaitUntil(() => !game.IsAnimating, 4f, "second pour");
             yield return new WaitForSecondsRealtime(1.6f);
             Tap(game, 1);
             Tap(game, 2);
 
             var win = router.Get<WinScreen>();
-            yield return WaitUntil(() => router.Current == win, 4f, "win screen");
+            yield return WaitUntil(() => router.Current == win, 6f, "win screen");
             yield return new WaitForSecondsRealtime(1.2f);
             yield return Capture("ui_win");
             Assert.AreEqual(2, PlayerData.Current.highestUnlocked);
