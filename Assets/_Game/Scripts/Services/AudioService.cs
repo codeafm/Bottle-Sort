@@ -80,6 +80,10 @@ namespace BottleSort.Services
             }
             Instance = this;
 
+            // на камерах в сценах слушателя нет, а без него Unity не выводит звук вообще
+            if (FindAnyObjectByType<AudioListener>() == null)
+                gameObject.AddComponent<AudioListener>();
+
             _voices = new AudioSource[SfxVoices];
             for (int i = 0; i < SfxVoices; i++)
                 _voices[i] = CreateSource(false);
