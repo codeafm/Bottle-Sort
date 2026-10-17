@@ -14,12 +14,16 @@ namespace BottleSort.UI
         [SerializeField] Button claimButton;
         [SerializeField] LocalizedText claimLabel;
         [SerializeField] CanvasGroup claimGroup;
+        // Вторая (синяя) кнопка и иконка видео для «×2 за рекламу или обычно».
+        [SerializeField] AdChoiceButtons adChoice;
         // По одному на день, с первого по седьмой.
         [SerializeField] LocalizedText[] dayLabels;
         [SerializeField] TMP_Text[] amounts;
         [SerializeField] UiGradient[] tiles;
         [SerializeField] GameObject[] checks;
         [SerializeField] GameObject[] todayGlows;
+
+        bool _adOffer;
 
         public override ScreenId Id => ScreenId.Calendar;
         public override bool IsPopup => true;
@@ -28,11 +32,16 @@ namespace BottleSort.UI
         {
             closeButton.onClick.AddListener(Close);
             dimmer.onClick.AddListener(Close);
-            claimButton.onClick.AddListener(ClaimDoubleForAd);
-            _choice = new AdChoiceButtons(claimButton);
+            claimButton.onClick.AddListener(() =>
+            {
+                if (_adOffer)
+                    ClaimDoubleForAd();
+                else
+                    Claim(1);
+            });
+            if (adChoice == null)
+                Debug.LogWarning("[CalendarPopup] No AdChoiceButtons in the card, the ad x2 offer is off");
         }
-
-        AdChoiceButtons _choice;
 
         protected override void OnOpen() => Refresh();
 
@@ -69,16 +78,19 @@ namespace BottleSort.UI
 
             claimButton.interactable = !claimedToday;
             claimGroup.alpha = claimedToday ? 0.55f : 1f;
-            // Зелёная — «×2 за рекламу», под ней обычное «Забрать». В редакторе без Play кнопок не плодим.
-            if (claimedToday || !Application.isPlaying || _choice == null)
+            // Зелёная — «×2 за рекламу», под ней обычное «Забрать». Без второй кнопки — просто «Забрать».
+            if (claimedToday || adChoice == null)
             {
-                _choice?.ShowSingle();
+                if (adChoice != null)
+                    adChoice.ShowSingle();
                 claimLabel.SetKey(claimedToday ? "calendar_tomorrow" : "gift_claim");
+                _adOffer = false;
             }
             else
             {
                 claimLabel.SetKey("reward_double_ad");
-                _choice.ShowPair("gift_claim", () => Claim(1));
+                adChoice.ShowPair("gift_claim", () => Claim(1));
+                _adOffer = true;
             }
         }
 

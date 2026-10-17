@@ -45,6 +45,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "items", items);
             Set(screen, "counts", counts);
             Set(screen, "itemSpacing", M(70));
+            AddAdChoice(screen);
             return screen;
         }
 
@@ -112,6 +113,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "checks", checks);
             Set(screen, "todayGlows", glows);
             Set(screen, "dayLabels", dayLabels);
+            AddAdChoice(screen);
             return screen;
         }
 

@@ -20,11 +20,12 @@ namespace BottleSort.UI
         [SerializeField] float itemSpacing = 175f;
         // Затемнение закрывает карточку только у предложений (реклама за монеты), у наград — нет.
         [SerializeField] Button dimmer;
+        // Вторая (синяя) кнопка и иконка видео для «за рекламу или обычно».
+        [SerializeField] AdChoiceButtons adChoice;
 
         Action _onClaim;
         Action _onSecondary;
         bool _dismissible;
-        AdChoiceButtons _choice;
 
         public override ScreenId Id => ScreenId.Reward;
         public override bool IsPopup => true;
@@ -42,9 +43,6 @@ namespace BottleSort.UI
                 subtitleText.fontSizeMin = subtitleText.fontSize * 0.7f;
                 subtitleText.enableAutoSizing = true;
             }
-            // Setup мог прийти раньше Awake (попап ещё ни разу не открывался) и уже завести кнопки.
-            if (_choice == null)
-                _choice = new AdChoiceButtons(claimButton);
             // В сценах, собранных до этого поля, ссылки нет: берём затемнение по имени, как его создаёт билдер.
             if (dimmer == null)
             {
@@ -64,7 +62,8 @@ namespace BottleSort.UI
             _onClaim = onClaim;
             _onSecondary = null;
             _dismissible = false;
-            _choice?.ShowSingle();
+            if (adChoice != null)
+                adChoice.ShowSingle();
 
             int[] amounts = { reward.Coins, reward.Undo, reward.Hints, reward.Bottles, reward.Spins };
             int shown = 0;
@@ -95,9 +94,10 @@ namespace BottleSort.UI
         {
             Setup(titleKey, subtitleKey, reward, adKey, onWatchAd, titleArgs);
             _onSecondary = onSecondary;
-            if (_choice == null)
-                _choice = new AdChoiceButtons(claimButton);
-            _choice.ShowPair(secondaryKey, Secondary);
+            if (adChoice != null)
+                adChoice.ShowPair(secondaryKey, Secondary);
+            else
+                Debug.LogWarning("[RewardPopup] No AdChoiceButtons in the card, only the ad button is shown");
         }
 
         void Secondary()
