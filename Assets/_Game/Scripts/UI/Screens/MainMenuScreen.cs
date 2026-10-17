@@ -116,11 +116,8 @@ namespace BottleSort.UI
             }
 
             // Ролик ещё не пришёл (или после прошлого показа грузится следующий) — говорим об этом сразу.
-            if (!RewardedAds.EnsureReady())
-            {
-                toast.ShowKey("toast_ad_loading", 2f);
+            if (!AdLoadingHint.Check(toast))
                 return;
-            }
 
             var popup = Router.Get<RewardPopup>();
             popup.Setup("coins_ad_title", "coins_ad_text", new RewardBundle(CoinAdOffer.Coins), "coins_ad_watch",
@@ -133,11 +130,8 @@ namespace BottleSort.UI
         {
             var from = popup.CoinIcon.position;
             var icon = popup.CoinIcon.Find("Icon");
-            if (!RewardedAds.EnsureReady())
-            {
-                toast.ShowKey("toast_ad_loading", 2f);
+            if (!AdLoadingHint.Check(toast))
                 return;
-            }
             RewardedAds.Show(watched =>
             {
                 var data = PlayerData.Current;
@@ -184,17 +178,24 @@ namespace BottleSort.UI
 
             var popup = Router.Get<RewardPopup>();
             popup.SetupChoice("daily_gift_title", "daily_gift_text", EconomyRules.DailyGift,
-                "reward_double_ad", () => RewardedAds.Show(watched =>
-                {
-                    // Реклама не досмотрена — подарок не пропадает, его можно забрать ещё раз.
-                    if (watched)
-                        ClaimGift(2);
-                    else
-                        toast.ShowKey("toast_coins_ad_failed", 2.2f);
-                }),
+                "reward_double_ad", WatchAdForDoubleGift,
                 "gift_claim", () => ClaimGift(1));
             popup.AllowDismiss();
             Router.ShowPopup(ScreenId.Reward);
+        }
+
+        // Ролик не загружен или не досмотрен — подарок не пропадает, его можно открыть ещё раз.
+        void WatchAdForDoubleGift()
+        {
+            if (!AdLoadingHint.Check(toast))
+                return;
+            RewardedAds.Show(watched =>
+            {
+                if (watched)
+                    ClaimGift(2);
+                else
+                    toast.ShowKey("toast_coins_ad_failed", 2.2f);
+            });
         }
 
         void ClaimGift(int multiplier)

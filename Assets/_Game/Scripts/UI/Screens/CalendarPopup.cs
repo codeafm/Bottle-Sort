@@ -96,6 +96,8 @@ namespace BottleSort.UI
 
         void ClaimDoubleForAd()
         {
+            if (!AdLoadingHint.Check(claimButton))
+                return;
             claimButton.interactable = false;
             RewardedAds.Show(watched =>
             {

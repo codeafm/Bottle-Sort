@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using BottleSort.Core;
 using BottleSort.UI;
 using UnityEngine;
@@ -9,8 +8,6 @@ namespace BottleSort.Services
     // Точка входа для экранов: правила LEVEL_DESIGN §7 здесь, SDK — за IAdsService.
     public static class Ads
     {
-        // Во Flutter rewarded ждали до 15 с, если он ещё грузился.
-        const float RewardedWaitSeconds = 15f;
         static IAdsService _service;
         static MainThread _thread;
         static readonly InterstitialPolicy Policy = new InterstitialPolicy();
@@ -67,6 +64,8 @@ namespace BottleSort.Services
             return new EditorAdsService(thread);
         }
 
+        // Не ждём, пока ролик догрузится: кнопки сами проверяют RewardedAds.EnsureReady и говорят игроку,
+        // а сюда без готового ролика приходит только редкий случай — тогда просто «не досмотрел».
         public static void ShowRewarded(Action<bool> done)
         {
             if (_service == null || _busy)
@@ -74,35 +73,21 @@ namespace BottleSort.Services
                 done?.Invoke(false);
                 return;
             }
-            SetBusy(true);
-            _thread.StartCoroutine(ShowRewardedWhenReady(watched =>
-            {
-                SetBusy(false);
-                if (watched)
-                    Policy.OnRewardedWatched();
-                done?.Invoke(watched);
-            }));
-        }
-
-        static IEnumerator ShowRewardedWhenReady(Action<bool> done)
-        {
             if (!_service.IsRewardedReady)
             {
                 _service.LoadRewarded();
-                float waitUntil = Time.realtimeSinceStartup + RewardedWaitSeconds;
-                while (!_service.IsRewardedReady && Time.realtimeSinceStartup < waitUntil)
-                    yield return null;
+                done?.Invoke(false);
+                return;
             }
-            if (!_service.IsRewardedReady)
-            {
-                done(false);
-                yield break;
-            }
+            SetBusy(true);
             AudioListener.pause = true;
             _service.ShowRewarded(watched =>
             {
                 AudioListener.pause = false;
-                done(watched);
+                SetBusy(false);
+                if (watched)
+                    Policy.OnRewardedWatched();
+                done?.Invoke(watched);
             });
         }
 

@@ -623,6 +623,8 @@ namespace BottleSort.UI
         // Как в макете: когда бустеры кончились, бейдж «AD» — смотришь рекламу и получаешь один.
         void OfferForAd(Booster booster)
         {
+            if (!AdLoadingHint.Check(toast))
+                return;
             RewardedAds.Show(watched =>
             {
                 if (!watched)

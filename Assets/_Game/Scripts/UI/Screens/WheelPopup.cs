@@ -167,6 +167,8 @@ namespace BottleSort.UI
                 return;
             }
 
+            if (!AdLoadingHint.Check(adButton))
+                return;
             adButton.interactable = false;
             RewardedAds.Show(watched =>
             {

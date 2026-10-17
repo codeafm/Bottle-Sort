@@ -168,6 +168,8 @@ namespace BottleSort.UI
 
         void DoubleReward()
         {
+            if (!AdLoadingHint.Check(doubleButton))
+                return;
             doubleButton.interactable = false;
             RewardedAds.Show(watched =>
             {

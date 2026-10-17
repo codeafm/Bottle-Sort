@@ -66,6 +66,12 @@ namespace BottleSort.UI
 
         void WatchAdForMoves()
         {
+            // Ролик ещё грузится: говорим об этом и через пару секунд снова даём выбор.
+            if (!AdLoadingHint.Check(toast))
+            {
+                Tweens.Delay(this, "loss", 2f, ShowOutOfMoves);
+                return;
+            }
             var session = _session;
             RewardedAds.Show(watched =>
             {
@@ -135,6 +141,12 @@ namespace BottleSort.UI
         // Бутылка за рекламу не тратит запас бустеров «+Бутылка».
         void WatchAdForBottle()
         {
+            if (!AdLoadingHint.Check(toast))
+            {
+                int moves = _session.MovesMade;
+                Tweens.Delay(this, "loss", 2f, () => ShowDeadEnd(moves));
+                return;
+            }
             var session = _session;
             RewardedAds.Show(watched =>
             {
