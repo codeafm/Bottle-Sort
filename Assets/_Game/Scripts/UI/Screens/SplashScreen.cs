@@ -57,7 +57,7 @@ namespace BottleSort.UI
             // Первый уровень игрока строим заранее: на поздних уровнях генератор думает заметное время.
             int level = PlayerData.Current.highestUnlocked;
             _loading = LevelLoader.Get(level);
-            SceneLoader.Preload(PlayerData.Current.IsFirstLaunch ? SceneLoader.GameScene : SceneLoader.MenuScene);
+            SceneLoader.Preload(SceneLoader.MenuScene);
         }
 
         void AnimateLogo()
@@ -125,11 +125,8 @@ namespace BottleSort.UI
         void Leave()
         {
             _leaving = true;
-            // Первый запуск — сразу в обучение, меню игрок увидит по кнопке «домой» (LEVEL_DESIGN §3.4).
-            if (PlayerData.Current.IsFirstLaunch)
-                Router.PlayLevel(1);
-            else
-                Router.Show(ScreenId.Menu);
+            // После заставки всегда меню, и в первый запуск тоже (решение заказчика).
+            Router.Show(ScreenId.Menu);
         }
 
         void ShowStep(bool animated = true)
