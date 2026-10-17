@@ -62,6 +62,13 @@ namespace BottleSort.UI.Editor
                 else if (name == "shadow")
                     border = new Vector4(128, 128, 128, 128);
 
+                bool coin = name == "coin";
+                if (coin)
+                {
+                    SetupCoin(importer);
+                    continue;
+                }
+
                 bool changed = importer.textureType != TextureImporterType.Sprite
                                || importer.spriteBorder != border || importer.mipmapEnabled;
                 if (!changed)
@@ -75,6 +82,29 @@ namespace BottleSort.UI.Editor
                 importer.wrapMode = TextureWrapMode.Clamp;
                 importer.SaveAndReimport();
             }
+        }
+
+        // Монета рисуется и в 16 pt (цена в магазине), и в 48 pt, поэтому с мипмапами.
+        static void SetupCoin(TextureImporter importer)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spriteBorder = Vector4.zero;
+            importer.mipmapEnabled = true;
+            importer.alphaIsTransparency = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.maxTextureSize = 512;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            foreach (string platform in new[] { "Android", "iPhone" })
+            {
+                var settings = importer.GetPlatformTextureSettings(platform);
+                settings.overridden = true;
+                settings.maxTextureSize = 512;
+                settings.format = TextureImporterFormat.ASTC_4x4;
+                settings.textureCompression = TextureImporterCompression.CompressedHQ;
+                importer.SetPlatformTextureSettings(settings);
+            }
+            importer.SaveAndReimport();
         }
 
         // Бутылки в меню, на заставке и в магазине рисуются на uGUI, но из арта vfx-art: стекло берём как есть,

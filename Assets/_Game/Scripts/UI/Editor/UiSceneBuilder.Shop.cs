@@ -135,8 +135,7 @@ namespace BottleSort.UI.Editor
             pill.rectTransform.offsetMin = new Vector2(M(6), M(8));
             pill.rectTransform.offsetMax = new Vector2(-M(6), M(38));
             var pillGradient = Gradient(pill, Hex("#FFD957"), Hex("#FF7A00"));
-            var coin = Image(pill.transform, "Coin", "coin", Color.white);
-            coin.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(10, 0), new Vector2(16, 16), new Vector2(0f, 0.5f));
+            var coin = Coin(pill.transform, "Coin", new Vector2(0f, 0.5f), new Vector2(10 + 8, 0), 16);
             var lockIcon = Image(pill.transform, "Lock", "icon_lock", Color.white);
             lockIcon.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(10, 0), new Vector2(14, 14), new Vector2(0f, 0.5f));
             var pillLabel = Text(pill.transform, "Label", DisplayFont, 15, Color.white);

@@ -469,15 +469,7 @@ def bake_primitives():
     cv.stroke([([(10, 1.2), (86, 1.2)], False)], hex_rgba("#FFFFFF", 0.75), 2.4)
     cv.save("shelf.png")
 
-    # Монета (radial-gradient из макета) и тёмная полоска снизу.
-    cv = Canvas(96, 96)
-    coin = circle(48, 48, 46)
-    cv.fill(coin, radial([(0, hex_rgba("#FFF5BF")), (0.45, hex_rgba("#FFC83D")), (1, hex_rgba("#D97F00"))], 33, 29, 66))
-    inner = Canvas(96, 96)
-    inner.fill(circle(48, 42, 46), WHITE)
-    rim = cv.fill_mask(coin) * (1 - inner.rgba[..., 3])
-    cv.paint(rim, hex_rgba("#8C4600", 0.55))
-    cv.save("coin.png")
+    # Монета больше не печётся здесь: Art/UI/coin.png — это Docs/Art/coin_512.png (исходник Docs/Art/coin.svg).
 
     # Конус лучей для экрана победы.
     cv = Canvas(512, 512)

@@ -421,8 +421,7 @@ namespace BottleSort.UI.Editor
             rewardCaption.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(18, 25), new Vector2(160, 18), new Vector2(0f, 0.5f));
             var coinGlow = Image(rewardPanel.transform, "CoinGlow", "glow", Hex("#FFC83C", 0.7f));
             coinGlow.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(18 - 10, -10), new Vector2(58, 58), new Vector2(0f, 0.5f));
-            var coin = Image(rewardPanel.transform, "Coin", "coin", Color.white);
-            coin.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(18, -10), new Vector2(38, 38), new Vector2(0f, 0.5f));
+            Coin(rewardPanel.transform, "Coin", new Vector2(0f, 0.5f), new Vector2(18 + 19, -10), 38);
             var reward = Text(rewardPanel.transform, "Amount", DisplayFont, 40, Hex("#FFD957"), TextAlignmentOptions.MidlineLeft);
             reward.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(66, -10), new Vector2(140, 48), new Vector2(0f, 0.5f));
             reward.text = "+25";
@@ -494,8 +493,10 @@ namespace BottleSort.UI.Editor
                 tile.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2((i - 1.5f) * 70, -104), new Vector2(60, 60), new Vector2(0.5f, 1f));
                 if (!isCoin)
                     Gradient(tile, Hex("#35C7FF"), Hex("#0548A8"));
-                var glyph = Image(tile.transform, "Icon", icons[i], Color.white);
-                glyph.rectTransform.sizeDelta = isCoin ? M(48, 48) : M(28, 28);
+                if (isCoin)
+                    Coin(tile.transform, "Icon", new Vector2(0.5f, 0.5f), Vector2.zero, 48);
+                else
+                    Image(tile.transform, "Icon", icons[i], Color.white).rectTransform.sizeDelta = M(28, 28);
                 var count = Text(panel.transform, "Count " + i, DisplayFont, 18, Color.white);
                 count.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2((i - 1.5f) * 70, -170), new Vector2(70, 24), new Vector2(0.5f, 1f));
                 counts.Add(count);

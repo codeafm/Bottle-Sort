@@ -162,6 +162,23 @@ namespace BottleSort.UI.Editor
             return inset;
         }
 
+        // Монета из Docs/Art/coin.svg (квадрат 120): лицевой круг r = 50 с центром (60, 56), под ним толщина и тень.
+        // Старая плоская монета занимала 92 из 96 px своего квадрата. Ставим новую так, чтобы лицо было
+        // того же диаметра и на том же месте: size и center — размер и центр прежней монеты в pt.
+        const float NewCoinFace = 100f / 120f;
+        const float OldCoinFace = 92f / 96f;
+        const float CoinFaceLift = 4f / 120f;
+
+        public static Image Coin(Transform parent, string name, Vector2 anchor, Vector2 center, float size)
+        {
+            float drawn = size * OldCoinFace / NewCoinFace;
+            var coin = Image(parent, name, "coin", Color.white);
+            coin.preserveAspect = true;
+            coin.rectTransform.Place(anchor, center - new Vector2(0f, drawn * CoinFaceLift), new Vector2(drawn, drawn),
+                new Vector2(0.5f, 0.5f));
+            return coin;
+        }
+
         // Межбуквенный интервал из CSS (px при данном кегле) в единицы TMP (сотые доли em).
         public static float Spacing(float letterSpacing, float fontSize) => letterSpacing / fontSize * 100f;
 

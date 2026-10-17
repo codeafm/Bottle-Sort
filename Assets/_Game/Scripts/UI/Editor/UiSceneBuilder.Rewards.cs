@@ -85,8 +85,7 @@ namespace BottleSort.UI.Editor
                 dayLabel.rectTransform.TopBand(6, 18);
                 dayLabels.Add(dayLabel.GetComponent<LocalizedText>());
 
-                var coin = Image(tile.transform, "Coin", "coin", Color.white);
-                coin.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 2), new Vector2(34, 34));
+                Coin(tile.transform, "Coin", new Vector2(0.5f, 0.5f), new Vector2(0, 2), 34);
                 var amount = Text(tile.transform, "Amount", DisplayFont, 16, Color.white);
                 amount.rectTransform.BottomBand(6, 22);
                 Shadow(amount, Hex("#061B42"), -0.6f);
@@ -151,9 +150,11 @@ namespace BottleSort.UI.Editor
                 var spoke = Node("Prize " + i, wheel);
                 spoke.Fill();
                 spoke.localRotation = Quaternion.Euler(0, 0, -i * 60);
-                var icon = Image(spoke, "Icon", icons[i], Color.white);
-                bool coin = icons[i] == "coin";
-                icon.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, diameter * 0.33f), coin ? new Vector2(36, 36) : new Vector2(28, 28));
+                if (icons[i] == "coin")
+                    Coin(spoke, "Icon", new Vector2(0.5f, 0.5f), new Vector2(0, diameter * 0.33f), 36);
+                else
+                    Image(spoke, "Icon", icons[i], Color.white).rectTransform.Place(new Vector2(0.5f, 0.5f),
+                        new Vector2(0, diameter * 0.33f), new Vector2(28, 28));
                 var label = Text(spoke, "Label", DisplayFont, 17, Color.white);
                 label.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, diameter * 0.19f), new Vector2(60, 24));
                 label.text = labels[i];
@@ -230,8 +231,10 @@ namespace BottleSort.UI.Editor
             tile.rectTransform.Place(new Vector2(0.5f, 1f), position, new Vector2(60, 60), new Vector2(0.5f, 1f));
             if (!isCoin)
                 Gradient(tile, Hex("#35C7FF"), Hex("#0548A8"));
-            var glyph = Image(tile.transform, "Icon", icon, Color.white);
-            glyph.rectTransform.sizeDelta = isCoin ? M(48, 48) : M(28, 28);
+            if (isCoin)
+                Coin(tile.transform, "Icon", new Vector2(0.5f, 0.5f), Vector2.zero, 48);
+            else
+                Image(tile.transform, "Icon", icon, Color.white).rectTransform.sizeDelta = M(28, 28);
             return tile.rectTransform;
         }
     }

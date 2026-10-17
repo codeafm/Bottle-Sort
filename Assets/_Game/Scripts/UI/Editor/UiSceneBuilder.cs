@@ -204,9 +204,7 @@ namespace BottleSort.UI.Editor
             var coinGlow = Image(face.transform, "CoinGlow", "glow", Hex("#FFC83C", 0.5f));
             coinGlow.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(6f - 6f, 0f), new Vector2(coinSize + 12, coinSize + 12),
                 new Vector2(0f, 0.5f));
-            var coin = Image(face.transform, "Coin", "coin", Color.white);
-            coin.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(plus ? 8f : 6f, 0f), new Vector2(coinSize, coinSize),
-                new Vector2(0f, 0.5f));
+            Coin(face.transform, "Coin", new Vector2(0f, 0.5f), new Vector2((plus ? 8f : 6f) + coinSize / 2f, 0f), coinSize);
 
             float right = plus ? 44f : 12f;
             label = Text(face.transform, "Amount", DisplayFont, plus ? 20 : 18, Color.white,
