@@ -14,11 +14,11 @@ namespace BottleSort.Services
         static IAdsService _service;
         static MainThread _thread;
         static readonly InterstitialPolicy Policy = new InterstitialPolicy();
-        static readonly BannerRefreshTimer BannerTimer = new BannerRefreshTimer();
+        static BannerScheduler _banners;
         static ScreenId _screen = ScreenId.Splash;
         static int _screenLevel;
         static bool _popupOpen;
-        static bool _bannerShown;
+        static BannerPlacement _bannerShown;
         static bool _busy;
 
         public static IAdsService Service => _service;
@@ -33,6 +33,13 @@ namespace BottleSort.Services
             _thread = thread;
             _service = CreateService(thread, AdsConfig.Load());
             _service.Initialize();
+            _bannerShown = BannerPlacement.None;
+            _banners = new BannerScheduler(placement =>
+                _service.LoadBanner(placement, loaded =>
+                {
+                    Debug.Log($"[Ads] Banner {placement}: {(loaded ? "new one shown" : "failed, keeping the old one")}");
+                    _banners.OnLoaded(placement, loaded);
+                }));
             RewardedAds.Handler = ShowRewarded;
             ScreenRouter.ScreenShown -= OnScreenShown;
             ScreenRouter.ScreenShown += OnScreenShown;
@@ -45,12 +52,7 @@ namespace BottleSort.Services
         }
 
         // Время баннера идёт, только пока он на экране и приложение на переднем плане.
-        static void TickBanner(float deltaTime)
-        {
-            bool visible = _bannerShown && !_busy && Application.isFocused;
-            if (BannerTimer.Tick(deltaTime, visible))
-                _service.RefreshBanner(BannerTimer.OnRefreshed);
-        }
+        static void TickBanner(float deltaTime) => _banners?.Tick(deltaTime, !_busy && Application.isFocused);
 
         // В редакторе заглушка. На устройстве только Yandex: другие сети (Unity Ads) подключены
         // адаптерами медиации внутри Yandex и настраиваются в кабинете, коду о них знать не нужно.
@@ -102,7 +104,14 @@ namespace BottleSort.Services
             });
         }
 
-        public static void LevelStarted() => Policy.OnLevelStarted();
+        // Новый уровень, «Следующий» или «Заново»: игровому баннеру — новый запрос.
+        public static void LevelStarted(int level)
+        {
+            Policy.OnLevelStarted();
+            var data = PlayerData.Current;
+            if (_banners != null && BannerRules.AllowedOnLevel(level, data.highestUnlocked, data.noAds))
+                _banners.LevelStarted();
+        }
         public static void LevelCompleted(int level) => Policy.OnWin(level);
         public static void LevelLost(int level) => Policy.OnLoss(level);
 
@@ -177,14 +186,16 @@ namespace BottleSort.Services
                 HighestUnlocked = data.highestUnlocked,
                 NoAds = data.noAds
             });
-            // Меняем только при настоящем переходе: смена сцены Menu → Game баннер не дёргает.
-            if (wanted == _bannerShown)
+            var placement = wanted ? BannerRules.PlacementOf(_screen) : BannerPlacement.None;
+            // Меняем только при настоящем переходе: Меню ↔ Карта — один и тот же баннер меню.
+            if (placement == _bannerShown)
                 return;
-            _bannerShown = wanted;
-            if (wanted)
-                _service.ShowBanner();
-            else
+            _bannerShown = placement;
+            _banners.Show(placement);
+            if (placement == BannerPlacement.None)
                 _service.HideBanner();
+            else
+                _service.ShowBanner(placement);
         }
     }
 }

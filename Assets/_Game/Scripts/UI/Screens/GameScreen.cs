@@ -159,7 +159,6 @@ namespace BottleSort.UI
             else
                 tutorial.Stop();
             OnAttemptStarted();
-            Ads.LevelStarted();
         }
 
         string DefaultInfo()

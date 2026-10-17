@@ -19,11 +19,13 @@ namespace BottleSort.UI
         bool _lossCounted;
         int _deadEndCheck;
 
+        // Новый уровень или «Заново»: сброс проигрыша и новый запрос игрового баннера.
         void OnAttemptStarted()
         {
             _lossCounted = false;
             _deadEndCheck++;
             Tweens.Kill(this, "loss");
+            Ads.LevelStarted(_level);
         }
 
         void CountLoss()
@@ -44,6 +46,11 @@ namespace BottleSort.UI
         {
             if (!IsOpen || _session == null || !_session.IsOutOfMoves)
                 return;
+            if (IsAnimating)
+            {
+                Tweens.Delay(this, "loss", 0.3f, ShowOutOfMoves);
+                return;
+            }
             var card = Router.Get<RewardPopup>();
             if (card == null)
             {
@@ -107,6 +114,12 @@ namespace BottleSort.UI
         {
             if (!IsOpen || _finished || _session == null || _session.MovesMade != moves)
                 return;
+            // Карточка не всплывает посреди налива.
+            if (IsAnimating)
+            {
+                Tweens.Delay(this, "loss", 0.3f, () => ShowDeadEnd(moves));
+                return;
+            }
             var card = Router.Get<RewardPopup>();
             if (card == null)
                 return;

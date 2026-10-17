@@ -20,6 +20,15 @@ namespace BottleSort.Services
     {
         public const int FromLevel = 4;
 
+        public static BannerPlacement PlacementOf(ScreenId screen) =>
+            screen == ScreenId.Game ? BannerPlacement.Game
+            : screen == ScreenId.Menu || screen == ScreenId.Levels ? BannerPlacement.Menu
+            : BannerPlacement.None;
+
+        // Есть ли смысл грузить игровой баннер для этого уровня.
+        public static bool AllowedOnLevel(int level, int highestUnlocked, bool noAds) =>
+            !noAds && level >= FromLevel && highestUnlocked >= FromLevel;
+
         public static bool ShouldShow(BannerContext context)
         {
             if (context.NoAds || context.FullscreenAdShowing || context.PopupOpen)

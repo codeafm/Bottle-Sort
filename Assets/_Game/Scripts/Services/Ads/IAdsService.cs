@@ -14,10 +14,12 @@ namespace BottleSort.Services
         void ShowRewarded(Action<bool> done);
         void ShowInterstitial(Action done);
 
-        void ShowBanner();
+        // Видимым становится баннер этого плейсмента (если уже загружен), другой прячется.
+        void ShowBanner(BannerPlacement placement);
         void HideBanner();
-        // Загрузить новый баннер на место показанного. done(false) — не загрузился, старый остался.
-        void RefreshBanner(Action<bool> done);
+        // Новый баннер в плейсмент: первый раз создать, дальше заменить показанный после загрузки.
+        // done(false) — не загрузился, на экране остался старый.
+        void LoadBanner(BannerPlacement placement, Action<bool> done);
     }
 
     // Unit id из Flutter-версии (FLUTTER_SPEC §5).

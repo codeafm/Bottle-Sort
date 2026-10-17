@@ -13,9 +13,13 @@ namespace BottleSort.Services
         public string yandexBanner = AdUnits.Banner;
         public string yandexInterstitial = AdUnits.Interstitial;
         public string yandexRewarded = AdUnits.Rewarded;
+        [Tooltip("Отдельный блок для баннера в игре, если нужна раздельная статистика. Пусто — тот же, что в меню.")]
+        public string yandexGameBanner = "";
 
         // Всегда настоящие блоки из кабинета, демо-блоки заказчик не хочет даже в dev-сборках.
         public string BannerId => yandexBanner;
+        public string BannerIdFor(BannerPlacement placement) =>
+            placement == BannerPlacement.Game && !string.IsNullOrEmpty(yandexGameBanner) ? yandexGameBanner : yandexBanner;
         public string InterstitialId => yandexInterstitial;
         public string RewardedId => yandexRewarded;
 

@@ -49,32 +49,44 @@ namespace BottleSort.Services
             _runner.After(FakeAdSeconds, () => done?.Invoke());
         }
 
-        // SDK нет, поэтому рисуем серую плашку 320×50 там, где на телефоне встанет баннер.
-        public void ShowBanner()
+        // SDK нет, поэтому рисуем серую плашку 320×50 там, где на телефоне встанет баннер:
+        // с плейсментом и номером загрузки, чтобы в редакторе было видно, когда пришёл новый.
+        readonly int[] _loads = new int[3];
+        BannerPlacement _shown;
+
+        public void ShowBanner(BannerPlacement placement)
         {
-            Debug.Log("[Ads] Banner on (stub)");
+            _shown = placement;
             if (_bannerStub == null)
                 _bannerStub = CreateBannerStub();
-            _bannerStub.SetActive(true);
+            _bannerStub.SetActive(_loads[(int)placement] > 0);
+            UpdateStubLabel();
         }
 
         public void HideBanner()
         {
-            Debug.Log("[Ads] Banner off (stub)");
+            _shown = BannerPlacement.None;
             if (_bannerStub != null)
                 _bannerStub.SetActive(false);
         }
 
-        int _bannerNumber = 1;
-
-        public void RefreshBanner(Action<bool> done)
+        public void LoadBanner(BannerPlacement placement, Action<bool> done)
         {
-            _bannerNumber++;
-            Debug.Log($"[Ads] Banner refreshed (stub), #{_bannerNumber}");
+            _runner.After(FakeAdSeconds, () =>
+            {
+                _loads[(int)placement]++;
+                Debug.Log($"[Ads] Banner {placement} loaded (stub), #{_loads[(int)placement]}");
+                if (_shown == placement)
+                    ShowBanner(placement);
+                done?.Invoke(true);
+            });
+        }
+
+        void UpdateStubLabel()
+        {
             var label = _bannerStub != null ? _bannerStub.GetComponentInChildren<Text>(true) : null;
             if (label != null)
-                label.text = $"Баннер Yandex 320×50 №{_bannerNumber} (настоящий — только на телефоне)";
-            done?.Invoke(true);
+                label.text = $"Баннер Yandex {_shown} №{_loads[(int)_shown]} (настоящий — только на телефоне)";
         }
 
         static GameObject CreateBannerStub()

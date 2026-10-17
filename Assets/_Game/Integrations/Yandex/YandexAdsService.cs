@@ -28,10 +28,16 @@ namespace BottleSort.Integrations
         float _rewardedLoadedAt;
         bool _interstitialLoading;
         bool _rewardedLoading;
-        Banner _banner;
-        Banner _nextBanner;
-        bool _bannerLoaded;
-        bool _bannerWanted;
+        // Свой баннер у меню и у игры. Next — новый, который грузится скрытым, пока на экране старый.
+        sealed class BannerSlot
+        {
+            public Banner Current;
+            public Banner Next;
+        }
+
+        readonly BannerSlot _menuBanner = new BannerSlot();
+        readonly BannerSlot _gameBanner = new BannerSlot();
+        BannerPlacement _visible;
 
 #if !UNITY_EDITOR
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -154,81 +160,67 @@ namespace BottleSort.Integrations
             ad.Show();
         }
 
-        public void ShowBanner()
+        public void ShowBanner(BannerPlacement placement)
         {
-            _bannerWanted = true;
-            if (_banner == null)
-            {
-                _banner = CreateBanner(OnFirstBannerLoaded, OnFirstBannerFailed);
-                return;
-            }
-            if (_bannerLoaded)
-                _banner.Show();
+            _visible = placement;
+            ApplyBannerVisibility();
         }
 
         public void HideBanner()
         {
-            _bannerWanted = false;
-            _banner?.Hide();
+            _visible = BannerPlacement.None;
+            ApplyBannerVisibility();
         }
 
-        // Новый баннер грузится скрытым рядом со старым и встаёт на его место только после загрузки:
-        // так нет пустого места между баннерами, а при ошибке остаётся старый.
-        public void RefreshBanner(Action<bool> done)
+        // Новый баннер грузится скрытым и встаёт на место старого только после загрузки:
+        // нет пустого места между баннерами, а при ошибке остаётся старый.
+        public void LoadBanner(BannerPlacement placement, Action<bool> done)
         {
-            if (_banner == null || !_bannerLoaded || _nextBanner != null)
+            var slot = SlotOf(placement);
+            if (slot == null || slot.Next != null)
             {
                 done?.Invoke(false);
                 return;
             }
             Banner next = null;
-            next = CreateBanner(() =>
+            next = CreateBanner(placement, () =>
             {
-                if (_nextBanner != next)
+                if (slot.Next != next)
                     return;
-                _nextBanner = null;
-                var old = _banner;
-                _banner = next;
-                if (_bannerWanted)
-                    _banner.Show();
-                else
-                    _banner.Hide();
-                old.Destroy();
+                slot.Next = null;
+                var old = slot.Current;
+                slot.Current = next;
+                ApplyBannerVisibility();
+                old?.Destroy();
                 done?.Invoke(true);
             }, () =>
             {
-                if (_nextBanner != next)
+                if (slot.Next != next)
                     return;
-                _nextBanner = null;
+                slot.Next = null;
                 next.Destroy();
                 done?.Invoke(false);
             });
-            _nextBanner = next;
+            slot.Next = next;
         }
 
-        void OnFirstBannerLoaded()
+        void ApplyBannerVisibility()
         {
-            _bannerLoaded = true;
-            if (_bannerWanted)
-                _banner.Show();
-            else
-                _banner.Hide();
+            foreach (var (placement, slot) in new[] { (BannerPlacement.Menu, _menuBanner), (BannerPlacement.Game, _gameBanner) })
+            {
+                if (slot.Current == null)
+                    continue;
+                if (placement == _visible)
+                    slot.Current.Show();
+                else
+                    slot.Current.Hide();
+            }
         }
 
-        void OnFirstBannerFailed()
-        {
-            _banner?.Destroy();
-            _banner = null;
-            _bannerLoaded = false;
-            if (_bannerWanted)
-                _thread.After(RetrySeconds, () =>
-                {
-                    if (_bannerWanted && _banner == null)
-                        _banner = CreateBanner(OnFirstBannerLoaded, OnFirstBannerFailed);
-                });
-        }
+        BannerSlot SlotOf(BannerPlacement placement) =>
+            placement == BannerPlacement.Menu ? _menuBanner : placement == BannerPlacement.Game ? _gameBanner : null;
 
-        Banner CreateBanner(Action loaded, Action failed)
+        Banner CreateBanner(BannerPlacement placement, Action loaded, Action failed)
         {
             // Не выше 50 при ширине 320, как место под баннер в макете меню и игры. Yandex прижимает его
             // к низу safe area, а кнопки ui начинаются на 71 pt выше неё, так что баннер их не закрывает.
@@ -238,7 +230,7 @@ namespace BottleSort.Integrations
             banner.Hide();
             banner.OnAdLoaded += (sender, args) => _thread.Post(loaded);
             banner.OnAdFailedToLoad += (sender, args) => _thread.Post(failed);
-            banner.LoadAd(new AdRequest(_config.BannerId));
+            banner.LoadAd(new AdRequest(_config.BannerIdFor(placement)));
             return banner;
         }
     }

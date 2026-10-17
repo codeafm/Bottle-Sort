@@ -96,61 +96,6 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void BannerTimer_RefreshesAfterThirtyVisibleSeconds()
-        {
-            var timer = new BannerRefreshTimer();
-            for (int i = 0; i < 29 * 10; i++)
-                Assert.IsFalse(timer.Tick(0.1f, true));
-            bool due = false;
-            for (int i = 0; i < 20 && !due; i++)
-                due = timer.Tick(0.1f, true);
-            Assert.IsTrue(due);
-        }
-
-        [Test]
-        public void BannerTimer_PausesWhenHidden()
-        {
-            var timer = new BannerRefreshTimer();
-            Tick(timer, 20f, true);
-            Tick(timer, 600f, false);
-            Assert.AreEqual(20f, timer.VisibleTime, 0.01f);
-            Assert.IsFalse(Tick(timer, 9f, true));
-            Assert.IsTrue(Tick(timer, 2f, true));
-        }
-
-        [Test]
-        public void BannerTimer_HugeFrameAfterResumeDoesNotCount()
-        {
-            var timer = new BannerRefreshTimer();
-            Assert.IsFalse(timer.Tick(3600f, true));
-            Assert.Less(timer.VisibleTime, 1f);
-        }
-
-        [Test]
-        public void BannerTimer_NoOverlappingLoads_KeepsOldOnFailure()
-        {
-            var timer = new BannerRefreshTimer();
-            Assert.IsTrue(Tick(timer, 31f, true));
-            Assert.IsTrue(timer.IsLoading);
-            Assert.IsFalse(Tick(timer, 60f, true), "пока грузится, второй запрос не шлём");
-
-            timer.OnRefreshed(false);
-            Assert.IsFalse(Tick(timer, 9f, true));
-            Assert.IsTrue(Tick(timer, 2f, true), "после ошибки — новая попытка через 10 с");
-
-            timer.OnRefreshed(true);
-            Assert.AreEqual(0f, timer.VisibleTime);
-        }
-
-        static bool Tick(BannerRefreshTimer timer, float seconds, bool visible)
-        {
-            bool due = false;
-            for (float t = 0; t < seconds - 0.001f; t += 0.1f)
-                due |= timer.Tick(0.1f, visible);
-            return due;
-        }
-
-        [Test]
         public void ExtraMoves_ContinueLevelUntilRestart()
         {
             var session = new GameSession(LevelState.FromLayout(4, "RRGG GGRR - -"), 4, moveLimit: 2);
