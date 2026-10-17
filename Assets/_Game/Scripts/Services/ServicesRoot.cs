@@ -29,6 +29,7 @@ namespace BottleSort.Services
             gameObject.AddComponent<GameFeedback>().Bind(Audio);
             Ads.Initialize(Thread);
             NotificationService.Initialize();
+            PushService.Initialize(Thread);
         }
 
         void Start() => NotificationService.Reschedule();

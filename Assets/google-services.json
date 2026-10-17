@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "115774090987",
+    "project_id": "bottle-sort-23297",
+    "storage_bucket": "bottle-sort-23297.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:115774090987:android:3ab5c2e3a9a447ee2258ae",
+        "android_client_info": {
+          "package_name": "com.codeafm.bottlesort"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBELQYRK-QacdqUiOzP52RPvsP09jsUW6I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

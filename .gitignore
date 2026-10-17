@@ -56,3 +56,8 @@ desktop.ini
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Firebase: конфиг для десктопа генерируется из google-services.json, десктопные библиотеки под macOS и Linux не нужны
+Assets/StreamingAssets/google-services-desktop.json*
+Assets/Firebase/Plugins/x86_64/FirebaseCppApp-*.bundle*
+Assets/Firebase/Plugins/x86_64/FirebaseCppApp-*.so*
