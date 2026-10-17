@@ -30,6 +30,12 @@ namespace BottleSort.UI
         // На сколько градусов бутылка в покое прямее, чем при наливе (угол налива — тот, что в префабе).
         const float RestTilt = 34f;
         const int Capacity = 4;
+        // Звук налива: клип короче самого налива, поэтому он звучит трижды внахлёст, и тон чуть растёт,
+        // как при доливании. Тише, чем на поле.
+        static readonly float[] PourCues = { StreamStart, 1.6f, 2.6f };
+        static readonly float[] PourPitch = { 0.95f, 1.02f, 1.1f };
+        const float PourShare = 0.45f;
+        const float CompleteShare = 0.5f;
 
         const float MinTime = CycleTime;
         // Подвисание при загрузке не должно съедать время показа: шаг кадра не больше 1/20 с.
@@ -65,6 +71,8 @@ namespace BottleSort.UI
         float _elapsed;
         float _pourTime;
         int _burstCycle = -1;
+        int _soundCycle = -1;
+        int _soundCue;
         float _pourAngle = float.NaN;
         float _streamY = float.NaN;
         float _shownProgress;
@@ -115,6 +123,7 @@ namespace BottleSort.UI
             _elapsed = 0f;
             _pourTime = StartOffset;
             _burstCycle = -1;
+            _soundCycle = -1;
             AnimateLogo();
             Pose(_pourTime, false);
             if (AudioService.Instance != null)
@@ -275,11 +284,38 @@ namespace BottleSort.UI
                 ripple.GetComponent<Image>().color = UiColors.Liquid(color, 1);
             }
 
-            if (live && p >= FillEnd && _burstCycle != cycle)
+            if (!live)
+                return;
+            PlayPourSound(cycle, p);
+            if (p >= FillEnd && _burstCycle != cycle)
             {
                 _burstCycle = cycle;
                 Burst();
+                PlaySound(UiSound.BottleComplete, 1f, CompleteShare);
             }
+        }
+
+        void PlayPourSound(int cycle, float p)
+        {
+            if (_soundCycle != cycle)
+            {
+                _soundCycle = cycle;
+                _soundCue = 0;
+            }
+            int due = _soundCue;
+            while (due < PourCues.Length && p >= PourCues[due] && p < FillEnd)
+                due++;
+            // Если кадр перескочил несколько отметок, догонять пачкой не надо — только последняя.
+            if (due > _soundCue)
+                PlaySound(UiSound.Pour, PourPitch[due - 1], PourShare);
+            _soundCue = due;
+        }
+
+        static void PlaySound(UiSound sound, float pitch, float share)
+        {
+            var audio = AudioService.Instance;
+            if (audio != null)
+                audio.Play(sound, pitch, share);
         }
 
         void Burst()
