@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.42" r="0.75">
+      <stop offset="0" stop-color="#2A56C4"/>
+      <stop offset="0.45" stop-color="#12306E"/>
+      <stop offset="1" stop-color="#050C2A"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7FB2FF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7FB2FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E6F5FF" stop-opacity="0.38"/>
+      <stop offset="0.2" stop-color="#E6F5FF" stop-opacity="0.12"/>
+      <stop offset="0.6" stop-color="#E6F5FF" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#E6F5FF" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#BFE3FF"/>
+      <stop offset="0.45" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#8FC3EE"/>
+    </linearGradient>
+    <linearGradient id="lR" x1="410" y1="0" x2="710" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8E1C2B"/><stop offset="0.12" stop-color="#C9283A"/><stop offset="0.28" stop-color="#E0687A"/><stop offset="0.45" stop-color="#C9283A"/><stop offset="0.82" stop-color="#C9283A"/><stop offset="1" stop-color="#7C1924"/></linearGradient>
+    <linearGradient id="lY" x1="410" y1="0" x2="710" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#A37E12"/><stop offset="0.12" stop-color="#E3B21E"/><stop offset="0.28" stop-color="#F0CE62"/><stop offset="0.45" stop-color="#E3B21E"/><stop offset="0.82" stop-color="#E3B21E"/><stop offset="1" stop-color="#8C6E13"/></linearGradient>
+    <linearGradient id="lG" x1="410" y1="0" x2="710" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1D7036"/><stop offset="0.12" stop-color="#2A9E4A"/><stop offset="0.28" stop-color="#6CC487"/><stop offset="0.45" stop-color="#2A9E4A"/><stop offset="0.82" stop-color="#2A9E4A"/><stop offset="1" stop-color="#1A622E"/></linearGradient>
+    <linearGradient id="lB" x1="410" y1="0" x2="710" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1F438C"/><stop offset="0.12" stop-color="#2D5FC4"/><stop offset="0.28" stop-color="#7495DB"/><stop offset="0.45" stop-color="#2D5FC4"/><stop offset="0.82" stop-color="#2D5FC4"/><stop offset="1" stop-color="#1C3B79"/></linearGradient>
+    <linearGradient id="lP" x1="410" y1="0" x2="710" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#4E2A7D"/><stop offset="0.12" stop-color="#6E3BB0"/><stop offset="0.28" stop-color="#A27FD0"/><stop offset="0.45" stop-color="#6E3BB0"/><stop offset="0.82" stop-color="#6E3BB0"/><stop offset="1" stop-color="#44246D"/></linearGradient>
+    <linearGradient id="stream" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8E1C2B"/><stop offset="0.35" stop-color="#E0687A"/><stop offset="0.7" stop-color="#C9283A"/><stop offset="1" stop-color="#7C1924"/>
+    </linearGradient>
+    <linearGradient id="layerTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="0.2" stop-color="#FFFFFF" stop-opacity="0.02"/><stop offset="1" stop-color="#000000" stop-opacity="0.08"/>
+    </linearGradient>
+    <radialGradient id="shelfGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#9CC8FF" stop-opacity="0.6"/><stop offset="1" stop-color="#9CC8FF" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="mainInner"><path d="M503 258 V292 Q503 342 456 364 Q428 377 428 410 V818 Q428 882 492 882 H628 Q692 882 692 818 V410 Q692 377 664 364 Q617 342 617 292 V258 Z"/></clipPath>
+    <clipPath id="smallInner"><path d="M503 258 V292 Q503 342 456 364 Q428 377 428 410 V818 Q428 882 492 882 H628 Q692 882 692 818 V410 Q692 377 664 364 Q617 342 617 292 V258 Z"/></clipPath>
+    <g id="bottleGlass">
+      <path d="M485 240 V290 Q485 330 440 350 Q410 362 410 400 V820 Q410 900 490 900 H630 Q710 900 710 820 V400 Q710 362 680 350 Q635 330 635 290 V240 Z" fill="url(#glass)"/>
+    </g>
+    <g id="bottleFront">
+      <path d="M485 240 V290 Q485 330 440 350 Q410 362 410 400 V820 Q410 900 490 900 H630 Q710 900 710 820 V400 Q710 362 680 350 Q635 330 635 290 V240 Z" fill="none" stroke="#E8F4FF" stroke-opacity="0.95" stroke-width="14" stroke-linejoin="round"/>
+      <path d="M440 420 V810" fill="none" stroke="#FFFFFF" stroke-opacity="0.7" stroke-width="22" stroke-linecap="round"/>
+      <path d="M676 430 V560" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="10" stroke-linecap="round"/>
+      <path d="M504 262 V300" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="9" stroke-linecap="round"/>
+      <rect x="462" y="200" width="196" height="52" rx="16" fill="url(#rim)" stroke="#E8F4FF" stroke-width="5"/>
+    </g>
+  </defs>
+
+  <g id="background">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+    <circle cx="560" cy="560" r="420" fill="url(#halo)"/>
+    <g fill="#FFFFFF">
+      <path d="M190 300 l10 26 26 10 -26 10 -10 26 -10 -26 -26 -10 26 -10 Z" opacity="0.9"/>
+      <path d="M830 220 l7 18 18 7 -18 7 -7 18 -7 -18 -18 -7 18 -7 Z" opacity="0.8"/>
+      <path d="M850 690 l9 22 22 9 -22 9 -9 22 -9 -22 -22 -9 22 -9 Z" opacity="0.75"/>
+      <path d="M170 760 l6 15 15 6 -15 6 -6 15 -6 -15 -15 -6 15 -6 Z" opacity="0.6"/>
+      <circle cx="300" cy="560" r="5" opacity="0.7"/><circle cx="790" cy="420" r="4" opacity="0.6"/>
+      <circle cx="720" cy="140" r="4" opacity="0.5"/><circle cx="260" cy="900" r="4" opacity="0.5"/>
+    </g>
+  </g>
+
+  <g id="foreground" transform="translate(-48 25)">
+    <ellipse cx="560" cy="918" rx="250" ry="34" fill="url(#shelfGlow)"/>
+    <ellipse cx="560" cy="906" rx="160" ry="16" fill="#000000" opacity="0.35"/>
+
+    <use href="#bottleGlass"/>
+    <g clip-path="url(#mainInner)">
+      <rect x="380" y="767" width="360" height="120" fill="url(#lB)"/>
+      <rect x="380" y="652" width="360" height="116" fill="url(#lP)"/>
+      <rect x="380" y="537" width="360" height="116" fill="url(#lY)"/>
+      <rect x="380" y="430" width="360" height="108" fill="url(#lR)"/>
+      <rect x="380" y="767" width="360" height="120" fill="url(#layerTop)"/>
+      <rect x="380" y="652" width="360" height="116" fill="url(#layerTop)"/>
+      <rect x="380" y="537" width="360" height="116" fill="url(#layerTop)"/>
+      <rect x="380" y="430" width="360" height="108" fill="url(#layerTop)"/>
+      <ellipse cx="560" cy="432" rx="150" ry="10" fill="#F2A3AE" opacity="0.9"/>
+      <ellipse cx="560" cy="434" rx="46" ry="12" fill="none" stroke="#F7C6CD" stroke-width="5" opacity="0.9"/>
+      <ellipse cx="560" cy="434" rx="80" ry="18" fill="none" stroke="#F7C6CD" stroke-width="3" opacity="0.5"/>
+    </g>
+    <use href="#bottleFront"/>
+
+    <path d="M549 158 Q562 260 557 434 L571 434 Q574 260 563 154 Z" fill="url(#stream)"/>
+    <path d="M556 190 Q564 280 562 420" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="536" cy="396" r="7" fill="#E0687A"/><circle cx="590" cy="404" r="5" fill="#E0687A"/><circle cx="548" cy="376" r="4" fill="#FFFFFF" opacity="0.8"/>
+
+    <g transform="translate(449 93) rotate(118) scale(0.38) translate(-560 -560)">
+      <use href="#bottleGlass"/>
+      <g clip-path="url(#smallInner)">
+        <rect x="380" y="560" width="360" height="330" fill="url(#lR)"/>
+        <rect x="380" y="560" width="360" height="330" fill="url(#layerTop)"/>
+      </g>
+      <use href="#bottleFront"/>
+    </g>
+  </g>
+</svg>
