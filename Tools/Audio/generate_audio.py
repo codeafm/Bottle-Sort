@@ -445,7 +445,7 @@ def sfx_wheel_stop():
     return normalize(reverb(fade(out), 0.15, tail=0.4), -6)
 
 
-def music_loop(chords, bpm, bars_per_chord, seed, melody_density, pad_gain, root_oct):
+def music_loop(chords, bpm, bars_per_chord, seed, melody_density, pad_gain, root_oct, arp_prob=0.82, arp_gain=0.22):
     beat = 60.0 / bpm
     bar = beat * 4
     length = bar * bars_per_chord * len(chords)
@@ -465,10 +465,10 @@ def music_loop(chords, bpm, bars_per_chord, seed, melody_density, pad_gain, root
             arp = chord + [chord[1][:-1] + str(int(chord[1][-1]) + 1)]
             steps = int(dur / (beat / 2))
             for s in range(steps):
-                if r.random() < 0.82:
+                if r.random() < arp_prob:
                     nn = arp[(s * 2 + (s // 4)) % len(arp)]
                     f = note(nn[:-1] + str(int(nn[-1]) + 1))
-                    add(voice, tone(f, 1.0, KALIMBA, decay=0.45), t0 + s * beat / 2, 0.22 + 0.06 * r.random())
+                    add(voice, tone(f, 1.0, KALIMBA, decay=0.45), t0 + s * beat / 2, arp_gain + 0.04 * r.random())
             scale = ['C', 'D', 'E', 'G', 'A']
             for s in range(int(dur / beat)):
                 if r.random() < melody_density:
@@ -524,11 +524,11 @@ def main():
         print('sfx', name, flush=True)
     if not only or 'music' in only:
         menu = music_loop([['C4', 'E4', 'G4', 'B4'], ['A3', 'C4', 'E4', 'G4'], ['F3', 'A3', 'C4', 'E4'], ['G3', 'B3', 'D4', 'E4']],
-                          bpm=78, bars_per_chord=1, seed=101, melody_density=0.35, pad_gain=0.12, root_oct=4)
+                          bpm=66, bars_per_chord=2, seed=101, melody_density=0.12, pad_gain=0.14, root_oct=4, arp_prob=0.5, arp_gain=0.16)
         write_wav(os.path.join(mus_dir, 'music_menu_loop.wav'), list(menu))
         print('music menu', flush=True)
         game = music_loop([['D4', 'F#4', 'A4', 'C#5'], ['B3', 'D4', 'F#4', 'A4'], ['G3', 'B3', 'D4', 'F#4'], ['A3', 'C#4', 'E4', 'G4']],
-                          bpm=70, bars_per_chord=1, seed=202, melody_density=0.18, pad_gain=0.1, root_oct=4)
+                          bpm=58, bars_per_chord=2, seed=202, melody_density=0.05, pad_gain=0.13, root_oct=4, arp_prob=0.32, arp_gain=0.13)
         write_wav(os.path.join(mus_dir, 'music_game_loop.wav'), list(game))
         print('music game', flush=True)
 

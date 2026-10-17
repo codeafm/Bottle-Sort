@@ -221,9 +221,12 @@ namespace BottleSort.Services
             _musicB.clip = null;
         }
 
+        // Музыка — фон: в меню тише эффектов, в игре ещё тише, чтобы не надоедала.
+        static float TrackGain(MusicTrack track) => track == MusicTrack.Game ? 0.35f : 0.45f;
+
         void Update()
         {
-            float target = MusicVolume;
+            float target = MusicVolume * TrackGain(_track);
             var other = _activeMusic == _musicA ? _musicB : _musicA;
             if (_fade < 1f)
             {
