@@ -1,16 +1,20 @@
 using System.Threading.Tasks;
 using BottleSort.Core;
+using BottleSort.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace BottleSort.UI
 {
     // Заставка из Splash.dc.html: логотип влетает, наклонённая бутылка наливает в бутылку на полке,
-    // слой за слоем, потом золотое свечение и звёздочки. Держим минимум 3.2 с, пока грузятся меню и уровень игрока;
-    // полоса плавно доезжает до 100 %, «Готово!», и заставка спокойно уходит (outro), а не обрывается.
+    // слой за слоем, потом золотое свечение и звёздочки. При запуске игры сначала идёт интро студии (BrandIntro),
+    // потом заставка не меньше одного полного цикла налива (4.5 с), пока грузятся меню и уровень игрока;
+    // полоса идёт в такт этому времени, «Готово!», и заставка спокойно уходит (outro), а не обрывается.
     public sealed class SplashScreen : UiScreen
     {
-        const float MinTime = 3.2f;
+        const float MinTime = 6 * StepTime;
+        // Подвисание при загрузке не должно съедать время показа: шаг кадра не больше 1/20 с.
+        const float MaxFrameStep = 0.05f;
         const float ReadyPause = 0.35f;
         const float StepTime = 0.75f;
         const float StreamTop = 330f;
@@ -33,6 +37,10 @@ namespace BottleSort.UI
         [SerializeField] LocalizedText loadingLabel;
         [SerializeField] IdleMotion barShine;
         [SerializeField] ScreenMotion outro;
+        [SerializeField] BrandIntro brandIntro;
+
+        // Интро студии — один раз за запуск игры.
+        static bool _introShown;
         // Сколько макетных пикселей в одной единице Canvas по вертикали внутри сцены заставки.
         [SerializeField] float mockupScale = 2.5f;
 
@@ -43,6 +51,9 @@ namespace BottleSort.UI
         Task _loading;
         bool _leaving;
         bool _frozen;
+        bool _waitingIntro;
+
+        public bool IsReady => _leaving;
 
         public override ScreenId Id => ScreenId.Splash;
         public override Theme? BackdropTheme => Theme.Violet;
@@ -54,13 +65,36 @@ namespace BottleSort.UI
             _stepTimer = 0f;
             _shownProgress = 0.06f;
             _leaving = false;
-            AnimateLogo();
-            ShowStep();
 
             // Первый уровень игрока строим заранее: на поздних уровнях генератор думает заметное время.
             int level = PlayerData.Current.highestUnlocked;
             _loading = LevelLoader.Get(level);
             SceneLoader.Preload(SceneLoader.MenuScene);
+
+            if (brandIntro != null && !_introShown)
+            {
+                _introShown = true;
+                _waitingIntro = true;
+                logoGroup.alpha = 0f;
+                brandIntro.Play(BeginSplash);
+                return;
+            }
+            if (brandIntro != null)
+                brandIntro.Skip();
+            BeginSplash();
+        }
+
+        // Заставка начинается, когда интро студии погасло, и тёмный фон растворяется уже поверх неё.
+        void BeginSplash()
+        {
+            _waitingIntro = false;
+            _elapsed = 0f;
+            _stepTimer = 0f;
+            _step = 0;
+            AnimateLogo();
+            ShowStep();
+            if (AudioService.Instance != null)
+                AudioService.Instance.PlayMusic(MusicTrack.Menu);
         }
 
         void AnimateLogo()
@@ -77,9 +111,9 @@ namespace BottleSort.UI
 
         void Update()
         {
-            if (!IsOpen || _frozen)
+            if (!IsOpen || _frozen || _waitingIntro)
                 return;
-            float dt = Time.unscaledDeltaTime;
+            float dt = Mathf.Min(Time.unscaledDeltaTime, MaxFrameStep);
             _elapsed += dt;
             // На «Готово!» налив останавливается на полной бутылке.
             if (_leaving)
@@ -93,9 +127,9 @@ namespace BottleSort.UI
                 ShowStep();
             }
 
-            // Время идёт с ease-out: к концу полоса замедляется и мягко встаёт на 100 %.
+            // Полоса идёт в такт показу и лишь к концу мягко замедляется; быстрая загрузка её не подгоняет.
             float time = Mathf.Clamp01(_elapsed / MinTime);
-            float timeProgress = 1f - (1f - time) * (1f - time);
+            float timeProgress = 1f - Mathf.Pow(1f - time, 1.6f);
             float loadProgress = Mathf.Min(_loading == null || _loading.IsCompleted ? 1f : 0.85f, SceneLoader.PreloadProgress);
             float target = Mathf.Min(timeProgress, loadProgress);
             _shownProgress = Mathf.Lerp(_shownProgress, target, 1f - Mathf.Exp(-dt * 10f));
@@ -122,6 +156,9 @@ namespace BottleSort.UI
         public void Freeze(int step, float progress)
         {
             _frozen = true;
+            _waitingIntro = false;
+            if (brandIntro != null)
+                brandIntro.Skip();
             _step = step;
             foreach (var motion in GetComponentsInChildren<IdleMotion>())
                 motion.enabled = false;
@@ -138,7 +175,8 @@ namespace BottleSort.UI
         {
             _leaving = true;
             loadingLabel.SetKey("splash_ready");
-            _step = (_step / 6) * 6 + 4;
+            // Полная бутылка того цвета, что наливался; если цикл только что начался заново — прошлого.
+            _step = Mathf.Max(0, (_step - 1) / 6) * 6 + 4;
             ShowStep();
             SweepBar();
             Tweens.Delay(this, "leave", ReadyPause, () => outro.Play(1f, Leave));

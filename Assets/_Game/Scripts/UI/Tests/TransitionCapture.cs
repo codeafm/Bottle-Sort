@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace BottleSort.UI.Tests
 {
-    // Кадры перехода заставка → меню и игра → меню в Docs/Screens/transition, каждые 0.1 с реального времени.
+    // Кадры запуска (интро CODEAFM → заставка → меню) и перехода игра → меню в Docs/Screens/transition.
     // Запуск: -runTests -testPlatform PlayMode -testFilter TransitionCapture (без -nographics).
     [Explicit, Category("MockupCompare")]
     public sealed class TransitionCapture
@@ -63,20 +63,25 @@ namespace BottleSort.UI.Tests
         [UnityTest]
         public IEnumerator SplashToMenu()
         {
-            foreach (string old in Directory.GetFiles(OutputDir, "splash_*.jpg"))
+            foreach (string old in Directory.GetFiles(OutputDir, "launch_*.jpg"))
                 File.Delete(old);
             SceneManager.LoadScene(SceneLoader.SplashScene);
             yield return null;
             float start = Time.realtimeSinceStartup;
-            float next = 2.7f;
+            float next = 0f;
             float menuSince = -1f;
-            while (Time.realtimeSinceStartup - start < 12f)
+            float outroFrom = -1f;
+            while (Time.realtimeSinceStartup - start < 20f)
             {
                 float now = Time.realtimeSinceStartup - start;
+                var splash = FindRouter() != null ? FindRouter().Get<SplashScreen>() : null;
+                if (outroFrom < 0f && splash != null && splash.IsReady)
+                    outroFrom = now;
                 if (now >= next)
                 {
-                    Shot("splash", now);
-                    next += Step;
+                    Shot("launch", now);
+                    // Интро — каждые 0.2 с, сама заставка — раз в полсекунды, уход и появление меню — каждые 0.1 с.
+                    next += now < BrandIntro.Duration + 0.6f ? 0.2f : outroFrom < 0f ? 0.5f : Step;
                 }
                 var router = FindRouter();
                 bool inMenu = router != null && router.Current != null && router.Current.Id == ScreenId.Menu;

@@ -130,9 +130,12 @@ namespace BottleSort.UI
             Run(target, "move", duration, t => target.anchoredPosition = Vector2.LerpUnclamped(from, to, t), ease, done);
         }
 
+        // Подвисание (загрузка сцены, первый кадр игры) не проматывает анимации: шаг не больше 1/15 с.
+        const float MaxStep = 1f / 15f;
+
         void Update()
         {
-            float dt = Time.unscaledDeltaTime;
+            float dt = Mathf.Min(Time.unscaledDeltaTime, MaxStep);
             for (int i = 0; i < _active.Count; i++)
             {
                 var tween = _active[i];

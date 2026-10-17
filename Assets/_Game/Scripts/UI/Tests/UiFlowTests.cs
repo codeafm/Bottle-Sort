@@ -46,7 +46,8 @@ namespace BottleSort.UI.Tests
             yield return Capture("ui_splash");
 
             // После заставки всегда меню, и в первый запуск тоже; обучение — по кнопке «Играть».
-            yield return WaitScreen(ScreenId.Menu, 12f, "menu after splash");
+            // Интро студии 3.9 с, заставка 4.5 с, «Готово!» и уход — около 10 с до меню.
+            yield return WaitScreen(ScreenId.Menu, 20f, "menu after splash");
             Assert.AreEqual(SceneLoader.MenuScene, SceneManager.GetActiveScene().name);
             yield return new WaitForSecondsRealtime(1.2f);
             yield return Capture("ui_menu");

@@ -35,6 +35,14 @@
 - Тени и обводки текста — материалы в `Assets/_Game/Fonts/Effects`, их цвет и сдвиг правятся там.
 - Переход между сценами — префаб `Prefabs/UI/Resources/SceneLoader`: время растворения `Fade Time`, цвет запасной шторки `Curtain`.
 
+## Интро студии CODEAFM
+
+- Лежит в префабе `SplashScreen` объектом `CodeafmIntro` (поверх заставки). Чтобы править саму заставку,
+  выключите `CodeafmIntro` галочкой; на запуск это не влияет — игра включает его сама.
+- Это фирменный стиль, перенесён из MahjongVita без изменений: эмблема AF (`Brand/codeafm-logo.png` и шейдер
+  `Brand/CodeafmReveal.shader` делают её белой), надписи CODEAFM и G A M I N G, ореол, звук `Audio/Brand/codeafm-intro.wav`.
+  Тайминги появления — в коде `BrandIntro` (3.4 с), они совпадают со звуком.
+
 ## Анимации переходов
 
 - Уход заставки — объект `SplashScreen/Outro`, появление меню — `MainMenuScreen/Intro` (компонент `ScreenMotion`).

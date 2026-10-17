@@ -129,6 +129,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "loadingLabel", loading.GetComponent<LocalizedText>());
             Set(screen, "mockupScale", K);
             ScreenMotionSetup.SplashOutro(screen);
+            BrandIntroSetup.AddTo(screen);
             return screen;
         }
 
