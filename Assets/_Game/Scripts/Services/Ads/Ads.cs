@@ -27,17 +27,35 @@ namespace BottleSort.Services
         public static void Initialize(MainThread thread)
         {
             _thread = thread;
-#if YANDEX_MOBILE_ADS && !UNITY_EDITOR
-            _service = new YandexAdsService(thread);
-#else
-            _service = new EditorAdsService(thread);
-#endif
+            _service = CreateService(thread, AdsConfig.Load());
             _service.Initialize();
             RewardedAds.Handler = ShowRewarded;
             ScreenRouter.ScreenShown -= OnScreenShown;
             ScreenRouter.ScreenShown += OnScreenShown;
             PlayerData.Changed -= RefreshBanner;
             PlayerData.Changed += RefreshBanner;
+        }
+
+        // В редакторе всегда заглушка. На устройстве Yandex основной, Unity Ads (LevelPlay) — запасной,
+        // если пакет стоит и в AdsConfig вписаны ключи.
+        static IAdsService CreateService(MainThread thread, AdsConfig config)
+        {
+#if UNITY_EDITOR
+            return new EditorAdsService(thread);
+#else
+            IAdsService primary;
+#if YANDEX_MOBILE_ADS
+            primary = new YandexAdsService(thread, config);
+#else
+            primary = new EditorAdsService(thread);
+#endif
+            IAdsService fallback = null;
+#if BOTTLESORT_LEVELPLAY
+            if (config.HasLevelPlayKeys)
+                fallback = new LevelPlayAdsService(thread, config);
+#endif
+            return new FallbackAdsService(primary, fallback);
+#endif
         }
 
         public static void ShowRewarded(Action<bool> done)

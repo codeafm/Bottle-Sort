@@ -15,6 +15,7 @@ namespace BottleSort.Services
         const float CacheLifetime = 30f * 60f;
 
         readonly MainThread _thread;
+        readonly AdsConfig _config;
 
         InterstitialAdLoader _interstitialLoader;
         RewardedAdLoader _rewardedLoader;
@@ -27,9 +28,10 @@ namespace BottleSort.Services
         Banner _banner;
         bool _bannerWanted;
 
-        public YandexAdsService(MainThread thread)
+        public YandexAdsService(MainThread thread, AdsConfig config)
         {
             _thread = thread;
+            _config = config;
         }
 
         public bool IsInterstitialReady => _interstitial != null && Fresh(_interstitialLoadedAt);
@@ -76,7 +78,7 @@ namespace BottleSort.Services
             if (_interstitialLoading || IsInterstitialReady)
                 return;
             _interstitialLoading = true;
-            _interstitialLoader.LoadAd(new AdRequestConfiguration.Builder(AdUnits.Interstitial).Build());
+            _interstitialLoader.LoadAd(new AdRequestConfiguration.Builder(_config.yandexInterstitial).Build());
         }
 
         public void LoadRewarded()
@@ -84,7 +86,7 @@ namespace BottleSort.Services
             if (_rewardedLoading || IsRewardedReady)
                 return;
             _rewardedLoading = true;
-            _rewardedLoader.LoadAd(new AdRequestConfiguration.Builder(AdUnits.Rewarded).Build());
+            _rewardedLoader.LoadAd(new AdRequestConfiguration.Builder(_config.yandexRewarded).Build());
         }
 
         public void ShowInterstitial(Action done)
@@ -152,7 +154,7 @@ namespace BottleSort.Services
 
             float density = Screen.dpi > 0 ? Screen.dpi / 160f : 2f;
             int widthDp = Mathf.RoundToInt(Screen.safeArea.width / density);
-            _banner = new Banner(AdUnits.Banner, BannerAdSize.StickySize(widthDp), AdPosition.BottomCenter);
+            _banner = new Banner(_config.yandexBanner, BannerAdSize.StickySize(widthDp), AdPosition.BottomCenter);
             _banner.OnAdLoaded += (sender, args) => _thread.Post(() =>
             {
                 if (_bannerWanted)
