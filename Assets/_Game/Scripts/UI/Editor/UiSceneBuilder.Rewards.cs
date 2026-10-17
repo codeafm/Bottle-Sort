@@ -15,7 +15,9 @@ namespace BottleSort.UI.Editor
         static UiScreen BuildRewardPopup(Transform safeArea)
         {
             var screen = ScreenRoot<RewardPopup>(safeArea, "RewardPopup", out var content);
-            Dimmer(content).transform.SetAsFirstSibling();
+            var dimmer = Dimmer(content);
+            dimmer.transform.SetAsFirstSibling();
+            Set(screen, "dimmer", dimmer);
 
             var panel = BluePanel(content, "Panel", 28);
             panel.rectTransform.Place(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(320, 330));

@@ -6,7 +6,8 @@ using UnityEngine.UI;
 
 namespace BottleSort.UI
 {
-    // Карточка с наградой: подарок дня, сундук главы, сундук за звёзды. Показывает только то, что реально дают.
+    // Карточка с наградой: подарок дня, сундук главы, сундук за звёзды, «+100 за рекламу».
+    // Показывает только то, что реально дают.
     public sealed class RewardPopup : UiScreen
     {
         [SerializeField] LocalizedText title;
@@ -17,13 +18,30 @@ namespace BottleSort.UI
         [SerializeField] RectTransform[] items;
         [SerializeField] TMP_Text[] counts;
         [SerializeField] float itemSpacing = 175f;
+        // Затемнение закрывает карточку только у предложений (реклама за монеты), у наград — нет.
+        [SerializeField] Button dimmer;
 
         Action _onClaim;
+        bool _dismissible;
 
         public override ScreenId Id => ScreenId.Reward;
         public override bool IsPopup => true;
 
-        void Awake() => claimButton.onClick.AddListener(Claim);
+        // Откуда летят монеты в счётчик.
+        public RectTransform CoinIcon => items[0];
+
+        void Awake()
+        {
+            claimButton.onClick.AddListener(Claim);
+            // В сценах, собранных до этого поля, ссылки нет: берём затемнение по имени, как его создаёт билдер.
+            if (dimmer == null)
+            {
+                var found = transform.Find("Content/Dimmer");
+                dimmer = found != null ? found.GetComponent<Button>() : null;
+            }
+            if (dimmer != null)
+                dimmer.onClick.AddListener(Dismiss);
+        }
 
         public void Setup(string titleKey, string subtitleKey, RewardBundle reward, string buttonKey, Action onClaim,
             params object[] titleArgs)
@@ -32,6 +50,7 @@ namespace BottleSort.UI
             subtitle.SetKey(subtitleKey);
             claimLabel.SetKey(buttonKey);
             _onClaim = onClaim;
+            _dismissible = false;
 
             int[] amounts = { reward.Coins, reward.Undo, reward.Hints, reward.Bottles, reward.Spins };
             int shown = 0;
@@ -55,10 +74,24 @@ namespace BottleSort.UI
             }
         }
 
+        // Для предложений: можно закрыть тапом мимо карточки или «назад», ничего не получив.
+        public void AllowDismiss() => _dismissible = true;
+
         public override bool OnBack()
         {
-            Claim();
+            if (_dismissible)
+                Dismiss();
+            else
+                Claim();
             return true;
+        }
+
+        void Dismiss()
+        {
+            if (!_dismissible)
+                return;
+            _onClaim = null;
+            Router.ClosePopup(this);
         }
 
         void Claim()

@@ -36,6 +36,11 @@ namespace BottleSort.UI
         public string wheelDate = "";
         public int wheelSpins = 1;
 
+        // «+100 монет за рекламу» в меню: сколько раз сегодня и когда последний раз (Unix-время, секунды).
+        public string coinAdDate = "";
+        public int coinAdCount;
+        public long coinAdLastUnix;
+
         public int starChestsOpened;
         public List<int> chapterChests = new List<int>();
         public bool noAds;

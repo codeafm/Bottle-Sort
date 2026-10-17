@@ -14,6 +14,8 @@ namespace BottleSort.Integrations
     {
         const float RetrySeconds = 30f;
         const float CacheLifetime = 30f * 60f;
+        const int BannerWidth = 320;
+        const int BannerHeight = 50;
 
         readonly MainThread _thread;
         readonly AdsConfig _config;
@@ -171,8 +173,9 @@ namespace BottleSort.Integrations
 
         void CreateBanner()
         {
-            int widthDp = ScreenUtils.ConvertPixelsToDp((int)Screen.safeArea.width);
-            _banner = new Banner(BannerAdSize.Sticky(widthDp), AdPosition.BottomCenter);
+            // 320×50, как место под баннер в макете меню и игры. Yandex прижимает его к низу safe area,
+            // а кнопки ui начинаются на 71 pt выше неё, так что баннер их не закрывает.
+            _banner = new Banner(BannerAdSize.Fixed(BannerWidth, BannerHeight), AdPosition.BottomCenter);
             _banner.OnAdLoaded += (sender, args) => _thread.Post(() =>
             {
                 _bannerLoaded = true;

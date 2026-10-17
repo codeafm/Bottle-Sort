@@ -11,13 +11,12 @@ namespace BottleSort.Services
     {
         // Во Flutter rewarded ждали до 15 с, если он ещё грузился.
         const float RewardedWaitSeconds = 15f;
-        // Реклама показывается только после обучения (§3.4): ни баннера, ни interstitial на 1–3.
-        const int FirstLevelWithBanner = 4;
-
         static IAdsService _service;
         static MainThread _thread;
         static readonly InterstitialPolicy Policy = new InterstitialPolicy();
-        static bool _bannerScreen;
+        static ScreenId _screen = ScreenId.Splash;
+        static int _screenLevel;
+        static bool _popupOpen;
         static bool _bannerShown;
         static bool _busy;
 
@@ -36,6 +35,8 @@ namespace BottleSort.Services
             RewardedAds.Handler = ShowRewarded;
             ScreenRouter.ScreenShown -= OnScreenShown;
             ScreenRouter.ScreenShown += OnScreenShown;
+            ScreenRouter.PopupsChanged -= OnPopupsChanged;
+            ScreenRouter.PopupsChanged += OnPopupsChanged;
             PlayerData.Changed -= RefreshBanner;
             PlayerData.Changed += RefreshBanner;
         }
@@ -58,10 +59,10 @@ namespace BottleSort.Services
                 done?.Invoke(false);
                 return;
             }
-            _busy = true;
+            SetBusy(true);
             _thread.StartCoroutine(ShowRewardedWhenReady(watched =>
             {
-                _busy = false;
+                SetBusy(false);
                 done?.Invoke(watched);
             }));
         }
@@ -101,21 +102,36 @@ namespace BottleSort.Services
                 return;
             }
 
-            _busy = true;
+            SetBusy(true);
             Policy.OnShown(now);
             AudioListener.pause = true;
             _service.ShowInterstitial(() =>
             {
                 AudioListener.pause = false;
-                _busy = false;
+                SetBusy(false);
                 then?.Invoke();
             });
         }
 
+        // Пока идёт полноэкранная реклама, баннер прячем, чтобы он не висел поверх неё.
+        static void SetBusy(bool busy)
+        {
+            _busy = busy;
+            RefreshBanner();
+        }
+
         static void OnScreenShown(UiScreen screen, bool animated)
         {
-            // Баннер только на карте уровней: в игре и в меню низ экрана занят кнопками.
-            _bannerScreen = screen.Id == ScreenId.Levels;
+            _screen = screen.Id;
+            _screenLevel = screen is GameScreen game ? game.Level : 0;
+            // Новая сцена начинает без попапов, старый роутер уже уничтожен.
+            _popupOpen = screen.Router != null && screen.Router.HasPopup;
+            RefreshBanner();
+        }
+
+        static void OnPopupsChanged(ScreenRouter router)
+        {
+            _popupOpen = router.HasPopup;
             RefreshBanner();
         }
 
@@ -124,7 +140,16 @@ namespace BottleSort.Services
             if (_service == null)
                 return;
             var data = PlayerData.Current;
-            bool wanted = _bannerScreen && !data.noAds && data.highestUnlocked >= FirstLevelWithBanner;
+            bool wanted = BannerRules.ShouldShow(new BannerContext
+            {
+                Screen = _screen,
+                Level = _screenLevel,
+                PopupOpen = _popupOpen,
+                FullscreenAdShowing = _busy,
+                HighestUnlocked = data.highestUnlocked,
+                NoAds = data.noAds
+            });
+            // Меняем только при настоящем переходе: смена сцены Menu → Game баннер не дёргает.
             if (wanted == _bannerShown)
                 return;
             _bannerShown = wanted;

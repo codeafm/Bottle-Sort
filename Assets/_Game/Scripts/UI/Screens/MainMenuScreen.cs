@@ -38,7 +38,8 @@ namespace BottleSort.UI
         void Awake()
         {
             settingsButton.onClick.AddListener(() => Router.ShowPopup(ScreenId.Settings));
-            coinsButton.onClick.AddListener(() => Router.Show(ScreenId.Shop));
+            // Как во Flutter: тап по монетам или зелёному «+» — монеты за рекламу. В магазин ведёт своя кнопка.
+            coinsButton.onClick.AddListener(OfferCoinsForAd);
             shopButton.onClick.AddListener(() => Router.Show(ScreenId.Shop));
             levelsButton.onClick.AddListener(() => Router.Show(ScreenId.Levels));
             playButton.onClick.AddListener(() => Router.PlayLevel(PlayerData.Current.highestUnlocked));
@@ -83,6 +84,69 @@ namespace BottleSort.UI
             giftBadge.SetActive(DailyRewards.GiftAvailable(data, DateTime.Now));
             luckBadge.SetActive(data.wheelSpins > 0);
             luckCount.text = data.wheelSpins.ToString();
+        }
+
+        const int FlyingCoins = 8;
+
+        void OfferCoinsForAd()
+        {
+            switch (CoinAdOffer.StateOf(PlayerData.Current, DateTime.Now, out var wait))
+            {
+                case CoinAdState.Tutorial:
+                    toast.ShowKey("toast_coins_ad_tutorial", 1.8f);
+                    return;
+                case CoinAdState.DailyLimit:
+                    toast.ShowKey("toast_coins_ad_limit", 1.8f);
+                    return;
+                case CoinAdState.Cooldown:
+                    toast.Show(Loc.Format("toast_coins_ad_wait", $"{(int)wait.TotalMinutes}:{wait.Seconds:00}"), 1.8f);
+                    return;
+            }
+
+            var popup = Router.Get<RewardPopup>();
+            popup.Setup("coins_ad_title", "coins_ad_text", new RewardBundle(CoinAdOffer.Coins), "coins_ad_watch",
+                () => WatchAdForCoins(popup));
+            popup.AllowDismiss();
+            Router.ShowPopup(ScreenId.Reward);
+        }
+
+        void WatchAdForCoins(RewardPopup popup)
+        {
+            var from = popup.CoinIcon.position;
+            var icon = popup.CoinIcon.Find("Icon");
+            RewardedAds.Show(watched =>
+            {
+                var data = PlayerData.Current;
+                if (!watched)
+                {
+                    toast.ShowKey("toast_coins_ad_failed", 2.2f);
+                    return;
+                }
+                int before = data.coins;
+                if (!CoinAdOffer.TryGrant(data, DateTime.Now))
+                    return;
+                FlyCoinsIn(from, icon != null ? icon.GetComponent<Image>() : null, before, data.coins);
+            });
+        }
+
+        // Монеты уже начислены и сохранены, счётчик догоняет их, пока они летят.
+        void FlyCoinsIn(Vector3 from, Image template, int before, int after)
+        {
+            coins.text = Loc.Number(before);
+            if (template == null)
+            {
+                coins.text = Loc.Number(after);
+                UiFeedback.Play(UiSound.Coin);
+                return;
+            }
+            CoinFlight.Fly((RectTransform)transform, template, from, CoinsTarget.position, FlyingCoins, index =>
+            {
+                UiFeedback.Play(UiSound.Coin);
+                int shown = before + (after - before) * (index + 1) / FlyingCoins;
+                coins.text = Loc.Number(shown);
+                if (index == FlyingCoins - 1)
+                    Haptics.Light();
+            });
         }
 
         void OpenDailyGift()

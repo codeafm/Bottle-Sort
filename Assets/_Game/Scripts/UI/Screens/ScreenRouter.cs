@@ -18,8 +18,11 @@ namespace BottleSort.UI
 
         // Смену экрана слушают музыка и реклама (баннер только на некоторых экранах).
         public static event System.Action<UiScreen, bool> ScreenShown;
+        // Баннеру важно, открыт ли попап: поверх затемнения он не нужен.
+        public static event System.Action<ScreenRouter> PopupsChanged;
 
         public UiScreen Current => _current;
+        public bool HasPopup => _popups.Count > 0;
         public IReadOnlyList<UiScreen> Screens => screens;
 
         void Awake()
@@ -60,7 +63,8 @@ namespace BottleSort.UI
                 SceneLoader.Open(id);
                 return;
             }
-            CloseAllPopups();
+            // Без события: про закрытые попапы сразу скажет ScreenShown, иначе баннер мигнул бы на старом экране.
+            CloseAllPopups(false);
             if (_current != null && _current != next)
                 _current.Close(animated);
             _current = next;
@@ -81,12 +85,15 @@ namespace BottleSort.UI
             _popups.Add(popup);
             popup.Open(true);
             UiFeedback.Play(UiSound.Popup);
+            PopupsChanged?.Invoke(this);
         }
 
         public void ClosePopup(UiScreen popup)
         {
-            if (_popups.Remove(popup))
-                popup.Close(true);
+            if (!_popups.Remove(popup))
+                return;
+            popup.Close(true);
+            PopupsChanged?.Invoke(this);
         }
 
         // В сцене игры следующий уровень открывается без перезагрузки, из меню — через сцену Game.
@@ -109,11 +116,15 @@ namespace BottleSort.UI
                 backdrop.SetTheme(theme.Value);
         }
 
-        void CloseAllPopups()
+        void CloseAllPopups(bool notify)
         {
+            if (_popups.Count == 0)
+                return;
             foreach (var popup in _popups)
                 popup.Close(true);
             _popups.Clear();
+            if (notify)
+                PopupsChanged?.Invoke(this);
         }
 
         void Update()
