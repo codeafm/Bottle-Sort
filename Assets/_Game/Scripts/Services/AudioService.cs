@@ -164,10 +164,13 @@ namespace BottleSort.Services
                 Play(name, pitch);
         }
 
+        // Пока идёт интро студии, слышен только его фирменный звук.
+        public static bool Silenced { get; set; }
+
         public void Play(string clipName, float pitch = 1f)
         {
             float volume = SfxVolume;
-            if (volume <= 0f)
+            if (volume <= 0f || Silenced)
                 return;
             float now = Time.unscaledTime;
             float interval = RepeatInterval.TryGetValue(clipName, out float custom) ? custom : SameClipInterval;
@@ -252,7 +255,10 @@ namespace BottleSort.Services
 
         void OnScreenShown(UiScreen screen, bool animated)
         {
-            if (animated && screen.Id != ScreenId.Splash)
+            // На заставке музыку включает она сама, когда закончится интро студии.
+            if (screen.Id == ScreenId.Splash)
+                return;
+            if (animated)
                 Play(UiSound.Whoosh);
             PlayMusic(screen.Id == ScreenId.Game ? MusicTrack.Game : MusicTrack.Menu);
         }

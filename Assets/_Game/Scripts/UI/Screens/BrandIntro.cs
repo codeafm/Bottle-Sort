@@ -48,6 +48,7 @@ namespace BottleSort.UI
         public void Skip()
         {
             StopAllCoroutines();
+            AudioService.Silenced = false;
             IsPlaying = false;
             gameObject.SetActive(false);
         }
@@ -55,6 +56,9 @@ namespace BottleSort.UI
         IEnumerator Run(Action done)
         {
             IsPlaying = true;
+            AudioService.Silenced = true;
+            if (AudioService.Instance != null)
+                AudioService.Instance.PlayMusic(MusicTrack.None);
             overlay.alpha = 1f;
             overlay.blocksRaycasts = true;
             MakeRevealMaterials();
@@ -62,9 +66,6 @@ namespace BottleSort.UI
             Present(0f);
             StartSignature();
             yield return null;
-            // Роутер включает музыку меню вместе с заставкой; во время интро звучит только фирменный звук.
-            if (AudioService.Instance != null)
-                AudioService.Instance.PlayMusic(MusicTrack.None);
 
             float elapsed = 0f;
             while (elapsed < Duration)
@@ -78,6 +79,7 @@ namespace BottleSort.UI
                 elapsed = signature != null && signature.isPlaying ? Mathf.Max(elapsed, signature.time) : elapsed + step;
             }
             Present(1f);
+            AudioService.Silenced = false;
             done?.Invoke();
 
             overlay.blocksRaycasts = false;
