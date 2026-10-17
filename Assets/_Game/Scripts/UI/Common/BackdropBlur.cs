@@ -31,36 +31,9 @@ namespace BottleSort.UI
             float hiddenAlpha = hide.alpha;
             hide.alpha = 0f;
 
-            // Overlay-канвас камера не рисует, поэтому на один кадр рендера переводим его в Screen Space - Camera.
-            var mode = canvas.renderMode;
-            var worldCamera = canvas.worldCamera;
-            float planeDistance = canvas.planeDistance;
-            float scaleFactor = canvas.scaleFactor;
-            var target = camera.targetTexture;
-            int fullWidth = target != null ? target.width : Screen.width;
-            int fullHeight = target != null ? target.height : Screen.height;
-            int width = Mathf.Max(2, fullWidth / RenderScale);
-            int height = Mathf.Max(2, fullHeight / RenderScale);
-
-            // CanvasScaler пересчитает масштаб только в своём Update, а раскладка в маленькой текстуре
-            // должна быть той же, поэтому уменьшаем масштаб канваса сами.
-            var frame = RenderTexture.GetTemporary(width, height, 24);
-            canvas.renderMode = RenderMode.ScreenSpaceCamera;
-            canvas.scaleFactor = scaleFactor * width / fullWidth;
-            canvas.worldCamera = camera;
-            canvas.planeDistance = 1f;
-            camera.targetTexture = frame;
-            Canvas.ForceUpdateCanvases();
-            camera.Render();
-            camera.targetTexture = target;
-            canvas.renderMode = mode;
-            canvas.worldCamera = worldCamera;
-            canvas.planeDistance = planeDistance;
-            canvas.scaleFactor = scaleFactor;
-            Canvas.ForceUpdateCanvases();
-
+            var frame = ScreenGrab.Render(camera, RenderScale);
             ReleaseBlurred();
-            _blurred = new RenderTexture(width / 2, height / 2, 0)
+            _blurred = new RenderTexture(frame.width / 2, frame.height / 2, 0)
             {
                 filterMode = FilterMode.Bilinear,
                 name = "BackdropBlur"

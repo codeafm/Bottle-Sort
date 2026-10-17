@@ -537,6 +537,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6873368200425957416}
+  - {fileID: 754284556857456567}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -590,6 +591,7 @@ MonoBehaviour:
   - {fileID: 8932764080546317228}
   - {fileID: 3304352695431127575}
   toast: {fileID: 1657373803877620808}
+  intro: {fileID: 7733620213996100811}
 --- !u!1 &882209342350058813
 GameObject:
   m_ObjectHideFlags: 0
@@ -4866,6 +4868,164 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1.9692308
+--- !u!1 &5939334054268399717
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 754284556857456567}
+  - component: {fileID: 7733620213996100811}
+  m_Layer: 5
+  m_Name: Intro
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &754284556857456567
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5939334054268399717}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2376470157843920777}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &7733620213996100811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5939334054268399717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d40fa641b8e8ff4db5a8869970ff28b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.UI.ScreenMotion
+  appear: 1
+  steps:
+  - target: {fileID: 1966567811650848744}
+    offset: {x: 0, y: 34}
+    scale: 1
+    delay: 0.05
+    duration: 0.4
+    spring: 0
+  - target: {fileID: 8159361256735249951}
+    offset: {x: 0, y: 34}
+    scale: 1
+    delay: 0.08
+    duration: 0.4
+    spring: 0
+  - target: {fileID: 1440174116814045189}
+    offset: {x: 0, y: 46}
+    scale: 0.94
+    delay: 0
+    duration: 0.6
+    spring: 1
+  - target: {fileID: 56593734761945451}
+    offset: {x: 0, y: -34}
+    scale: 1
+    delay: 0.12
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 6801700405330871788}
+    offset: {x: 0, y: -34}
+    scale: 1
+    delay: 0.17
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 4667145624639134241}
+    offset: {x: 0, y: -34}
+    scale: 1
+    delay: 0.22
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 7374726043636453746}
+    offset: {x: 0, y: -34}
+    scale: 1
+    delay: 0.27
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 3871115416778736035}
+    offset: {x: 0, y: -34}
+    scale: 1
+    delay: 0.32
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 3071411948642154458}
+    offset: {x: 0, y: 0}
+    scale: 1
+    delay: 0.1
+    duration: 0.35
+    spring: 0
+  - target: {fileID: 9088852454742532675}
+    offset: {x: 0, y: -44}
+    scale: 1
+    delay: 0.24
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 197635936331831945}
+    offset: {x: 0, y: -44}
+    scale: 1
+    delay: 0.28
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 8936884063190845202}
+    offset: {x: 0, y: -44}
+    scale: 1
+    delay: 0.32
+    duration: 0.4
+    spring: 1
+  - target: {fileID: 195090219095633266}
+    offset: {x: 0, y: -56}
+    scale: 1
+    delay: 0.34
+    duration: 0.42
+    spring: 1
+  - target: {fileID: 4641116891080178513}
+    offset: {x: 0, y: -56}
+    scale: 1
+    delay: 0.34
+    duration: 0.42
+    spring: 1
+  - target: {fileID: 1913094417322335752}
+    offset: {x: 0, y: -56}
+    scale: 1
+    delay: 0.4
+    duration: 0.4
+    spring: 0
+  - target: {fileID: 2656958124981596544}
+    offset: {x: 0, y: -56}
+    scale: 1
+    delay: 0.4
+    duration: 0.4
+    spring: 0
+  - target: {fileID: 1621920751615201673}
+    offset: {x: 0, y: -56}
+    scale: 1
+    delay: 0.44
+    duration: 0.4
+    spring: 0
+  - target: {fileID: 937566654211475139}
+    offset: {x: 0, y: -56}
+    scale: 1
+    delay: 0.44
+    duration: 0.4
+    spring: 0
 --- !u!1 &6037692698965354394
 GameObject:
   m_ObjectHideFlags: 0

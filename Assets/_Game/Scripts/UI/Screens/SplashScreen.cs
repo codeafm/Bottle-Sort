@@ -6,11 +6,12 @@ using UnityEngine.UI;
 namespace BottleSort.UI
 {
     // Заставка из Splash.dc.html: логотип влетает, наклонённая бутылка наливает в бутылку на полке,
-    // слой за слоем, потом золотое свечение и звёздочки. Держим минимум 2 с, пока грузятся следующая сцена
-    // и первый уровень.
+    // слой за слоем, потом золотое свечение и звёздочки. Держим минимум 3.2 с, пока грузятся меню и уровень игрока;
+    // полоса плавно доезжает до 100 %, «Готово!», и заставка спокойно уходит (outro), а не обрывается.
     public sealed class SplashScreen : UiScreen
     {
-        const float MinTime = 2f;
+        const float MinTime = 3.2f;
+        const float ReadyPause = 0.35f;
         const float StepTime = 0.75f;
         const float StreamTop = 330f;
 
@@ -30,6 +31,8 @@ namespace BottleSort.UI
         [SerializeField] RectTransform sparks;
         [SerializeField] RectTransform progressFill;
         [SerializeField] LocalizedText loadingLabel;
+        [SerializeField] IdleMotion barShine;
+        [SerializeField] ScreenMotion outro;
         // Сколько макетных пикселей в одной единице Canvas по вертикали внутри сцены заставки.
         [SerializeField] float mockupScale = 2.5f;
 
@@ -78,6 +81,9 @@ namespace BottleSort.UI
                 return;
             float dt = Time.unscaledDeltaTime;
             _elapsed += dt;
+            // На «Готово!» налив останавливается на полной бутылке.
+            if (_leaving)
+                return;
 
             _stepTimer += dt;
             if (_stepTimer >= StepTime)
@@ -87,14 +93,19 @@ namespace BottleSort.UI
                 ShowStep();
             }
 
-            float timeProgress = Mathf.Clamp01(_elapsed / MinTime);
+            // Время идёт с ease-out: к концу полоса замедляется и мягко встаёт на 100 %.
+            float time = Mathf.Clamp01(_elapsed / MinTime);
+            float timeProgress = 1f - (1f - time) * (1f - time);
             float loadProgress = Mathf.Min(_loading == null || _loading.IsCompleted ? 1f : 0.85f, SceneLoader.PreloadProgress);
-            _shownProgress = Mathf.MoveTowards(_shownProgress, Mathf.Min(timeProgress, loadProgress), dt * 1.5f);
+            float target = Mathf.Min(timeProgress, loadProgress);
+            _shownProgress = Mathf.Lerp(_shownProgress, target, 1f - Mathf.Exp(-dt * 10f));
+            if (target >= 1f && _shownProgress > 0.995f)
+                _shownProgress = 1f;
             progressFill.anchorMax = new Vector2(Mathf.Max(_shownProgress, 0.06f), 1f);
             loadingLabel.SetArgs(Mathf.RoundToInt(_shownProgress * 100f));
 
-            if (!_leaving && _shownProgress >= 0.999f)
-                Leave();
+            if (_shownProgress >= 1f)
+                Ready();
         }
 
         public override void FillForEditor()
@@ -122,12 +133,28 @@ namespace BottleSort.UI
             loadingLabel.SetArgs(Mathf.RoundToInt(progress * 100f));
         }
 
-        void Leave()
+        // 100 %: «Готово!», блик по полосе, бутылка долита. Через паузу заставка уходит, потом меню.
+        void Ready()
         {
             _leaving = true;
-            // После заставки всегда меню, и в первый запуск тоже (решение заказчика).
-            Router.Show(ScreenId.Menu);
+            loadingLabel.SetKey("splash_ready");
+            _step = (_step / 6) * 6 + 4;
+            ShowStep();
+            SweepBar();
+            Tweens.Delay(this, "leave", ReadyPause, () => outro.Play(1f, Leave));
         }
+
+        void SweepBar()
+        {
+            barShine.enabled = false;
+            var shine = (RectTransform)barShine.transform;
+            var range = barShine.SweepRange;
+            Tweens.Run(shine, "ready", ReadyPause, t => shine.anchoredPosition = new Vector2(Mathf.Lerp(range.x, range.y, t),
+                shine.anchoredPosition.y), Ease.InOutSine);
+        }
+
+        // После заставки всегда меню, и в первый запуск тоже (решение заказчика).
+        void Leave() => Router.Show(ScreenId.Menu);
 
         void ShowStep(bool animated = true)
         {

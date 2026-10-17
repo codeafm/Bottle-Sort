@@ -74,7 +74,8 @@ namespace BottleSort.UI.Tests
             // Заставка уже грузит меню, переход идёт через неё.
             Router.Show(ScreenId.Menu, false);
             yield return Arrive();
-            yield return Settle(0.6f);
+            // Меню после заставки появляется по частям, ждём, пока всё встанет.
+            yield return Settle(1.4f);
             yield return Shot("01_main");
 
             Router.Show(ScreenId.Levels, false);
@@ -132,7 +133,7 @@ namespace BottleSort.UI.Tests
             SimulateNotch();
 
             yield return Open(SceneLoader.MenuScene);
-            yield return Settle(0.6f);
+            yield return Settle(1.4f);
             data.wheelSpins = 1;
             Router.ShowPopup(ScreenId.Wheel);
             yield return Settle(1f);

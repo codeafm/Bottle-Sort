@@ -11,6 +11,8 @@ namespace BottleSort.UI
     {
         public const int TotalLevels = 2000;
 
+        const float IntroShortSpeed = 1.8f;
+
         static readonly string[] HeroLayouts = { "CCB", "KPPK", "YORR", "GLG", "BBCB" };
 
         [SerializeField] Button settingsButton;
@@ -29,6 +31,10 @@ namespace BottleSort.UI
         [SerializeField] Button shopButton;
         [SerializeField] BottleStubView[] heroBottles;
         [SerializeField] Toast toast;
+        // Появление элементов меню после заставки и после игры; при переходах внутри сцены не играет.
+        [SerializeField] ScreenMotion intro;
+
+        bool _introPlayed;
 
         public override ScreenId Id => ScreenId.Menu;
         // Куда летят монеты из наград (колесо, подарок дня).
@@ -55,6 +61,12 @@ namespace BottleSort.UI
         {
             Refresh();
             ShowHeroBottles();
+            if (_introPlayed || intro == null)
+                return;
+            _introPlayed = true;
+            // После заставки — полное появление, после игры — короткое. Начинаем, когда кадр прошлой сцены почти растворился.
+            float speed = SceneLoader.PreviousScene == SceneLoader.GameScene ? IntroShortSpeed : 1f;
+            intro.Play(speed, null, SceneLoader.IsBusy ? SceneLoader.RevealDelay : 0f);
         }
 
         public override void FillForEditor()

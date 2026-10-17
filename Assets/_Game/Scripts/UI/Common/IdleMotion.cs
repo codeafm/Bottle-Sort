@@ -33,6 +33,12 @@ namespace BottleSort.UI
         Vector3 _baseScale;
         float _time;
 
+        // Добавка к позиции от анимаций появления/ухода (ScreenMotion), чтобы покачивание её не перетирало.
+        public Vector2 Offset { get; set; }
+
+        public Kind MotionKind => kind;
+        public Vector2 SweepRange => sweepRange;
+
         public void Configure(Kind newKind, float newPeriod, float newAmount, float newPhase = 0f)
         {
             kind = newKind;
@@ -79,7 +85,7 @@ namespace BottleSort.UI
             switch (kind)
             {
                 case Kind.Float:
-                    _rect.anchoredPosition = _basePosition + new Vector2(0f, wave * amount);
+                    _rect.anchoredPosition = _basePosition + Offset + new Vector2(0f, wave * amount);
                     break;
                 case Kind.Pulse:
                     transform.localScale = _baseScale * (1f + wave * amount);

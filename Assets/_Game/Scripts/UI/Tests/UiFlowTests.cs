@@ -36,7 +36,7 @@ namespace BottleSort.UI.Tests
         }
 
         [UnityTest]
-        public IEnumerator SplashTutorialWinMenuAcrossScenes()
+        public IEnumerator SplashMenuTutorialWinAcrossScenes()
         {
             SceneManager.LoadScene(SceneLoader.SplashScene);
             // Сцена сменится только в конце кадра; без этого найдётся роутер сцены от прошлого теста.
@@ -45,14 +45,10 @@ namespace BottleSort.UI.Tests
             yield return new WaitForSecondsRealtime(0.5f);
             yield return Capture("ui_splash");
 
-            // Первый запуск: после заставки сразу обучение в сцене Game, меню — по кнопке «домой».
-            yield return WaitLevel(1, 10f, "level 1 after splash");
-            Assert.AreEqual(SceneLoader.GameScene, SceneManager.GetActiveScene().name);
-
-            Click(Game.transform, "Content/Home/Face");
-            yield return WaitScreen(ScreenId.Menu, 5f, "menu");
+            // После заставки всегда меню, и в первый запуск тоже; обучение — по кнопке «Играть».
+            yield return WaitScreen(ScreenId.Menu, 12f, "menu after splash");
             Assert.AreEqual(SceneLoader.MenuScene, SceneManager.GetActiveScene().name);
-            yield return new WaitForSecondsRealtime(0.5f);
+            yield return new WaitForSecondsRealtime(1.2f);
             yield return Capture("ui_menu");
 
             Click(FindRouter().Current.transform, "Content/Play");

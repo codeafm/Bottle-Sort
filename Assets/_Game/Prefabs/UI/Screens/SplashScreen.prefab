@@ -1959,6 +1959,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 431329609655564370}
+  - {fileID: 5806356751285800589}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2001,6 +2002,8 @@ MonoBehaviour:
   sparks: {fileID: 8271275507867674195}
   progressFill: {fileID: 7339967149647209366}
   loadingLabel: {fileID: 3740845101319902911}
+  barShine: {fileID: 8366495650308704314}
+  outro: {fileID: 1585726562808364560}
   mockupScale: 2.5
 --- !u!1 &6792098738942732415
 GameObject:
@@ -2369,6 +2372,110 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
   m_Padding: {x: 0, y: 0, z: 0, w: 0}
   m_Softness: {x: 0, y: 0}
+--- !u!1 &7771628293779229218
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5806356751285800589}
+  - component: {fileID: 1585726562808364560}
+  m_Layer: 5
+  m_Name: Outro
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5806356751285800589
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7771628293779229218}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7173753389634490368}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1585726562808364560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7771628293779229218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d40fa641b8e8ff4db5a8869970ff28b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.UI.ScreenMotion
+  appear: 0
+  steps:
+  - target: {fileID: 5676615784589730393}
+    offset: {x: 0, y: -46}
+    scale: 0.96
+    delay: 0
+    duration: 0.6
+    spring: 0
+  - target: {fileID: 718538871092242931}
+    offset: {x: 0, y: -46}
+    scale: 0.96
+    delay: 0.04
+    duration: 0.6
+    spring: 0
+  - target: {fileID: 8271275507867674195}
+    offset: {x: 0, y: -46}
+    scale: 1
+    delay: 0.04
+    duration: 0.6
+    spring: 0
+  - target: {fileID: 3004007200542318613}
+    offset: {x: 0, y: -36}
+    scale: 1
+    delay: 0.08
+    duration: 0.6
+    spring: 0
+  - target: {fileID: 2448840840449044669}
+    offset: {x: 0, y: 18}
+    scale: 1.08
+    delay: 0.1
+    duration: 0.6
+    spring: 0
+  - target: {fileID: 3390856276661574137}
+    offset: {x: 0, y: 0}
+    scale: 1
+    delay: 0
+    duration: 0.45
+    spring: 0
+  - target: {fileID: 5734987664521963522}
+    offset: {x: 0, y: 0}
+    scale: 1
+    delay: 0.05
+    duration: 0.45
+    spring: 0
+  - target: {fileID: 1306957968971084124}
+    offset: {x: 0, y: 0}
+    scale: 1
+    delay: 0.05
+    duration: 0.45
+    spring: 0
+  - target: {fileID: 4972239952530279637}
+    offset: {x: 0, y: 0}
+    scale: 1
+    delay: 0.1
+    duration: 0.45
+    spring: 0
 --- !u!1 &7805648902021622612
 GameObject:
   m_ObjectHideFlags: 0

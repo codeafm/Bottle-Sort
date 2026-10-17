@@ -160,6 +160,7 @@ namespace BottleSort.UI.Editor
             curtain.rectTransform.Fill();
             var group = Group(curtain.gameObject, 0f, false);
             Set(loader, "curtain", group);
+            ScreenMotionSetup.Dissolve(loader);
             PrefabUtility.SaveAsPrefabAsset(root, dir + "/SceneLoader.prefab");
             Object.DestroyImmediate(root);
         }

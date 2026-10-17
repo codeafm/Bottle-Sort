@@ -128,6 +128,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "progressFill", fill.rectTransform);
             Set(screen, "loadingLabel", loading.GetComponent<LocalizedText>());
             Set(screen, "mockupScale", K);
+            ScreenMotionSetup.SplashOutro(screen);
             return screen;
         }
 
@@ -242,6 +243,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "shopButton", shop);
             Set(screen, "heroBottles", heroes);
             Set(screen, "toast", toast);
+            ScreenMotionSetup.MenuIntro(screen);
             return screen;
         }
 

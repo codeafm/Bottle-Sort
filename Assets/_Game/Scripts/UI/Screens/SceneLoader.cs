@@ -1,12 +1,13 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace BottleSort.UI
 {
-    // Переходы между сценами Splash, Menu и Game: шторка поверх всего, асинхронная загрузка, проявление
-    // уже в новой сцене. Живёт между сценами. Какой экран и какой уровень открыть, новая сцена забирает
-    // через TakePendingScreen / TakePendingLevel.
+    // Переходы между сценами Splash, Menu и Game без чёрного провала: последний кадр старой сцены застывает
+    // поверх всего, под ним грузится новая, и кадр растворяется. Живёт между сценами. Какой экран и уровень
+    // открыть, новая сцена забирает через TakePendingScreen / TakePendingLevel.
     public sealed class SceneLoader : MonoBehaviour
     {
         public const string SplashScene = "Splash";
@@ -14,7 +15,8 @@ namespace BottleSort.UI
         public const string GameScene = "Game";
 
         [SerializeField] CanvasGroup curtain;
-        [SerializeField] float fadeTime = 0.28f;
+        [SerializeField] RawImage snapshot;
+        [SerializeField] float fadeTime = 0.5f;
 
         static SceneLoader _instance;
         static ScreenId? _pendingScreen;
@@ -24,6 +26,12 @@ namespace BottleSort.UI
         string _preloadScene;
 
         public static bool IsBusy { get; private set; }
+
+        // Через сколько после показа новой сцены старый кадр почти растворился: тогда и начинать появление экрана.
+        public static float RevealDelay => _instance != null ? _instance.fadeTime * 0.4f : 0f;
+
+        // Из какой сцены пришли: меню после заставки появляется полностью, после игры — коротко.
+        public static string PreviousScene { get; private set; }
 
         // Сколько готово из заранее начатой загрузки (заставка показывает это на полосе).
         public static float PreloadProgress =>
@@ -88,7 +96,7 @@ namespace BottleSort.UI
             return level;
         }
 
-        // Шторка — префаб Prefabs/UI/Resources/SceneLoader: цвет и время перехода правятся там.
+        // Префаб Prefabs/UI/Resources/SceneLoader: время растворения и цвет запасной шторки правятся там.
         static void Create()
         {
             _instance = Instantiate(Resources.Load<SceneLoader>("SceneLoader"));
@@ -101,8 +109,15 @@ namespace BottleSort.UI
         IEnumerator Switch(string scene)
         {
             IsBusy = true;
+            PreviousScene = SceneManager.GetActiveScene().name;
             curtain.blocksRaycasts = true;
-            yield return Fade(1f);
+            // Без камеры снимок не сделать — тогда обычная шторка цвета фона.
+            var frame = FreezeFrame();
+            if (frame == null)
+                yield return Fade(1f);
+            // Кадр всё равно стоит: пусть сцена грузится быстрее, чем в обычной игре.
+            var priority = Application.backgroundLoadingPriority;
+            Application.backgroundLoadingPriority = ThreadPriority.High;
 
             // Unity не начнёт новую загрузку, пока не включена отложенная: если заставка грузила другую сцену, пропускаем её.
             if (_preload != null && _preloadScene != scene)
@@ -115,12 +130,31 @@ namespace BottleSort.UI
             _preload = null;
             loading.allowSceneActivation = true;
             yield return loading;
+            Application.backgroundLoadingPriority = priority;
             // Кадр на Start новой сцены, чтобы под шторкой уже стоял нужный экран.
             yield return null;
 
             yield return Fade(0f);
             curtain.blocksRaycasts = false;
+            if (frame != null)
+            {
+                snapshot.texture = null;
+                snapshot.enabled = false;
+                RenderTexture.ReleaseTemporary(frame);
+            }
             IsBusy = false;
+        }
+
+        RenderTexture FreezeFrame()
+        {
+            var camera = Camera.main;
+            if (camera == null || snapshot == null)
+                return null;
+            var frame = ScreenGrab.Render(camera, 1);
+            snapshot.texture = frame;
+            snapshot.enabled = true;
+            curtain.alpha = 1f;
+            return frame;
         }
 
         IEnumerator Fade(float to)
@@ -128,7 +162,7 @@ namespace BottleSort.UI
             float from = curtain.alpha;
             for (float time = 0f; time < fadeTime; time += Time.unscaledDeltaTime)
             {
-                curtain.alpha = Mathf.Lerp(from, to, time / fadeTime);
+                curtain.alpha = Mathf.Lerp(from, to, Easing.Apply(Ease.InOutSine, time / fadeTime));
                 yield return null;
             }
             curtain.alpha = to;
