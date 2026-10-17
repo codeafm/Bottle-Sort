@@ -22,6 +22,7 @@ namespace BottleSort.UI
         const float BulbsSpin = 0.18f;
         const float TickSeconds = 0.13f;
         const float TickAngle = -14f;
+        const float TickSoundInterval = 0.04f;
         const float BurstSeconds = 1.1f;
 
         // Сектора на колесе идут как в макете (50, отмена, подсказка, 150, бутылка, попытка),
@@ -46,6 +47,8 @@ namespace BottleSort.UI
             new Vector3(94, 157, 0f), new Vector3(135, 105, 0.05f)
         };
 
+        [SerializeField] BackdropBlur backdropBlur;
+        [SerializeField] CanvasGroup contentGroup;
         [SerializeField] Button closeButton;
         [SerializeField] RectTransform ribbon;
         [SerializeField] RectTransform rays;
@@ -82,6 +85,7 @@ namespace BottleSort.UI
         float _bulbTime;
         int _lastDivider;
         float _tickTime = -1f;
+        float _lastTickSound = -1f;
         bool _spinning;
         bool _rewardShown;
         int _prize = -1;
@@ -108,6 +112,7 @@ namespace BottleSort.UI
 
         protected override void OnOpen()
         {
+            backdropBlur.Grab(contentGroup);
             DailyRewards.RefreshWheel(PlayerData.Current, DateTime.Now);
             HideReward(false);
             Refresh();
@@ -196,16 +201,25 @@ namespace BottleSort.UI
                     _lastDivider = divider;
                     Tick();
                 }
-            }, Ease.Linear, () => Tweens.Delay(this, "stop", 0.15f, Stop));
+            }, Ease.Linear, () =>
+            {
+                UiFeedback.Play(UiSound.WheelStop);
+                Tweens.Delay(this, "stop", 0.15f, Stop);
+            });
         }
 
         // Разделители стоят на ±30° от центров секторов; считаем, сколько их прошло под стрелкой.
         static int DividerIndex(float angle) => Mathf.FloorToInt((angle + SectorAngle / 2f) / SectorAngle);
 
+        // В начале вращения штырьки пролетают быстрее, чем раз в 40 мс: лишние щелчки пропускаем, стрелка качается всё равно.
         void Tick()
         {
-            UiFeedback.Play(UiSound.Tap);
             _tickTime = 0f;
+            float now = Time.unscaledTime;
+            if (now - _lastTickSound < TickSoundInterval)
+                return;
+            _lastTickSound = now;
+            UiFeedback.Play(UiSound.WheelTick, Random.Range(0.95f, 1.08f));
         }
 
         void Stop()

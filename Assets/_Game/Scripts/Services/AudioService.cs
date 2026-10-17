@@ -41,7 +41,9 @@ namespace BottleSort.Services
             { UiSound.Undo, "booster_undo" },
             { UiSound.IceCrack, "ice_crack" },
             { UiSound.Unlock, "unlock" },
-            { UiSound.Reveal, "reveal" }
+            { UiSound.Reveal, "reveal" },
+            { UiSound.WheelTick, "wheel_tick" },
+            { UiSound.WheelStop, "wheel_stop" }
         };
 
         // Свой баланс громкости для каждого звука: переливание и выбор звучат часто, их тише.
@@ -54,7 +56,14 @@ namespace BottleSort.Services
             { "pour", 0.8f },
             { "pour_short", 0.8f },
             { "wrong_move", 0.8f },
-            { "ui_whoosh", 0.55f }
+            { "ui_whoosh", 0.55f },
+            { "wheel_tick", 0.7f }
+        };
+
+        // Щелчки колеса идут чаще общего ограничения на повтор.
+        static readonly Dictionary<string, float> RepeatInterval = new Dictionary<string, float>
+        {
+            { "wheel_tick", 0.04f }
         };
 
         public static AudioService Instance { get; private set; }
@@ -147,7 +156,7 @@ namespace BottleSort.Services
             }
         }
 
-        void OnUiSound(UiSound sound) => Play(sound);
+        void OnUiSound(UiSound sound, float pitch) => Play(sound, pitch);
 
         public void Play(UiSound sound, float pitch = 1f)
         {
@@ -161,7 +170,8 @@ namespace BottleSort.Services
             if (volume <= 0f)
                 return;
             float now = Time.unscaledTime;
-            if (_lastPlayed.TryGetValue(clipName, out float last) && now - last < SameClipInterval)
+            float interval = RepeatInterval.TryGetValue(clipName, out float custom) ? custom : SameClipInterval;
+            if (_lastPlayed.TryGetValue(clipName, out float last) && now - last < interval)
                 return;
             var clip = Clip("Sfx/", clipName);
             if (clip == null)

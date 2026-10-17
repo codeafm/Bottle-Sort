@@ -151,6 +151,41 @@ namespace BottleSort.UI.Tests
             }
         }
 
+        // Размытый фон колеса снимается перерисовкой канваса через камеру; после этого канвас должен
+        // вернуться в Overlay с прежним масштабом, иначе поедет весь интерфейс.
+        [UnityTest]
+        public IEnumerator WheelBlurLeavesCanvasAsItWas()
+        {
+            var data = PlayerData.Current;
+            data.tutorialGiftTaken = true;
+            data.Save();
+
+            SceneManager.LoadScene("Main");
+            yield return null;
+            ScreenRouter router = null;
+            yield return WaitUntil(() => (router = FindRouter()) != null, 5f, "router");
+            router.Show(ScreenId.Menu, false);
+            yield return null;
+
+            var canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
+            Assert.AreEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
+            float scale = canvas.scaleFactor;
+            router.ShowPopup(ScreenId.Wheel);
+            yield return null;
+
+            Assert.AreEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);
+            Assert.AreEqual(scale, canvas.scaleFactor, 1e-4f);
+            var blur = router.Get<WheelPopup>().GetComponentInChildren<RawImage>();
+            Assert.IsTrue(blur.enabled, "blur shown");
+            Assert.IsNotNull(blur.texture, "blur texture");
+            var content = router.Get<WheelPopup>().transform.Find("Content").GetComponent<CanvasGroup>();
+            Assert.AreEqual(1f, content.alpha);
+
+            router.ClosePopup(router.Get<WheelPopup>());
+            yield return new WaitForSecondsRealtime(0.4f);
+            Assert.IsNull(blur.texture, "blur released");
+        }
+
         // Сразу после LoadScene ещё жив роутер прошлой сцены, берём только из активной.
         static ScreenRouter FindRouter()
         {

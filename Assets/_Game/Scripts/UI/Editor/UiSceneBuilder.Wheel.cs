@@ -34,6 +34,11 @@ namespace BottleSort.UI.Editor
         static UiScreen BuildWheel(Transform safeArea)
         {
             var screen = ScreenRoot<WheelPopup>(safeArea, "WheelPopup", out var content);
+            var blur = Node("Blur", screen.transform);
+            blur.SetAsFirstSibling();
+            blur.gameObject.AddComponent<RawImage>().raycastTarget = false;
+            var backdropBlur = blur.gameObject.AddComponent<BackdropBlur>();
+            var contentGroup = Group(content.gameObject);
 
             var stage = Node("Stage", content);
             stage.anchorMin = stage.anchorMax = new Vector2(0.5f, 0.5f);
@@ -222,6 +227,8 @@ namespace BottleSort.UI.Editor
                 flying.Add(coinRoot);
             }
 
+            Set(screen, "backdropBlur", backdropBlur);
+            Set(screen, "contentGroup", contentGroup);
             Set(screen, "closeButton", close);
             Set(screen, "ribbon", ribbon);
             Set(screen, "rays", rays.rectTransform);
