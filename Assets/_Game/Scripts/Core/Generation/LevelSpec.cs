@@ -28,12 +28,16 @@ namespace BottleSort.Core
         public FeaturePlacement Placement = FeaturePlacement.Empty;
     }
 
-    // Описание уровня для генератора. Какие параметры у какого номера — решает план уровней
-    // (LEVEL_DESIGN.md §3), здесь только то, что нужно для раскладки.
+    // Описание уровня для генератора. Какие параметры у какого номера, решает LevelParams
+    // (LEVEL_DESIGN.md §2–3, §5), здесь только то, что нужно для раскладки и отбора.
     public sealed class LevelSpec
     {
         public int Number = 1;
         public int GenVersion = LevelGenerator.CurrentGenVersion;
+        public LevelType Type = LevelType.Normal;
+        public LevelTier Tier = LevelTier.Medium;
+        // Какую фишку вводит этот уровень (карточка с правилом), иначе null.
+        public string Introduces;
 
         public int Colors = 4;
         public int Unit = 4;
@@ -41,6 +45,10 @@ namespace BottleSort.Core
         // Из скольких первых цветов палитры выбирать: 10 до L1100, 11 до L1600, потом 12.
         public int PaletteSize = 10;
         public bool BigFlask;
+
+        // Фигурка уровня-спасения: 1 — рецепт из U слоёв одного цвета, 2 — снизу X, сверху Y (с L328).
+        public int RescueRecipeColors;
+        public string RescueShape = "hippo";
 
         public int HiddenLayers;
         // В скольких бутылках со слоями прятать низ; -1 — во всех.
@@ -54,18 +62,33 @@ namespace BottleSort.Core
 
         // k из формулы лимита ходов: limit = par + max(8, ceil(k·par)). 0 — без лимита.
         public double MoveLimitSlack;
+        // Обучающий уровень лимита (L501): limit = par + MoveLimitExtra.
+        public int MoveLimitExtra;
 
         // Формы для особых уровней. Пусто — все бутылки classic.
         public List<string> ShapePool = new List<string>();
 
         public int Candidates = 64;
-        // null — берём первый подходящий кандидат; иначе — ближайший к этой сложности DS (0..100).
+        // Как выбрать кандидата: null и null — первый подходящий (так быстрее всего, для игры на лету);
+        // TargetDifficulty — ближайший к DS; TargetPercentile — кандидат на этом месте по DS среди прошедших.
         public double? TargetDifficulty;
+        public double? TargetPercentile;
         public bool ComputeMetrics;
+
+        // Требования к обучающему отрезку 1–30 (§3.3): доля побед случайного игрока, предел OPT, без ловушек в начале.
+        public double MinRandomWinRate;
+        public int MaxPar;
+        public bool NoEarlyTrap;
+
         public SolverOptions Solver = SolverOptions.Default;
         public AnalyzerOptions Analyzer = AnalyzerOptions.Default;
 
         public bool AllowsExtraBottle => !BigFlask;
         public bool HasHidden => HiddenLayers > 0 && HiddenBottles != 0;
+        public bool HasRescue => RescueRecipeColors > 0;
+        public bool HasMoveLimit => MoveLimitSlack > 0 || MoveLimitExtra > 0;
+
+        public bool NeedsMetrics => ComputeMetrics || TargetDifficulty != null || TargetPercentile != null
+            || HasMoveLimit || MinRandomWinRate > 0;
     }
 }

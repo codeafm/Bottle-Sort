@@ -6,17 +6,22 @@ using UnityEngine;
 
 namespace BottleSort.UI
 {
-    // Генератор с солвером может думать сотни миллисекунд, поэтому уровень строим в фоне
-    // и заранее, пока игрок смотрит на экран победы.
+    // Уровни 1–2000 берём из готовой базы (Resources/LevelDatabase), обучающие 1–3 — из HandmadeLevels,
+    // а после 2000 строим генератором в фоне и заранее, пока игрок смотрит на экран победы.
     public static class LevelLoader
     {
+        const string DatabaseResource = "LevelDatabase";
+
         static readonly Dictionary<int, Task<GeneratedLevel>> Cache = new Dictionary<int, Task<GeneratedLevel>>();
+        static LevelDatabase _database;
 
         public static Task<GeneratedLevel> Get(int level)
         {
             if (Cache.TryGetValue(level, out var task) && !task.IsFaulted)
                 return task;
-            task = Task.Run(() => Build(level));
+            // Resources можно трогать только из главного потока, поэтому базу читаем здесь, до Task.Run.
+            var database = Database;
+            task = Task.Run(() => Build(level, database));
             Cache[level] = task;
             return task;
         }
@@ -26,17 +31,38 @@ namespace BottleSort.UI
         // Готовый уровень под номером вместо генератора: раскладки из макета для сравнения экранов, отладка.
         public static void Put(int level, GeneratedLevel generated) => Cache[level] = Task.FromResult(generated);
 
-        static GeneratedLevel Build(int level)
+        static LevelDatabase Database
         {
+            get
+            {
+                if (_database == null)
+                {
+                    var asset = Resources.Load<TextAsset>(DatabaseResource);
+                    _database = asset != null ? LevelDatabase.Parse(asset.text) : new LevelDatabase();
+                    if (asset == null)
+                        Debug.LogWarning("[LevelLoader] No level database, every level will be generated on the fly.");
+                }
+                return _database;
+            }
+        }
+
+        static GeneratedLevel Build(int level, LevelDatabase database)
+        {
+            if (HandmadeLevels.TryGet(level, out var handmade))
+                return handmade;
+            var stored = database.Get(level);
+            if (stored != null)
+                return stored;
+
             try
             {
-                return LevelCatalog.Get(level, LevelPlan.SpecFor);
+                return LevelGenerator.Generate(LevelParams.SpecFor(level));
             }
             catch (Exception e)
             {
-                // Временная таблица параметров может попросить невозможное; лучше упростить уровень, чем упасть.
+                // На лету проверки строже, чем есть время перебирать кандидатов; лучше упростить уровень, чем упасть.
                 Debug.LogWarning($"[LevelLoader] Level {level}: {e.Message}. Retrying with a simpler spec.");
-                var spec = LevelPlan.SpecFor(level);
+                var spec = LevelParams.SpecFor(level);
                 spec.HiddenLayers = 0;
                 spec.ShapePool.Clear();
                 spec.Colors = Math.Max(3, spec.Colors - 1);

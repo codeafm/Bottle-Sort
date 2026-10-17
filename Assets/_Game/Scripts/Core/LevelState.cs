@@ -71,7 +71,7 @@ namespace BottleSort.Core
             get
             {
                 foreach (var bottle in bottles)
-                    if (!bottle.IsEmpty && !bottle.IsCompleted(Unit))
+                    if (!bottle.IsDone(Unit))
                         return false;
                 return true;
             }
@@ -140,7 +140,8 @@ namespace BottleSort.Core
                 return MoveError.TargetFrozen;
             if (target.IsFull)
                 return MoveError.TargetFull;
-            if (!target.IsEmpty && target.TopColor != source.TopColor)
+            // Фигурке спасения неважно, что сверху: она ждёт следующий цвет рецепта.
+            if (target.Recipe == null && !target.IsEmpty && target.TopColor != source.TopColor)
                 return MoveError.ColorMismatch;
             if (!target.Accepts(source.TopColor))
                 return MoveError.TargetRejectsColor;
@@ -153,7 +154,8 @@ namespace BottleSort.Core
         public int PourAmount(Move move)
         {
             var source = bottles[move.From];
-            int amount = Math.Min(source.TopRunLength, bottles[move.To].FreeSpace);
+            var target = bottles[move.To];
+            int amount = Math.Min(source.TopRunLength, Math.Min(target.FreeSpace, target.RecipeRoomFor(source.TopColor)));
             if (source.PourLimit > 0)
                 amount = Math.Min(amount, source.PourLimit);
             return amount;

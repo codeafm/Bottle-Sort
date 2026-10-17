@@ -13,12 +13,14 @@ namespace BottleSort.Core
         public bool ParExact;
         public List<Move> Solution;
         public int MoveLimit;
-        // false — ни один кандидат не прошёл мягкие фильтры, взят лучший из решаемых.
+        // false — ни один кандидат не прошёл фильтры, взят лучший из решаемых.
         public bool PassedAllFilters;
         public LevelMetrics Metrics;
         // Уровень задан вручную (override по номеру), генератор его не строил.
         public bool IsHandmade;
         public bool IsTutorial;
+        // Сколько раз уровень пересобирали с другим seed, чтобы он не повторял соседей (LevelAudit).
+        public int Retry;
 
         public GameSession CreateSession() =>
             new GameSession(State, Par, MoveLimit, Spec.AllowsExtraBottle && !IsTutorial, IsTutorial);
@@ -29,11 +31,12 @@ namespace BottleSort.Core
     public static class LevelGenerator
     {
         // Любое изменение, влияющее на раскладки, — новая версия. Иначе у игроков поменяются уже выпущенные уровни.
-        public const int CurrentGenVersion = 1;
+        public const int CurrentGenVersion = 2;
 
         public const string ClassicShape = Bottle.DefaultShape;
         public const string FlaskShape = "cylinder";
         public const string HourglassShape = "hourglass";
+        // Колба и фигурка спасения стоят второй, как колба в макете; раскладку в центр делает ui.
         public const int BigFlaskIndex = 1;
 
         public static GeneratedLevel Generate(LevelSpec spec) =>
@@ -43,55 +46,91 @@ namespace BottleSort.Core
         {
             Validate(spec);
 
-            GeneratedLevel best = null;
+            var passed = new List<GeneratedLevel>();
             GeneratedLevel fallback = null;
-            double bestDistance = double.MaxValue;
+            bool pickFirst = spec.TargetDifficulty == null && spec.TargetPercentile == null;
 
             for (int k = 0; k < spec.Candidates; k++)
             {
                 var rng = new Rng(Seeds.ForCandidate(seed, k));
                 var state = BuildCandidate(spec, rng);
-                bool passesSoft = PassesLayoutFilters(spec, state);
-                if (!passesSoft && fallback != null)
+                bool passes = PassesLayoutFilters(spec, state);
+                if (!passes && fallback != null)
                     continue;
 
-                var level = TrySolve(spec, state, seed, k, ref passesSoft);
+                var level = TrySolve(spec, state, seed, k, ref passes);
                 if (level == null)
                     continue;
-                level.PassedAllFilters = passesSoft;
+                level.PassedAllFilters = passes;
 
-                if (!passesSoft)
+                if (!passes)
                 {
                     fallback = fallback ?? level;
                     continue;
                 }
-
-                if (spec.TargetDifficulty == null)
+                if (pickFirst && (!spec.NoEarlyTrap || !DifficultyAnalyzer.HasEarlyTrap(level.State, level.Solution)))
                     return level;
-
-                double distance = Math.Abs(level.Metrics.Difficulty - spec.TargetDifficulty.Value);
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    best = level;
-                }
+                passed.Add(level);
             }
 
-            var chosen = best ?? fallback;
+            var chosen = Choose(spec, passed) ?? fallback;
             if (chosen == null)
                 throw new InvalidOperationException(
                     $"No solvable layout for level {spec.Number} in {spec.Candidates} candidates");
             return chosen;
         }
 
-        private static GeneratedLevel TrySolve(LevelSpec spec, LevelState state, ulong seed, int k, ref bool passesSoft)
+        // Кандидаты по возрастанию DS; начинаем с нужного места и расходимся в стороны, пока не найдём без ловушки.
+        private static GeneratedLevel Choose(LevelSpec spec, List<GeneratedLevel> passed)
+        {
+            if (passed.Count == 0)
+                return null;
+
+            int target;
+            if (spec.TargetDifficulty != null || spec.TargetPercentile != null)
+            {
+                passed.Sort((a, b) => a.Metrics.Difficulty != b.Metrics.Difficulty
+                    ? a.Metrics.Difficulty.CompareTo(b.Metrics.Difficulty)
+                    : a.Candidate.CompareTo(b.Candidate));
+                target = spec.TargetPercentile != null
+                    ? (int)Math.Round(spec.TargetPercentile.Value * (passed.Count - 1))
+                    : ClosestTo(passed, spec.TargetDifficulty.Value);
+            }
+            else
+                target = 0;
+
+            for (int offset = 0; offset < passed.Count * 2; offset++)
+            {
+                int index = target + (offset % 2 == 0 ? offset / 2 : -(offset / 2 + 1));
+                if (index < 0 || index >= passed.Count)
+                    continue;
+                var level = passed[index];
+                if (!spec.NoEarlyTrap || !DifficultyAnalyzer.HasEarlyTrap(level.State, level.Solution))
+                    return level;
+            }
+
+            var trapped = passed[target];
+            trapped.PassedAllFilters = false;
+            return trapped;
+        }
+
+        private static int ClosestTo(List<GeneratedLevel> sorted, double difficulty)
+        {
+            int best = 0;
+            for (int i = 1; i < sorted.Count; i++)
+                if (Math.Abs(sorted[i].Metrics.Difficulty - difficulty) < Math.Abs(sorted[best].Metrics.Difficulty - difficulty))
+                    best = i;
+            return best;
+        }
+
+        private static GeneratedLevel TrySolve(LevelSpec spec, LevelState state, ulong seed, int k, ref bool passes)
         {
             var solve = Solver.Solve(state, spec.Solver);
             if (!solve.IsSolved || solve.Length == 0)
                 return null;
 
-            if (passesSoft)
-                passesSoft = FeaturesMatter(spec, state, solve);
+            if (passes)
+                passes = FeaturesMatter(spec, state, solve) && (spec.MaxPar <= 0 || solve.Length <= spec.MaxPar);
 
             var level = new GeneratedLevel
             {
@@ -105,17 +144,21 @@ namespace BottleSort.Core
                 MoveLimit = MoveLimitFor(spec, solve.Length)
             };
 
-            if (spec.ComputeMetrics || spec.TargetDifficulty != null || spec.MoveLimitSlack > 0)
+            // Метрики дорогие: считаем их только для тех, кто прошёл остальные фильтры.
+            if (spec.NeedsMetrics && (passes || spec.ComputeMetrics))
             {
                 level.Metrics = DifficultyAnalyzer.Analyze(state, solve, level.MoveLimit, spec.Analyzer);
-                if (passesSoft)
-                    passesSoft = PassesMetricFilters(spec, level.Metrics);
+                if (passes)
+                    passes = PassesMetricFilters(spec, level.Metrics);
             }
             return level;
         }
 
         public static int MoveLimitFor(LevelSpec spec, int par)
         {
+            // Лимит не строже порога 2★ (§4), поэтому любая победа с лимитом — минимум две звезды.
+            if (spec.MoveLimitExtra > 0)
+                return Math.Min(par + spec.MoveLimitExtra, StarRating.TwoStarLimit(par));
             if (spec.MoveLimitSlack <= 0)
                 return 0;
             return par + Math.Max(8, (int)Math.Ceiling(spec.MoveLimitSlack * par));
@@ -125,10 +168,12 @@ namespace BottleSort.Core
         {
             if (spec.Colors < 1 || spec.Colors > Math.Min(spec.PaletteSize, Palette.MaxColors))
                 throw new ArgumentException($"Colors must be 1..{spec.PaletteSize}");
-            if (spec.Unit < 2 || spec.Unit * (spec.BigFlask ? 2 : 1) > Bottle.MaxCapacity)
+            if (spec.Unit < 2 || spec.Unit * (spec.BigFlask || spec.RescueRecipeColors > 1 ? 2 : 1) > Bottle.MaxCapacity)
                 throw new ArgumentException("Unit doesn't fit into a bottle");
             if (spec.Candidates < 1)
                 throw new ArgumentException("Need at least one candidate");
+            if (spec.RescueRecipeColors < 0 || spec.RescueRecipeColors > Math.Min(2, spec.Colors))
+                throw new ArgumentException("Rescue recipe takes one or two colors");
 
             int onFull = spec.Pipettes + (spec.HourglassFlips > 0 ? 1 : 0);
             int onEmpty = 0;
@@ -151,12 +196,13 @@ namespace BottleSort.Core
             public int AcceptColor = Palette.AnyColor;
             public int LockColor = Palette.AnyColor;
             public int PourLimit;
+            public bool CanPourOut = true;
+            public byte[] Recipe;
             public int Frozen;
             public bool Locked;
             public int Flips;
             public int Hidden;
             public bool HasFeature;
-            public bool IsFlask;
         }
 
         private static LevelState BuildCandidate(LevelSpec spec, Rng rng)
@@ -187,13 +233,15 @@ namespace BottleSort.Core
             PlaceFeatures(spec, slots, colors, rng);
 
             if (spec.BigFlask)
-                slots.Insert(Math.Min(BigFlaskIndex, slots.Count),
-                    new Slot { Capacity = spec.Unit * 2, Shape = FlaskShape, IsFlask = true });
+                slots.Insert(Math.Min(BigFlaskIndex, slots.Count), new Slot { Capacity = spec.Unit * 2, Shape = FlaskShape });
+            if (spec.HasRescue)
+                slots.Insert(Math.Min(BigFlaskIndex, slots.Count), RescueSlot(spec, colors, rng));
 
             var bottles = new List<Bottle>(slots.Count);
             foreach (var slot in slots)
             {
-                var bottle = new Bottle(slot.Capacity, slot.Shape, slot.AcceptColor, slot.LockColor, slot.PourLimit);
+                var bottle = new Bottle(slot.Capacity, slot.Shape, slot.AcceptColor, slot.LockColor, slot.PourLimit,
+                    slot.CanPourOut, slot.Recipe);
                 foreach (byte layer in slot.Layers)
                     bottle.Push(layer);
                 bottle.FrozenTurns = slot.Frozen;
@@ -203,6 +251,17 @@ namespace BottleSort.Core
                 bottles.Add(bottle);
             }
             return new LevelState(spec.Unit, bottles);
+        }
+
+        // Фигурка принимает только цвета рецепта по порядку и ничего не отдаёт обратно.
+        private static Slot RescueSlot(LevelSpec spec, List<byte> colors, Rng rng)
+        {
+            var recipeColors = new List<byte>(colors);
+            rng.Shuffle(recipeColors);
+            var recipe = new byte[spec.Unit * spec.RescueRecipeColors];
+            for (int i = 0; i < recipe.Length; i++)
+                recipe[i] = recipeColors[i / spec.Unit];
+            return new Slot { Capacity = recipe.Length, Shape = spec.RescueShape, Recipe = recipe, CanPourOut = false };
         }
 
         // При C ≤ 6 цвета берутся из seed, но без похожих пар (K/R, L/G, C/B, D/B).
@@ -246,7 +305,7 @@ namespace BottleSort.Core
                 var slot = TakeSlot(slots, lockFeature.Placement, rng);
                 slot.Locked = true;
                 if (lockFeature.Colored)
-                    slot.LockColor = rng.Pick(colors);
+                    slot.LockColor = PickLockColor(slot, colors, rng);
             }
 
             foreach (var tint in spec.Tints)
@@ -273,6 +332,13 @@ namespace BottleSort.Core
                 for (int i = 0; i < count; i++)
                     full[i].Hidden = Math.Min(spec.HiddenLayers, full[i].Layers.Count - 1);
             }
+        }
+
+        // Ключ цветного замка не должен лежать под этим же замком (§5.7), иначе открыть его нечем.
+        private static int PickLockColor(Slot locked, List<byte> colors, Rng rng)
+        {
+            var outside = colors.FindAll(c => !locked.Layers.Contains(c));
+            return outside.Count > 0 ? rng.Pick(outside) : rng.Pick(colors);
         }
 
         private static Slot TakeSlot(List<Slot> slots, FeaturePlacement placement, Rng rng)
@@ -316,10 +382,12 @@ namespace BottleSort.Core
         }
 
         // Фишка должна работать, а не стоять для красоты: в тонированную льют, замок мешает,
-        // переворот сокращает решение хотя бы на 2 хода.
+        // переворот нужен для победы или сокращает решение хотя бы на 2 хода.
         private static bool FeaturesMatter(LevelSpec spec, LevelState state, SolveResult solve)
         {
-            for (int i = 0; i < state.BottleCount; i++)
+            // Мягкая форма — фишка на третьей пустой (§5.2, §5.6): она облегчает уровень, и решению может быть не нужна.
+            bool softForm = spec.EmptyBottles >= 3;
+            for (int i = 0; i < state.BottleCount && !softForm; i++)
             {
                 var bottle = state[i];
                 if (bottle.AcceptColor != Palette.AnyColor && !SolutionTouches(solve.Moves, i, asTarget: true))
@@ -352,7 +420,9 @@ namespace BottleSort.Core
         {
             if (spec.HasHidden && metrics.BlindWinRate < 0.6 * metrics.RandomWinRate)
                 return false;
-            if (spec.MoveLimitSlack > 0 && metrics.GreedyWinRateWithinLimit < 0.4)
+            if (spec.HasMoveLimit && metrics.GreedyWinRateWithinLimit < 0.4)
+                return false;
+            if (metrics.RandomWinRate < spec.MinRandomWinRate)
                 return false;
             return true;
         }

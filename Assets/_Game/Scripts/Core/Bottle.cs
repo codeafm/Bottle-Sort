@@ -18,6 +18,8 @@ namespace BottleSort.Core
         public int LockColor { get; }
         public int PourLimit { get; }
         public bool CanPourOut { get; }
+        // Фигурка из уровня-спасения: принимает только следующий цвет рецепта (снизу вверх), null — обычная бутылка.
+        public byte[] Recipe { get; }
 
         public int Count { get; private set; }
         public int HiddenCount { get; set; }
@@ -26,8 +28,11 @@ namespace BottleSort.Core
         public int FlipsLeft { get; set; }
 
         public Bottle(int capacity, string shape = DefaultShape, int acceptColor = Palette.AnyColor,
-            int lockColor = Palette.AnyColor, int pourLimit = 0, bool canPourOut = true)
+            int lockColor = Palette.AnyColor, int pourLimit = 0, bool canPourOut = true, byte[] recipe = null)
         {
+            if (recipe != null && recipe.Length != capacity)
+                throw new ArgumentException("Recipe must fill the whole bottle", nameof(recipe));
+
             if (capacity < 1 || capacity > MaxCapacity)
                 throw new ArgumentOutOfRangeException(nameof(capacity), capacity, $"Capacity must be 1..{MaxCapacity}");
 
@@ -37,6 +42,7 @@ namespace BottleSort.Core
             LockColor = lockColor;
             PourLimit = pourLimit;
             CanPourOut = canPourOut;
+            Recipe = recipe;
             layers = new byte[capacity];
         }
 
@@ -78,7 +84,26 @@ namespace BottleSort.Core
         // Собранная = ровно unit слоёв одного цвета. Для большой колбы (2U) это тоже ровно U.
         public bool IsCompleted(int unit) => Count == unit && IsUniform;
 
-        public bool Accepts(int color) => AcceptColor == Palette.AnyColor || AcceptColor == color;
+        // Для победы: обычная бутылка пуста или собрана, фигурка — заполнена по рецепту до верха.
+        public bool IsDone(int unit) => Recipe != null ? Count == Capacity : IsEmpty || IsCompleted(unit);
+
+        // Сколько слоёв цвета подряд ещё ждёт рецепт. Для обычной бутылки — без ограничения.
+        public int RecipeRoomFor(int color)
+        {
+            if (Recipe == null)
+                return int.MaxValue;
+            int room = 0;
+            while (Count + room < Recipe.Length && Recipe[Count + room] == color)
+                room++;
+            return room;
+        }
+
+        public bool Accepts(int color)
+        {
+            if (Recipe != null)
+                return RecipeRoomFor(color) > 0;
+            return AcceptColor == Palette.AnyColor || AcceptColor == color;
+        }
 
         public void Push(byte color)
         {
@@ -121,13 +146,25 @@ namespace BottleSort.Core
             return copy;
         }
 
-        public Bottle CloneEmpty() => new Bottle(Capacity, Shape, AcceptColor, LockColor, PourLimit, CanPourOut);
+        public Bottle CloneEmpty() => new Bottle(Capacity, Shape, AcceptColor, LockColor, PourLimit, CanPourOut, Recipe);
 
         // Форма только для вида: правила от неё не зависят, поэтому солвер её не различает.
         public bool HasSameRules(Bottle other)
         {
             return Capacity == other.Capacity && AcceptColor == other.AcceptColor && LockColor == other.LockColor
-                && PourLimit == other.PourLimit && CanPourOut == other.CanPourOut;
+                && PourLimit == other.PourLimit && CanPourOut == other.CanPourOut && SameRecipe(Recipe, other.Recipe);
+        }
+
+        private static bool SameRecipe(byte[] a, byte[] b)
+        {
+            if (a == null || b == null)
+                return a == b;
+            if (a.Length != b.Length)
+                return false;
+            for (int i = 0; i < a.Length; i++)
+                if (a[i] != b[i])
+                    return false;
+            return true;
         }
 
         public bool StateEquals(Bottle other)

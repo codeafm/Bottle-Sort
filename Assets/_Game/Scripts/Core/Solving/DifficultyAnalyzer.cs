@@ -117,6 +117,27 @@ namespace BottleSort.Core
             return metrics;
         }
 
+        // trap5 (§9.2): на одной из первых позиций оптимального пути есть ход, после которого уже не выиграть.
+        public static bool HasEarlyTrap(LevelState start, IReadOnlyList<Move> solution, int positions = 5,
+            int deadCheckStates = 20_000)
+        {
+            var state = start.Clone();
+            var legal = new List<Move>();
+            for (int step = 0; step < positions && step < solution.Count; step++)
+            {
+                state.GetLegalMoves(legal);
+                foreach (var move in legal)
+                {
+                    var next = state.Clone();
+                    next.Apply(move);
+                    if (!next.IsWon && Solver.IsDeadEnd(next, deadCheckStates))
+                        return true;
+                }
+                state.Apply(solution[step]);
+            }
+            return false;
+        }
+
         // DS = 100 × (0.35·(1−RW) + 0.20·(1−GW или BW) + 0.15·DEAD + 0.15·SPREAD + 0.15·min(1, OPT/60)).
         public static double Score(LevelMetrics m, bool hasHidden)
         {
