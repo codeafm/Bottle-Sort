@@ -29,6 +29,7 @@ namespace BottleSort.Integrations
         bool _interstitialLoading;
         bool _rewardedLoading;
         Banner _banner;
+        Banner _nextBanner;
         bool _bannerLoaded;
         bool _bannerWanted;
 
@@ -158,7 +159,7 @@ namespace BottleSort.Integrations
             _bannerWanted = true;
             if (_banner == null)
             {
-                CreateBanner();
+                _banner = CreateBanner(OnFirstBannerLoaded, OnFirstBannerFailed);
                 return;
             }
             if (_bannerLoaded)
@@ -171,34 +172,74 @@ namespace BottleSort.Integrations
             _banner?.Hide();
         }
 
-        void CreateBanner()
+        // Новый баннер грузится скрытым рядом со старым и встаёт на его место только после загрузки:
+        // так нет пустого места между баннерами, а при ошибке остаётся старый.
+        public void RefreshBanner(Action<bool> done)
+        {
+            if (_banner == null || !_bannerLoaded || _nextBanner != null)
+            {
+                done?.Invoke(false);
+                return;
+            }
+            Banner next = null;
+            next = CreateBanner(() =>
+            {
+                if (_nextBanner != next)
+                    return;
+                _nextBanner = null;
+                var old = _banner;
+                _banner = next;
+                if (_bannerWanted)
+                    _banner.Show();
+                else
+                    _banner.Hide();
+                old.Destroy();
+                done?.Invoke(true);
+            }, () =>
+            {
+                if (_nextBanner != next)
+                    return;
+                _nextBanner = null;
+                next.Destroy();
+                done?.Invoke(false);
+            });
+            _nextBanner = next;
+        }
+
+        void OnFirstBannerLoaded()
+        {
+            _bannerLoaded = true;
+            if (_bannerWanted)
+                _banner.Show();
+            else
+                _banner.Hide();
+        }
+
+        void OnFirstBannerFailed()
+        {
+            _banner?.Destroy();
+            _banner = null;
+            _bannerLoaded = false;
+            if (_bannerWanted)
+                _thread.After(RetrySeconds, () =>
+                {
+                    if (_bannerWanted && _banner == null)
+                        _banner = CreateBanner(OnFirstBannerLoaded, OnFirstBannerFailed);
+                });
+        }
+
+        Banner CreateBanner(Action loaded, Action failed)
         {
             // Не выше 50 при ширине 320, как место под баннер в макете меню и игры. Yandex прижимает его
             // к низу safe area, а кнопки ui начинаются на 71 pt выше неё, так что баннер их не закрывает.
             // Fixed не годится: плагин 8.6.0 зовёт на Android BannerAdSize.fixedSize, а в SDK 8.6.0 метод
             // уже называется fixed, и баннер падает с NoSuchMethodError. Inline в SDK есть под тем же именем.
-            _banner = new Banner(BannerAdSize.Inline(BannerWidth, BannerHeight), AdPosition.BottomCenter);
-            _banner.OnAdLoaded += (sender, args) => _thread.Post(() =>
-            {
-                _bannerLoaded = true;
-                if (_bannerWanted)
-                    _banner.Show();
-                else
-                    _banner.Hide();
-            });
-            _banner.OnAdFailedToLoad += (sender, args) => _thread.Post(() =>
-            {
-                _banner?.Destroy();
-                _banner = null;
-                _bannerLoaded = false;
-                if (_bannerWanted)
-                    _thread.After(RetrySeconds, () =>
-                    {
-                        if (_bannerWanted && _banner == null)
-                            CreateBanner();
-                    });
-            });
-            _banner.LoadAd(new AdRequest(_config.BannerId));
+            var banner = new Banner(BannerAdSize.Inline(BannerWidth, BannerHeight), AdPosition.BottomCenter);
+            banner.Hide();
+            banner.OnAdLoaded += (sender, args) => _thread.Post(loaded);
+            banner.OnAdFailedToLoad += (sender, args) => _thread.Post(failed);
+            banner.LoadAd(new AdRequest(_config.BannerId));
+            return banner;
         }
     }
 }

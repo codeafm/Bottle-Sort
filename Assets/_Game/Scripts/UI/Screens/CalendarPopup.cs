@@ -28,8 +28,11 @@ namespace BottleSort.UI
         {
             closeButton.onClick.AddListener(Close);
             dimmer.onClick.AddListener(Close);
-            claimButton.onClick.AddListener(Claim);
+            claimButton.onClick.AddListener(ClaimDoubleForAd);
+            _choice = new AdChoiceButtons(claimButton);
         }
+
+        AdChoiceButtons _choice;
 
         protected override void OnOpen() => Refresh();
 
@@ -66,12 +69,34 @@ namespace BottleSort.UI
 
             claimButton.interactable = !claimedToday;
             claimGroup.alpha = claimedToday ? 0.55f : 1f;
-            claimLabel.SetKey(claimedToday ? "calendar_tomorrow" : "gift_claim");
+            // Зелёная — «×2 за рекламу», под ней обычное «Забрать». В редакторе без Play кнопок не плодим.
+            if (claimedToday || !Application.isPlaying || _choice == null)
+            {
+                _choice?.ShowSingle();
+                claimLabel.SetKey(claimedToday ? "calendar_tomorrow" : "gift_claim");
+            }
+            else
+            {
+                claimLabel.SetKey("reward_double_ad");
+                _choice.ShowPair("gift_claim", () => Claim(1));
+            }
         }
 
-        void Claim()
+        void ClaimDoubleForAd()
         {
-            if (!DailyRewards.TryClaimCalendar(PlayerData.Current, DateTime.Now, out _))
+            claimButton.interactable = false;
+            RewardedAds.Show(watched =>
+            {
+                if (watched)
+                    Claim(2);
+                else
+                    Refresh();
+            });
+        }
+
+        void Claim(int multiplier)
+        {
+            if (!DailyRewards.TryClaimCalendar(PlayerData.Current, DateTime.Now, out _, multiplier))
                 return;
             UiFeedback.Play(UiSound.Coin);
             Refresh();

@@ -7,10 +7,11 @@ namespace BottleSort.Core
     {
         private readonly LevelState initial;
         private readonly UndoStack history = new UndoStack();
+        private readonly int baseMoveLimit;
 
         public LevelState State { get; private set; }
         public int Par { get; }
-        public int MoveLimit { get; }
+        public int MoveLimit { get; private set; }
         public bool ExtraBottleAllowed { get; }
         public bool ExtraBottleUsed { get; private set; }
         // На обучающих уровнях звёзды всегда три, ходы не считаются.
@@ -22,6 +23,7 @@ namespace BottleSort.Core
             this.initial = initial?.Clone() ?? throw new ArgumentNullException(nameof(initial));
             Par = par;
             MoveLimit = moveLimit;
+            baseMoveLimit = moveLimit;
             ExtraBottleAllowed = extraBottleAllowed;
             IsTutorial = isTutorial;
             State = initial.Clone();
@@ -65,10 +67,20 @@ namespace BottleSort.Core
             return true;
         }
 
+        // Ходы за рекламу на проигрыше по лимиту. Действуют до «Заново».
+        public bool AddMoves(int count)
+        {
+            if (!HasMoveLimit || count <= 0)
+                return false;
+            MoveLimit += count;
+            return true;
+        }
+
         public void Restart()
         {
             history.Clear();
             ExtraBottleUsed = false;
+            MoveLimit = baseMoveLimit;
             State = initial.Clone();
         }
 

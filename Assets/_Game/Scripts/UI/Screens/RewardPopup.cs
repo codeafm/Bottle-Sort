@@ -22,7 +22,9 @@ namespace BottleSort.UI
         [SerializeField] Button dimmer;
 
         Action _onClaim;
+        Action _onSecondary;
         bool _dismissible;
+        AdChoiceButtons _choice;
 
         public override ScreenId Id => ScreenId.Reward;
         public override bool IsPopup => true;
@@ -33,6 +35,16 @@ namespace BottleSort.UI
         void Awake()
         {
             claimButton.onClick.AddListener(Claim);
+            // Подзаголовок в одну строку: длинный перевод лучше чуть уменьшить, чем вылезти за карточку.
+            if (subtitle.TryGetComponent(out TMP_Text subtitleText) && !subtitleText.enableAutoSizing)
+            {
+                subtitleText.fontSizeMax = subtitleText.fontSize;
+                subtitleText.fontSizeMin = subtitleText.fontSize * 0.7f;
+                subtitleText.enableAutoSizing = true;
+            }
+            // Setup мог прийти раньше Awake (попап ещё ни разу не открывался) и уже завести кнопки.
+            if (_choice == null)
+                _choice = new AdChoiceButtons(claimButton);
             // В сценах, собранных до этого поля, ссылки нет: берём затемнение по имени, как его создаёт билдер.
             if (dimmer == null)
             {
@@ -50,7 +62,9 @@ namespace BottleSort.UI
             subtitle.SetKey(subtitleKey);
             claimLabel.SetKey(buttonKey);
             _onClaim = onClaim;
+            _onSecondary = null;
             _dismissible = false;
+            _choice?.ShowSingle();
 
             int[] amounts = { reward.Coins, reward.Undo, reward.Hints, reward.Bottles, reward.Spins };
             int shown = 0;
@@ -72,6 +86,27 @@ namespace BottleSort.UI
                 counts[i].text = i == 0 ? "+" + Loc.Number(amounts[i]) : Loc.Format("gift_count", amounts[i]);
                 slot++;
             }
+        }
+
+        // Две кнопки: зелёная «за рекламу» (adKey, onWatchAd) и под ней обычная (secondaryKey, onSecondary).
+        // Карточка закрывается после любой из них, колбэк вызывается уже после закрытия.
+        public void SetupChoice(string titleKey, string subtitleKey, RewardBundle reward, string adKey, Action onWatchAd,
+            string secondaryKey, Action onSecondary, params object[] titleArgs)
+        {
+            Setup(titleKey, subtitleKey, reward, adKey, onWatchAd, titleArgs);
+            _onSecondary = onSecondary;
+            if (_choice == null)
+                _choice = new AdChoiceButtons(claimButton);
+            _choice.ShowPair(secondaryKey, Secondary);
+        }
+
+        void Secondary()
+        {
+            var callback = _onSecondary;
+            _onSecondary = null;
+            _onClaim = null;
+            Router.ClosePopup(this);
+            callback?.Invoke();
         }
 
         // Для предложений: можно закрыть тапом мимо карточки или «назад», ничего не получив.

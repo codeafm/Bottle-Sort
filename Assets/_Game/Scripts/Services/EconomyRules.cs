@@ -123,6 +123,11 @@ namespace BottleSort.Services
             return LevelReward(type, level, stars) - LevelReward(type, level, previousStars);
         }
 
+        // Награда за победу за рекламу: ×2, а на спасениях и боссах ×3. Такие уровни — 6 % от всех,
+        // так что даже если смотреть рекламу каждый раз, доход вырастает примерно на 1 % (§6.3).
+        public static int RewardedWinMultiplier(LevelType type) =>
+            type == LevelType.Rescue || type == LevelType.Boss || type == LevelType.ChapterBoss ? 3 : 2;
+
         public static RewardBundle ChapterChest(int chapter) => new RewardBundle(100 + 10 * chapter, 1, 1, 1);
 
         public static int CalendarCoins(int day) => 40 + Math.Max(1, Math.Min(CalendarDays, day)) * 20;

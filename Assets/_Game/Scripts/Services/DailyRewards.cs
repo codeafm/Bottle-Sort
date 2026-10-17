@@ -12,9 +12,10 @@ namespace BottleSort.Services
 
         public static bool GiftAvailable(PlayerData data, DateTime today) => data.giftDate != DayKey(today);
 
-        public static bool TryClaimGift(PlayerData data, DateTime today, out RewardBundle reward)
+        // multiplier 2 — подарок забрали через рекламу «×2».
+        public static bool TryClaimGift(PlayerData data, DateTime today, out RewardBundle reward, int multiplier = 1)
         {
-            reward = EconomyRules.DailyGift;
+            reward = Multiply(EconomyRules.DailyGift, multiplier);
             if (!GiftAvailable(data, today))
                 return false;
             data.giftDate = DayKey(today);
@@ -27,10 +28,10 @@ namespace BottleSort.Services
         // День, награду которого заберут следующей. Пропуск дня серию не сбрасывает — как во Flutter.
         public static int CalendarDay(PlayerData data) => Math.Max(1, Math.Min(EconomyRules.CalendarDays, data.calendarDay));
 
-        public static bool TryClaimCalendar(PlayerData data, DateTime today, out int coins)
+        public static bool TryClaimCalendar(PlayerData data, DateTime today, out int coins, int multiplier = 1)
         {
             int day = CalendarDay(data);
-            coins = EconomyRules.CalendarCoins(day);
+            coins = EconomyRules.CalendarCoins(day) * Math.Max(1, multiplier);
             if (CalendarClaimedToday(data, today))
                 return false;
             data.calendarDate = DayKey(today);
@@ -67,6 +68,12 @@ namespace BottleSort.Services
             int sector = random.Next(EconomyRules.WheelPrizes.Length);
             Economy.Grant(data, EconomyRules.WheelPrizes[sector]);
             return sector;
+        }
+
+        static RewardBundle Multiply(RewardBundle reward, int multiplier)
+        {
+            int m = Math.Max(1, multiplier);
+            return new RewardBundle(reward.Coins * m, reward.Undo * m, reward.Hints * m, reward.Bottles * m, reward.Spins * m);
         }
 
         public static void AddSpin(PlayerData data)

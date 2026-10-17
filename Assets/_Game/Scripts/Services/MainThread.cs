@@ -10,6 +10,9 @@ namespace BottleSort.Services
     {
         readonly Queue<Action> _queue = new Queue<Action>();
 
+        // Каждый кадр, с unscaled deltaTime: таймерам рекламы не важна пауза игры.
+        public event Action<float> Ticked;
+
         public void Post(Action action)
         {
             if (action == null)
@@ -28,6 +31,7 @@ namespace BottleSort.Services
 
         void Update()
         {
+            Ticked?.Invoke(Time.unscaledDeltaTime);
             while (true)
             {
                 Action next;

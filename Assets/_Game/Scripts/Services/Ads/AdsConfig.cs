@@ -14,15 +14,10 @@ namespace BottleSort.Services
         public string yandexInterstitial = AdUnits.Interstitial;
         public string yandexRewarded = AdUnits.Rewarded;
 
-        [Tooltip("Тестовые объявления Yandex. В development-сборках включается всегда.")]
-        public bool testMode;
-
-        public bool UseTestMode => testMode || Debug.isDebugBuild;
-
-        // Демо-блоки Yandex всегда отдают тестовую рекламу, в том числе от сетей медиации.
-        public string BannerId => UseTestMode ? "demo-banner-yandex" : yandexBanner;
-        public string InterstitialId => UseTestMode ? "demo-interstitial-yandex" : yandexInterstitial;
-        public string RewardedId => UseTestMode ? "demo-rewarded-yandex" : yandexRewarded;
+        // Всегда настоящие блоки из кабинета, демо-блоки заказчик не хочет даже в dev-сборках.
+        public string BannerId => yandexBanner;
+        public string InterstitialId => yandexInterstitial;
+        public string RewardedId => yandexRewarded;
 
         public static AdsConfig Load()
         {

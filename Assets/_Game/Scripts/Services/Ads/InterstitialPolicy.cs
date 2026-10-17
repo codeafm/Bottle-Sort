@@ -1,45 +1,59 @@
-using System.Collections.Generic;
-using BottleSort.Core;
-
 namespace BottleSort.Services
 {
-    // LEVEL_DESIGN §7.5: не раньше 21-го, не чаще раза в 3 уровня и раза в 150 секунд; никогда после
-    // обучающего уровня фишки, после босса главы и на первом уровне сессии. Во Flutter было просто L % 3 == 0.
+    // Решение заказчика вместо LEVEL_DESIGN §7.5: межстраничная после каждой 2-й победы и после каждого
+    // 2-го проигрыша, победы и проигрыши считаются отдельно. Не на обучении 1–3 и не сразу после того,
+    // как игрок сам смотрел рекламу за награду на этом уровне. Между двумя показами не меньше 30 секунд,
+    // чтобы два быстрых проигрыша подряд и победа следом не дали три ролика за минуту.
     public sealed class InterstitialPolicy
     {
-        public const int FirstLevel = 21;
-        public const int LevelsBetween = 3;
-        public const double SecondsBetween = 150;
+        public const int WinsBetween = 2;
+        public const int LossesBetween = 2;
+        public const double MinSecondsBetween = 30;
+        public const int FirstLevel = 4;
 
-        // Первые уровни новых фишек (§5, §10): «?», замок, лёд, тонировка, цветной замок, переворот, пипетка.
-        static readonly HashSet<int> FeatureIntroLevels = new HashSet<int> { 101, 151, 201, 251, 401, 601, 701 };
-
-        int _levelsSinceAd;
+        int _wins;
+        int _losses;
         double _lastShownAt = double.NegativeInfinity;
+        bool _rewardedThisLevel;
 
-        public int LevelsSinceAd => _levelsSinceAd;
+        public int WinsSinceAd => _wins;
+        public int LossesSinceAd => _losses;
 
-        public static bool IsFeatureIntro(int level) => FeatureIntroLevels.Contains(level);
+        public void OnLevelStarted() => _rewardedThisLevel = false;
+        public void OnRewardedWatched() => _rewardedThisLevel = true;
 
-        // Вызывать на каждой победе, до решения о показе.
-        public void OnLevelCompleted() => _levelsSinceAd++;
-
-        public bool ShouldShow(int level, LevelType type, bool noAds, double now)
+        public void OnWin(int level)
         {
-            if (noAds || level < FirstLevel)
-                return false;
-            if (type == LevelType.ChapterBoss || IsFeatureIntro(level))
-                return false;
-            // Счётчик живёт только в памяти, поэтому первый уровень сессии сюда не дотягивает сам собой.
-            if (_levelsSinceAd < LevelsBetween)
-                return false;
-            return now - _lastShownAt >= SecondsBetween;
+            if (level >= FirstLevel)
+                _wins++;
         }
 
-        public void OnShown(double now)
+        public void OnLoss(int level)
         {
-            _levelsSinceAd = 0;
+            if (level >= FirstLevel)
+                _losses++;
+        }
+
+        public bool ShouldShowAfterWin(int level, bool noAds, double now) =>
+            _wins >= WinsBetween && Allowed(level, noAds, now);
+
+        public bool ShouldShowAfterLoss(int level, bool noAds, double now) =>
+            _losses >= LossesBetween && Allowed(level, noAds, now);
+
+        // Пропущенный показ не сбрасывает счётчик: реклама выйдет при следующей возможности.
+        public void OnShownAfterWin(double now)
+        {
+            _wins = 0;
             _lastShownAt = now;
         }
+
+        public void OnShownAfterLoss(double now)
+        {
+            _losses = 0;
+            _lastShownAt = now;
+        }
+
+        bool Allowed(int level, bool noAds, double now) =>
+            !noAds && level >= FirstLevel && !_rewardedThisLevel && now - _lastShownAt >= MinSecondsBetween;
     }
 }

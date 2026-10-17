@@ -79,6 +79,7 @@ win_moves	Ходы: {0}	Moves: {0}
 win_best	Лучший результат	New best
 win_reward	НАГРАДА	REWARD
 win_double	×2 = {0}	×2 = {0}
+win_triple	×3 = {0}	×3 = {0}
 win_next	Следующий уровень	Next level
 win_menu	В главное меню	Main menu
 gift_title	Обучение пройдено!	Tutorial complete!
@@ -206,3 +207,14 @@ toast_coins_ad_tutorial	Монеты за рекламу откроются по
 toast_coins_ad_limit	На сегодня всё. Приходи завтра за новыми монетами!	That's all for today. Come back tomorrow!
 toast_coins_ad_wait	Следующие монеты через {0}	Next coins in {0}
 toast_coins_ad_failed	Реклама не загрузилась или не досмотрена — монеты не начислены. Попробуй позже	The ad didn't load or wasn't finished, no coins this time. Try again later
+reward_double_ad	×2 за рекламу	×2 for an ad
+lose_moves_title	Ходы закончились	Out of moves
+lose_moves_text	Возьми ещё 5 ходов и доиграй	Take 5 more moves and finish it
+lose_moves_ad	+5 ходов	+5 moves
+lose_restart	Заново	Restart
+deadend_title	Ходов нет	No moves left
+deadend_text	Возьми ещё бутылку и играй дальше	Take one more bottle and keep going
+deadend_text_restart	Отмени ход или начни заново	Undo a move or start over
+deadend_bottle_ad	+1 бутылка	+1 bottle
+toast_extra_moves	+{0} ходов!	+{0} moves!
+toast_reward_ad_failed	Реклама не загрузилась или не досмотрена. Попробуй ещё раз	The ad didn't load or wasn't finished. Try again

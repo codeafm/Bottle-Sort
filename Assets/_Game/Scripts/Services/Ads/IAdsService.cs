@@ -16,6 +16,8 @@ namespace BottleSort.Services
 
         void ShowBanner();
         void HideBanner();
+        // Загрузить новый баннер на место показанного. done(false) — не загрузился, старый остался.
+        void RefreshBanner(Action<bool> done);
     }
 
     // Unit id из Flutter-версии (FLUTTER_SPEC §5).

@@ -68,14 +68,15 @@ namespace BottleSort.UI
             // На обучении рекламы нет совсем (LEVEL_DESIGN §3.4).
             doubleButton.gameObject.SetActive(!_result.IsTutorial && _result.Reward > 0);
             doubleButton.interactable = true;
-            doubleLabel.SetKey("win_double", Loc.Number(_result.Reward * 2));
+            int multiplier = EconomyRules.RewardedWinMultiplier(LevelPlan.TypeOf(_result.Level));
+            doubleLabel.SetKey(multiplier == 3 ? "win_triple" : "win_double", Loc.Number(_result.Reward * multiplier));
         }
 
         protected override void OnOpen()
         {
             ShowResult();
 
-            Ads.LevelCompleted();
+            Ads.LevelCompleted(_result.Level);
             PlayStarSounds();
             ScheduleChests();
 
@@ -175,8 +176,9 @@ namespace BottleSort.UI
                     doubleButton.interactable = true;
                     return;
                 }
-                PlayerData.Current.AddCoins(_result.Reward);
-                reward.text = "+" + Loc.Number(_result.Reward * 2);
+                int multiplier = EconomyRules.RewardedWinMultiplier(LevelPlan.TypeOf(_result.Level));
+                PlayerData.Current.AddCoins(_result.Reward * (multiplier - 1));
+                reward.text = "+" + Loc.Number(_result.Reward * multiplier);
                 UiFeedback.Play(UiSound.Coin);
                 doubleButton.gameObject.SetActive(false);
             });

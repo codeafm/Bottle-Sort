@@ -65,6 +65,18 @@ namespace BottleSort.Services
                 _bannerStub.SetActive(false);
         }
 
+        int _bannerNumber = 1;
+
+        public void RefreshBanner(Action<bool> done)
+        {
+            _bannerNumber++;
+            Debug.Log($"[Ads] Banner refreshed (stub), #{_bannerNumber}");
+            var label = _bannerStub != null ? _bannerStub.GetComponentInChildren<Text>(true) : null;
+            if (label != null)
+                label.text = $"Баннер Yandex 320×50 №{_bannerNumber} (настоящий — только на телефоне)";
+            done?.Invoke(true);
+        }
+
         static GameObject CreateBannerStub()
         {
             var root = new GameObject("Banner Stub", typeof(Canvas), typeof(CanvasScaler));

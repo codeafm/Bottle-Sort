@@ -83,45 +83,6 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void Interstitial_NeverBeforeLevel21()
-        {
-            var policy = new InterstitialPolicy();
-            for (int i = 0; i < 5; i++)
-                policy.OnLevelCompleted();
-            Assert.IsFalse(policy.ShouldShow(20, LevelType.Normal, false, 1000));
-            Assert.IsTrue(policy.ShouldShow(21, LevelType.Normal, false, 1000));
-        }
-
-        [Test]
-        public void Interstitial_EveryThreeLevelsAnd150Seconds()
-        {
-            var policy = new InterstitialPolicy();
-            policy.OnLevelCompleted();
-            Assert.IsFalse(policy.ShouldShow(40, LevelType.Normal, false, 0), "first level of the session");
-            policy.OnLevelCompleted();
-            policy.OnLevelCompleted();
-            Assert.IsTrue(policy.ShouldShow(42, LevelType.Normal, false, 0));
-            policy.OnShown(0);
-
-            for (int i = 0; i < 3; i++)
-                policy.OnLevelCompleted();
-            Assert.IsFalse(policy.ShouldShow(45, LevelType.Normal, false, 100), "too soon");
-            Assert.IsTrue(policy.ShouldShow(45, LevelType.Normal, false, 150));
-        }
-
-        [Test]
-        public void Interstitial_SkipsChapterBossFeatureIntroAndNoAds()
-        {
-            var policy = new InterstitialPolicy();
-            for (int i = 0; i < 5; i++)
-                policy.OnLevelCompleted();
-            Assert.IsFalse(policy.ShouldShow(50, LevelType.ChapterBoss, false, 1000));
-            Assert.IsFalse(policy.ShouldShow(101, LevelType.Normal, false, 1000));
-            Assert.IsFalse(policy.ShouldShow(60, LevelType.Normal, true, 1000));
-            Assert.IsTrue(policy.ShouldShow(25, LevelType.Boss, false, 1000));
-        }
-
-        [Test]
         public void Reminders_StartTomorrowEvening()
         {
             var times = NotificationService.ReminderTimes(new System.DateTime(2026, 10, 17, 21, 30, 0));

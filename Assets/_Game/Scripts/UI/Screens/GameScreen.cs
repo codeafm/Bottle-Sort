@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BottleSort.Core;
 using BottleSort.Gameplay;
+using BottleSort.Services;
 using UnityEngine;
 
 namespace BottleSort.UI
@@ -9,7 +10,7 @@ namespace BottleSort.UI
     // Игровой экран. Ходы идут прямо в GameSession / TutorialGuide, ядро меняется сразу,
     // а картинка догоняет его через PourAnimator. Пока бутылка летит или в неё льют, её не трогаем;
     // остальные бутылки можно брать — правила это не ломает, потому что ход уже применён.
-    public sealed class GameScreen : UiScreen
+    public sealed partial class GameScreen : UiScreen
     {
         const float WinDelay = 0.8f;
 
@@ -157,6 +158,8 @@ namespace BottleSort.UI
                 tutorial.Begin(this, _level, _guide);
             else
                 tutorial.Stop();
+            OnAttemptStarted();
+            Ads.LevelStarted();
         }
 
         string DefaultInfo()
@@ -303,7 +306,9 @@ namespace BottleSort.UI
             if (_session.IsWon)
                 _finished = true;
             else if (_session.IsOutOfMoves)
-                toast.ShowKey("toast_out_of_moves", 2.5f);
+                OnOutOfMoves();
+            else
+                CheckDeadEnd();
 
             if (!StartPour(move, outcome, changes))
             {
@@ -545,6 +550,7 @@ namespace BottleSort.UI
             SkipPours();
             Deselect();
             if (_guide != null) _guide.Restart(); else _session.Restart();
+            OnAttemptStarted();
             GameEvents.RaiseRestartUsed();
             field.Build(_session.State);
             hud.SetInfo(DefaultInfo());

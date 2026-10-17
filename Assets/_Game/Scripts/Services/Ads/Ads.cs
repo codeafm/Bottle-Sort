@@ -14,6 +14,7 @@ namespace BottleSort.Services
         static IAdsService _service;
         static MainThread _thread;
         static readonly InterstitialPolicy Policy = new InterstitialPolicy();
+        static readonly BannerRefreshTimer BannerTimer = new BannerRefreshTimer();
         static ScreenId _screen = ScreenId.Splash;
         static int _screenLevel;
         static bool _popupOpen;
@@ -39,6 +40,16 @@ namespace BottleSort.Services
             ScreenRouter.PopupsChanged += OnPopupsChanged;
             PlayerData.Changed -= RefreshBanner;
             PlayerData.Changed += RefreshBanner;
+            thread.Ticked -= TickBanner;
+            thread.Ticked += TickBanner;
+        }
+
+        // Время баннера идёт, только пока он на экране и приложение на переднем плане.
+        static void TickBanner(float deltaTime)
+        {
+            bool visible = _bannerShown && !_busy && Application.isFocused;
+            if (BannerTimer.Tick(deltaTime, visible))
+                _service.RefreshBanner(BannerTimer.OnRefreshed);
         }
 
         // В редакторе заглушка. На устройстве только Yandex: другие сети (Unity Ads) подключены
@@ -63,6 +74,8 @@ namespace BottleSort.Services
             _thread.StartCoroutine(ShowRewardedWhenReady(watched =>
             {
                 SetBusy(false);
+                if (watched)
+                    Policy.OnRewardedWatched();
                 done?.Invoke(watched);
             }));
         }
@@ -89,21 +102,36 @@ namespace BottleSort.Services
             });
         }
 
-        public static void LevelCompleted() => Policy.OnLevelCompleted();
+        public static void LevelStarted() => Policy.OnLevelStarted();
+        public static void LevelCompleted(int level) => Policy.OnWin(level);
+        public static void LevelLost(int level) => Policy.OnLoss(level);
 
         // Вызывать на «Дальше» после победы. then вызывается всегда: после рекламы или сразу.
         public static void ShowInterstitialIfDue(int level, LevelType type, Action then)
         {
-            var data = PlayerData.Current;
             double now = Time.realtimeSinceStartupAsDouble;
-            if (_service == null || _busy || !_service.IsInterstitialReady || !Policy.ShouldShow(level, type, data.noAds, now))
+            bool due = Policy.ShouldShowAfterWin(level, PlayerData.Current.noAds, now);
+            ShowInterstitial(due, () => Policy.OnShownAfterWin(now), then);
+        }
+
+        // Вызывать, когда после проигрыша игрок выбрал «Заново».
+        public static void ShowInterstitialAfterLossIfDue(int level, Action then)
+        {
+            double now = Time.realtimeSinceStartupAsDouble;
+            bool due = Policy.ShouldShowAfterLoss(level, PlayerData.Current.noAds, now);
+            ShowInterstitial(due, () => Policy.OnShownAfterLoss(now), then);
+        }
+
+        static void ShowInterstitial(bool due, Action shown, Action then)
+        {
+            if (!due || _service == null || _busy || !_service.IsInterstitialReady)
             {
                 then?.Invoke();
                 return;
             }
 
             SetBusy(true);
-            Policy.OnShown(now);
+            shown();
             AudioListener.pause = true;
             _service.ShowInterstitial(() =>
             {

@@ -171,12 +171,24 @@ namespace BottleSort.UI
             }
 
             var popup = Router.Get<RewardPopup>();
-            popup.Setup("daily_gift_title", "daily_gift_text", EconomyRules.DailyGift, "gift_claim", () =>
-            {
-                if (DailyRewards.TryClaimGift(PlayerData.Current, DateTime.Now, out _))
-                    UiFeedback.Play(UiSound.Reward);
-            });
+            popup.SetupChoice("daily_gift_title", "daily_gift_text", EconomyRules.DailyGift,
+                "reward_double_ad", () => RewardedAds.Show(watched =>
+                {
+                    // Реклама не досмотрена — подарок не пропадает, его можно забрать ещё раз.
+                    if (watched)
+                        ClaimGift(2);
+                    else
+                        toast.ShowKey("toast_coins_ad_failed", 2.2f);
+                }),
+                "gift_claim", () => ClaimGift(1));
+            popup.AllowDismiss();
             Router.ShowPopup(ScreenId.Reward);
+        }
+
+        void ClaimGift(int multiplier)
+        {
+            if (DailyRewards.TryClaimGift(PlayerData.Current, DateTime.Now, out _, multiplier))
+                UiFeedback.Play(UiSound.Reward);
         }
     }
 }
