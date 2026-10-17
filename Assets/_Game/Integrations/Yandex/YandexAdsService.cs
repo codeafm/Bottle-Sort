@@ -173,9 +173,11 @@ namespace BottleSort.Integrations
 
         void CreateBanner()
         {
-            // 320×50, как место под баннер в макете меню и игры. Yandex прижимает его к низу safe area,
-            // а кнопки ui начинаются на 71 pt выше неё, так что баннер их не закрывает.
-            _banner = new Banner(BannerAdSize.Fixed(BannerWidth, BannerHeight), AdPosition.BottomCenter);
+            // Не выше 50 при ширине 320, как место под баннер в макете меню и игры. Yandex прижимает его
+            // к низу safe area, а кнопки ui начинаются на 71 pt выше неё, так что баннер их не закрывает.
+            // Fixed не годится: плагин 8.6.0 зовёт на Android BannerAdSize.fixedSize, а в SDK 8.6.0 метод
+            // уже называется fixed, и баннер падает с NoSuchMethodError. Inline в SDK есть под тем же именем.
+            _banner = new Banner(BannerAdSize.Inline(BannerWidth, BannerHeight), AdPosition.BottomCenter);
             _banner.OnAdLoaded += (sender, args) => _thread.Post(() =>
             {
                 _bannerLoaded = true;
