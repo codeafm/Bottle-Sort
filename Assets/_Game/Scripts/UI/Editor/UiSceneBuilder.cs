@@ -212,6 +212,10 @@ namespace BottleSort.UI.Editor
             label = Text(face.transform, "Amount", DisplayFont, plus ? 20 : 18, Color.white,
                 plus ? TextAlignmentOptions.Center : TextAlignmentOptions.MidlineRight);
             label.rectTransform.Fill(plus ? 40 : 36, 0, right, 0);
+            // Ширина плашки фиксированная, большие суммы мельчают, а не вылезают.
+            label.enableAutoSizing = true;
+            label.fontSizeMax = label.fontSize;
+            label.fontSizeMin = M(11);
             label.text = "0";
 
             if (plus)

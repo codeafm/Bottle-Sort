@@ -11,6 +11,7 @@ namespace BottleSort.UI
     {
         const float MaxScale = 2.5f;
         const float MaxAvailableHeight = 420f;
+        const float BottomReserve = 12f;
         const float Gap = 12f;
         const float RowPadding = 10f;
         const float TopPadding = 24f;
@@ -101,10 +102,16 @@ namespace BottleSort.UI
             if (area.width <= 0f || area.height <= 0f)
                 return;
             // Как zoom в Game.dc.html: высота берётся не больше 420 pt, поэтому на длинных экранах бутылки не раздуваются.
-            float height = Mathf.Min(area.height, MaxAvailableHeight * MaxScale);
+            // Снизу держим запас: мировая полка спускается ниже своей ячейки, а над бустерами торчат бейджи.
+            float reserve = BottomReserve * MaxScale;
+            float height = Mathf.Min(area.height - reserve, MaxAvailableHeight * MaxScale);
             float scale = Mathf.Min(MaxScale, area.width / _boardSize.x, height / _boardSize.y);
             board.sizeDelta = _boardSize;
             board.localScale = new Vector3(scale, scale, 1f);
+
+            // Доска по центру поля, но если снизу остаётся меньше запаса — поднимаем её.
+            float bottomGap = (area.height - _boardSize.y * scale) / 2f;
+            board.anchoredPosition = new Vector2(0f, Mathf.Max(0f, reserve - bottomGap));
         }
 
         void Clear()

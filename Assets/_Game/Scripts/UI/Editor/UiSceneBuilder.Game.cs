@@ -36,7 +36,7 @@ namespace BottleSort.UI.Editor
             // Плашка 150×58 плюс рамка 1.5 снаружи.
             var plate = Rounded(content, "LevelPlate", 20, Color.white);
             plate.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -HeaderTop), new Vector2(153, 61), new Vector2(0.5f, 1f));
-            SoftShadow(plate.rectTransform, 8, 18, 0.35f);
+            var plateShadow = SoftShadow(plate.rectTransform, 8, 18, 0.35f);
             Gradient(plate, White(0.24f), White(0.08f));
             Border(plate.transform, 20, Hex("#E6F0FF", 0.55f));
             var levelCaption = Text(plate.transform, "Caption", HeavyFont, 11, Hex("#EBF3FF", 0.85f), TextAlignmentOptions.Center, "hud_level");
@@ -63,6 +63,15 @@ namespace BottleSort.UI.Editor
             var coinsRoot = CoinPill(content, "Coins", 104, 44, true, out var coins);
             coinsRoot.Place(new Vector2(1f, 1f), new Vector2(-16, -(HeaderTop + 6)), new Vector2(104, 44));
             SoftShadow(coinsRoot, 6, 14, 0.3f);
+
+            // В макете плашка 153 pt чуть шире своей колонки и вплотную к монетам; держим зазор 4 pt
+            // от монет и от «домой», на узком экране плашка ужимается.
+            var header = content.gameObject.AddComponent<HeaderLayout>();
+            Set(header, "plate", plate.rectTransform);
+            Set(header, "plateShadow", plateShadow.rectTransform);
+            Set(header, "plateWidth", M(153));
+            Set(header, "sideColumn", M(16 + 104));
+            Set(header, "minGap", M(4));
 
             // Панель прогресса: собрано · ходы · звёзды.
             var progress = Rounded(content, "Progress", 18, Color.white);
