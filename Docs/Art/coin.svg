@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="face" cx="0.38" cy="0.32" r="0.75">
+      <stop offset="0" stop-color="#FFF6C9"/>
+      <stop offset="0.35" stop-color="#FFD44A"/>
+      <stop offset="0.75" stop-color="#F5A70F"/>
+      <stop offset="1" stop-color="#D98300"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF4C2"/>
+      <stop offset="0.45" stop-color="#FFC531"/>
+      <stop offset="1" stop-color="#B86400"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D98100"/>
+      <stop offset="1" stop-color="#8A4500"/>
+    </linearGradient>
+    <radialGradient id="inner" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#FFC93A"/>
+      <stop offset="1" stop-color="#EE9600"/>
+    </radialGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF3B8"/>
+      <stop offset="0.55" stop-color="#FFD24A"/>
+      <stop offset="1" stop-color="#F0A000"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="60" cy="112" rx="40" ry="6" fill="url(#shadow)"/>
+
+  <!-- толщина монеты -->
+  <circle cx="60" cy="62" r="50" fill="url(#edge)"/>
+  <circle cx="60" cy="56" r="50" fill="url(#rim)"/>
+  <circle cx="60" cy="56" r="43" fill="url(#face)"/>
+  <circle cx="60" cy="56" r="43" fill="none" stroke="#C97400" stroke-opacity="0.55" stroke-width="1.5"/>
+
+  <!-- насечки -->
+  <g fill="#FFF0B0" fill-opacity="0.85">
+    <circle cx="60" cy="17" r="1.8"/><circle cx="79.5" cy="22.2" r="1.8"/><circle cx="93.8" cy="36.5" r="1.8"/>
+    <circle cx="99" cy="56" r="1.8"/><circle cx="93.8" cy="75.5" r="1.8"/><circle cx="79.5" cy="89.8" r="1.8"/>
+    <circle cx="60" cy="95" r="1.8"/><circle cx="40.5" cy="89.8" r="1.8"/><circle cx="26.2" cy="75.5" r="1.8"/>
+    <circle cx="21" cy="56" r="1.8"/><circle cx="26.2" cy="36.5" r="1.8"/><circle cx="40.5" cy="22.2" r="1.8"/>
+  </g>
+
+  <!-- внутренний круг -->
+  <circle cx="60" cy="57" r="31" fill="#C97A00" fill-opacity="0.45"/>
+  <circle cx="60" cy="56" r="31" fill="url(#inner)"/>
+  <circle cx="60" cy="56" r="31" fill="none" stroke="#FFE68A" stroke-width="2" stroke-opacity="0.9"/>
+
+  <!-- капля -->
+  <path d="M60 33 C60 33 45 50 45 61 C45 70 51.7 76 60 76 C68.3 76 75 70 75 61 C75 50 60 33 60 33 Z" fill="#B66A00" transform="translate(0 2)" fill-opacity="0.55"/>
+  <path d="M60 33 C60 33 45 50 45 61 C45 70 51.7 76 60 76 C68.3 76 75 70 75 61 C75 50 60 33 60 33 Z" fill="url(#drop)" stroke="#E08A00" stroke-width="1.6"/>
+  <path d="M53 58 C53 53 56 48 58.5 45" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="53.5" cy="64" r="2.2" fill="#FFFFFF" fill-opacity="0.75"/>
+
+  <!-- блеск -->
+  <path d="M28 40 C32 26 46 15 62 13" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="5" stroke-linecap="round"/>
+  <path d="M95 74 C92 82 86 88 79 92" fill="none" stroke="#FFF6D0" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+  <path d="M93 19 L95.2 25.2 L101.5 27 L95.2 28.8 L93 35 L90.8 28.8 L84.5 27 L90.8 25.2 Z" fill="#FFFFFF" fill-opacity="0.95"/>
+</svg>
