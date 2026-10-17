@@ -1,5 +1,7 @@
 using System;
+using BottleSort.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BottleSort.Services
 {
@@ -10,6 +12,7 @@ namespace BottleSort.Services
         const float FakeAdSeconds = 0.5f;
 
         readonly MainThread _runner;
+        GameObject _bannerStub;
 
         // Для проверки веток «реклама не загрузилась» и «закрыл, не досмотрев».
         public static bool SimulateNoFill;
@@ -46,7 +49,67 @@ namespace BottleSort.Services
             _runner.After(FakeAdSeconds, () => done?.Invoke());
         }
 
-        public void ShowBanner() => Debug.Log("[Ads] Banner on (stub)");
-        public void HideBanner() => Debug.Log("[Ads] Banner off (stub)");
+        // SDK нет, поэтому рисуем серую плашку 320×50 там, где на телефоне встанет баннер.
+        public void ShowBanner()
+        {
+            Debug.Log("[Ads] Banner on (stub)");
+            if (_bannerStub == null)
+                _bannerStub = CreateBannerStub();
+            _bannerStub.SetActive(true);
+        }
+
+        public void HideBanner()
+        {
+            Debug.Log("[Ads] Banner off (stub)");
+            if (_bannerStub != null)
+                _bannerStub.SetActive(false);
+        }
+
+        static GameObject CreateBannerStub()
+        {
+            var root = new GameObject("Banner Stub", typeof(Canvas), typeof(CanvasScaler));
+            UnityEngine.Object.DontDestroyOnLoad(root);
+            var canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 5000;
+            // Тот же масштаб, что у интерфейса игры: 390 pt макета = 975 единиц.
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(975f, 1732.5f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+
+            var safe = new GameObject("SafeArea", typeof(RectTransform), typeof(SafeAreaFitter));
+            var safeRect = (RectTransform)safe.transform;
+            safeRect.SetParent(root.transform, false);
+            safeRect.anchorMin = Vector2.zero;
+            safeRect.anchorMax = Vector2.one;
+            safeRect.offsetMin = safeRect.offsetMax = Vector2.zero;
+
+            var banner = new GameObject("Banner 320x50", typeof(RectTransform), typeof(Image));
+            var rect = (RectTransform)banner.transform;
+            rect.SetParent(safeRect, false);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(320f, 50f) * 2.5f;
+            rect.anchoredPosition = Vector2.zero;
+            var image = banner.GetComponent<Image>();
+            image.color = new Color(0.82f, 0.84f, 0.88f, 0.92f);
+            image.raycastTarget = false;
+
+            var label = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            var labelRect = (RectTransform)label.transform;
+            labelRect.SetParent(rect, false);
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
+            var text = label.GetComponent<Text>();
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 34;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = new Color(0.25f, 0.27f, 0.32f);
+            text.text = "Баннер Yandex 320×50 (настоящий — только на телефоне)";
+            text.raycastTarget = false;
+            return root;
+        }
     }
 }
