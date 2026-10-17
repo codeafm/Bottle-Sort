@@ -22,6 +22,10 @@ namespace BottleSort.Services
         static bool _busy;
 
         public static IAdsService Service => _service;
+
+        // Реализацию Yandex регистрирует Integrations/Yandex: плагин без asmdef лежит в Assembly-CSharp,
+        // и из Game.Runtime на него не сослаться.
+        public static Func<MainThread, AdsConfig, IAdsService> DeviceServiceFactory;
         public static bool IsShowing => _busy;
 
         public static void Initialize(MainThread thread)
@@ -36,26 +40,15 @@ namespace BottleSort.Services
             PlayerData.Changed += RefreshBanner;
         }
 
-        // В редакторе всегда заглушка. На устройстве Yandex основной, Unity Ads (LevelPlay) — запасной,
-        // если пакет стоит и в AdsConfig вписаны ключи.
+        // В редакторе заглушка. На устройстве только Yandex: другие сети (Unity Ads) подключены
+        // адаптерами медиации внутри Yandex и настраиваются в кабинете, коду о них знать не нужно.
         static IAdsService CreateService(MainThread thread, AdsConfig config)
         {
-#if UNITY_EDITOR
+#if !UNITY_EDITOR
+            if (DeviceServiceFactory != null)
+                return DeviceServiceFactory(thread, config);
+#endif
             return new EditorAdsService(thread);
-#else
-            IAdsService primary;
-#if YANDEX_MOBILE_ADS
-            primary = new YandexAdsService(thread, config);
-#else
-            primary = new EditorAdsService(thread);
-#endif
-            IAdsService fallback = null;
-#if BOTTLESORT_LEVELPLAY
-            if (config.HasLevelPlayKeys)
-                fallback = new LevelPlayAdsService(thread, config);
-#endif
-            return new FallbackAdsService(primary, fallback);
-#endif
         }
 
         public static void ShowRewarded(Action<bool> done)
