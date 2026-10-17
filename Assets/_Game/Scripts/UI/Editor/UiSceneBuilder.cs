@@ -1,25 +1,34 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BottleSort.Gameplay;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using static BottleSort.UI.Editor.UiKit;
+using Object = UnityEngine.Object;
 
 namespace BottleSort.UI.Editor
 {
-    // Собирает интерфейс сцены Main по размерам из Docs/Mockup. Повторный запуск пересобирает всё,
-    // что лежит под Canvas/SafeArea и Canvas/Backdrop; остальную сцену не трогает.
+    // Собирает три сцены игры по размерам из Docs/Mockup: Splash (заставка), Menu (меню, карта уровней, магазин,
+    // настройки, подарки, колесо) и Game (поле, HUD, победа). Сцены каждый раз создаются заново,
+    // экраны сохраняются префабами в Prefabs/UI/Screens.
     // Из batchmode: -executeMethod BottleSort.UI.Editor.UiSceneBuilder.BuildFromCommandLine
     public static partial class UiSceneBuilder
     {
-        const string MainScenePath = "Assets/_Game/Scenes/Main.unity";
+        const string ScenesDir = "Assets/_Game/Scenes";
         const string PrefabsDir = "Assets/_Game/Prefabs/UI";
         const string BottleStubPath = PrefabsDir + "/BottleStub.prefab";
         const string BottleAdapterPath = PrefabsDir + "/BottleViewAdapter.prefab";
         const string VfxBottlePath = "Assets/_Game/Art/Bottles/Bottle.prefab";
+        static readonly Color CameraBackground = new Color(0.06f, 0.07f, 0.12f, 1f);
+        // Прежние сцены, пока всё жило в одной Main с заставкой в Boot.
+        static readonly string[] OldScenes = { ScenesDir + "/Main.unity", ScenesDir + "/Boot.unity" };
 
         static BottleStubView _bottlePrefab;
         // Бутылка для игрового поля: настоящая от vfx-art, если она есть, иначе заглушка.
@@ -28,61 +37,114 @@ namespace BottleSort.UI.Editor
         public static void BuildFromCommandLine()
         {
             UiAssets.SetupAll();
-            BuildMainScene();
+            BuildScenes();
         }
 
-        [MenuItem("BottleSort/UI/3. Build Main Scene UI")]
-        public static void BuildMainScene()
+        [MenuItem("BottleSort/UI/3. Build Scenes UI")]
+        public static void BuildScenes()
         {
             LoadFonts();
             Directory.CreateDirectory(PrefabsDir);
             Directory.CreateDirectory(PrefabsDir + "/Screens");
-
-            var scene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
-            var canvas = GameObject.Find("Canvas");
-            SetupScaler(canvas.GetComponent<CanvasScaler>());
-            var safeArea = canvas.transform.Find("SafeArea");
-            ClearOld(canvas.transform, safeArea);
-
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             _bottlePrefab = BuildBottleStub();
             _fieldBottlePrefab = BuildBottleAdapter() ?? (MonoBehaviour)_bottlePrefab;
-            var backdrop = BuildBackdrop(canvas.transform);
-            backdrop.transform.SetAsFirstSibling();
 
-            var screens = new List<UiScreen>
+            var paths = new[]
             {
-                BuildSplash(safeArea),
-                BuildMenu(safeArea),
-                BuildLevels(safeArea),
-                BuildGame(safeArea),
-                BuildWin(safeArea),
-                BuildShop(safeArea),
-                BuildSettings(safeArea),
-                BuildGift(safeArea),
-                BuildRewardPopup(safeArea),
-                BuildCalendar(safeArea),
-                BuildWheel(safeArea)
+                BuildScene(SceneLoader.SplashScene, ScreenId.Splash, safeArea => new List<UiScreen> { BuildSplash(safeArea) }),
+                BuildScene(SceneLoader.MenuScene, ScreenId.Menu, safeArea => new List<UiScreen>
+                {
+                    BuildMenu(safeArea),
+                    BuildLevels(safeArea),
+                    BuildShop(safeArea),
+                    BuildSettings(safeArea),
+                    BuildRewardPopup(safeArea),
+                    BuildCalendar(safeArea),
+                    BuildWheel(safeArea)
+                }),
+                BuildScene(SceneLoader.GameScene, ScreenId.Game, safeArea => new List<UiScreen>
+                {
+                    BuildGame(safeArea),
+                    BuildWin(safeArea),
+                    BuildGift(safeArea),
+                    // Награда та же, что в меню: берём уже сохранённый префаб.
+                    Reuse<RewardPopup>(safeArea)
+                })
             };
 
-            var routerObject = new GameObject("ScreenRouter");
-            var router = routerObject.AddComponent<ScreenRouter>();
+            foreach (string old in OldScenes)
+                if (File.Exists(old))
+                    AssetDatabase.DeleteAsset(old);
+            // Только список сцен, остальные настройки сборки не трогаем.
+            EditorBuildSettings.scenes = paths.Select(path => new EditorBuildSettingsScene(path, true)).ToArray();
+            AssetDatabase.SaveAssets();
+            EditorSceneManager.OpenScene(paths[0], OpenSceneMode.Single);
+            Debug.Log("[UiSceneBuilder] Splash, Menu and Game scenes built");
+        }
+
+        static string BuildScene(string name, ScreenId start, Func<Transform, List<UiScreen>> buildScreens)
+        {
+            string path = $"{ScenesDir}/{name}.unity";
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            CreateCamera();
+            var canvas = CreateCanvas();
+            var safeArea = canvas.Find("SafeArea");
+            var backdrop = BuildBackdrop(canvas);
+            backdrop.transform.SetAsFirstSibling();
+            new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+
+            var screens = buildScreens(safeArea);
+            var router = new GameObject("ScreenRouter").AddComponent<ScreenRouter>();
             Set(router, "screens", screens);
             Set(router, "backdrop", backdrop);
+            Set(router, "startScreen", start);
 
             foreach (var screen in screens)
             {
+                if (PrefabUtility.IsPartOfPrefabInstance(screen))
+                    continue;
                 screen.gameObject.SetActive(true);
-                string path = $"{PrefabsDir}/Screens/{screen.name}.prefab";
-                PrefabUtility.SaveAsPrefabAssetAndConnect(screen.gameObject, path, InteractionMode.AutomatedAction);
+                string prefab = $"{PrefabsDir}/Screens/{screen.name}.prefab";
+                PrefabUtility.SaveAsPrefabAssetAndConnect(screen.gameObject, prefab, InteractionMode.AutomatedAction);
             }
-            // В редакторе видна только заставка, остальные экраны включает ScreenRouter.
+            // В редакторе виден только первый экран сцены, остальные включает ScreenRouter.
             foreach (var screen in screens)
-                screen.gameObject.SetActive(screen is SplashScreen);
+                screen.gameObject.SetActive(screen.Id == start);
 
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-            AssetDatabase.SaveAssets();
-            Debug.Log("[UiSceneBuilder] Main scene UI built");
+            EditorSceneManager.SaveScene(scene, path);
+            return path;
+        }
+
+        static T Reuse<T>(Transform safeArea) where T : UiScreen
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<T>($"{PrefabsDir}/Screens/{typeof(T).Name}.prefab");
+            return (T)PrefabUtility.InstantiatePrefab(prefab, safeArea);
+        }
+
+        static void CreateCamera()
+        {
+            var go = new GameObject("Main Camera", typeof(Camera));
+            go.tag = "MainCamera";
+            go.transform.position = new Vector3(0f, 0f, -10f);
+            var camera = go.GetComponent<Camera>();
+            camera.orthographic = true;
+            camera.orthographicSize = 9.6f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = CameraBackground;
+            camera.nearClipPlane = 0.3f;
+            camera.farClipPlane = 100f;
+        }
+
+        static Transform CreateCanvas()
+        {
+            var go = new GameObject("Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            go.layer = LayerMask.NameToLayer("UI");
+            go.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            SetupScaler(go.GetComponent<CanvasScaler>());
+            var safeArea = Node("SafeArea", go.transform).Fill();
+            safeArea.gameObject.AddComponent<SafeAreaFitter>();
+            return go.transform;
         }
 
         // Макет нарисован на 390 pt в ширину, в Canvas это 975 единиц (2.5 на pt). На вытянутых телефонах
@@ -94,21 +156,6 @@ namespace BottleSort.UI.Editor
             scaler.referenceResolution = new Vector2(M(390), M(693));
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             scaler.referencePixelsPerUnit = 100f;
-        }
-
-        static void ClearOld(Transform canvas, Transform safeArea)
-        {
-            for (int i = safeArea.childCount - 1; i >= 0; i--)
-                Object.DestroyImmediate(safeArea.GetChild(i).gameObject);
-            var oldBackdrop = canvas.Find("Backdrop");
-            if (oldBackdrop != null)
-                Object.DestroyImmediate(oldBackdrop.gameObject);
-            foreach (var name in new[] { "ScreenRouter", "UiSounds" })
-            {
-                var old = GameObject.Find(name);
-                if (old != null)
-                    Object.DestroyImmediate(old);
-            }
         }
 
         static ThemeBackdrop BuildBackdrop(Transform canvas)

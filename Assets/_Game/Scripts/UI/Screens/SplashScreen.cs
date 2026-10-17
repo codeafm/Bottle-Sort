@@ -6,7 +6,8 @@ using UnityEngine.UI;
 namespace BottleSort.UI
 {
     // Заставка из Splash.dc.html: логотип влетает, наклонённая бутылка наливает в бутылку на полке,
-    // слой за слоем, потом золотое свечение и звёздочки. Держим минимум 2 с и пока грузится первый уровень.
+    // слой за слоем, потом золотое свечение и звёздочки. Держим минимум 2 с, пока грузятся следующая сцена
+    // и первый уровень.
     public sealed class SplashScreen : UiScreen
     {
         const float MinTime = 2f;
@@ -56,6 +57,7 @@ namespace BottleSort.UI
             // Первый уровень игрока строим заранее: на поздних уровнях генератор думает заметное время.
             int level = PlayerData.Current.highestUnlocked;
             _loading = LevelLoader.Get(level);
+            SceneLoader.Preload(PlayerData.Current.IsFirstLaunch ? SceneLoader.GameScene : SceneLoader.MenuScene);
         }
 
         void AnimateLogo()
@@ -86,7 +88,7 @@ namespace BottleSort.UI
             }
 
             float timeProgress = Mathf.Clamp01(_elapsed / MinTime);
-            float loadProgress = _loading == null || _loading.IsCompleted ? 1f : 0.85f;
+            float loadProgress = Mathf.Min(_loading == null || _loading.IsCompleted ? 1f : 0.85f, SceneLoader.PreloadProgress);
             _shownProgress = Mathf.MoveTowards(_shownProgress, Mathf.Min(timeProgress, loadProgress), dt * 1.5f);
             progressFill.anchorMax = new Vector2(Mathf.Max(_shownProgress, 0.06f), 1f);
             loadingLabel.SetArgs(Mathf.RoundToInt(_shownProgress * 100f));

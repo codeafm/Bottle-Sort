@@ -36,34 +36,31 @@ namespace BottleSort.UI.Tests
         }
 
         [UnityTest]
-        public IEnumerator BootSplashMenuTutorialWinNextLevel()
+        public IEnumerator SplashTutorialWinMenuAcrossScenes()
         {
-            SceneManager.LoadScene("Boot");
+            SceneManager.LoadScene(SceneLoader.SplashScene);
             // Сцена сменится только в конце кадра; без этого найдётся роутер сцены от прошлого теста.
             yield return null;
-            ScreenRouter router = null;
-            yield return WaitUntil(() => (router = FindRouter()) != null, 5f, "router");
-            yield return WaitUntil(() => router.Current != null, 2f, "first screen");
-            Assert.AreEqual(ScreenId.Splash, router.Current.Id);
+            yield return WaitScreen(ScreenId.Splash, 5f, "splash");
             yield return new WaitForSecondsRealtime(0.5f);
             yield return Capture("ui_splash");
 
-            // Первый запуск: после заставки сразу обучение, меню — по кнопке «домой».
-            var game = router.Get<GameScreen>();
-            yield return WaitUntil(() => router.Current == game && !game.IsBusy, 10f, "level 1 after splash");
-            Assert.AreEqual(1, game.Level);
+            // Первый запуск: после заставки сразу обучение в сцене Game, меню — по кнопке «домой».
+            yield return WaitLevel(1, 10f, "level 1 after splash");
+            Assert.AreEqual(SceneLoader.GameScene, SceneManager.GetActiveScene().name);
 
-            Click(game.transform, "Content/Home/Face");
-            yield return WaitUntil(() => router.Current.Id == ScreenId.Menu, 3f, "menu");
+            Click(Game.transform, "Content/Home/Face");
+            yield return WaitScreen(ScreenId.Menu, 5f, "menu");
+            Assert.AreEqual(SceneLoader.MenuScene, SceneManager.GetActiveScene().name);
             yield return new WaitForSecondsRealtime(0.5f);
             yield return Capture("ui_menu");
 
-            Click(router.Current.transform, "Content/Play");
-            yield return WaitUntil(() => router.Current == game && !game.IsBusy, 5f, "level 1 from menu");
-            Assert.AreEqual(1, game.Level);
+            Click(FindRouter().Current.transform, "Content/Play");
+            yield return WaitLevel(1, 5f, "level 1 from menu");
             yield return new WaitForSecondsRealtime(1.2f);
             yield return Capture("ui_level1");
 
+            var game = Game;
             // Уровень 1 строгий: бутылку не по руке взять нельзя.
             Tap(game, 1);
             yield return null;
@@ -84,35 +81,70 @@ namespace BottleSort.UI.Tests
             Tap(game, 1);
             Tap(game, 2);
 
-            var win = router.Get<WinScreen>();
-            yield return WaitUntil(() => router.Current == win, 6f, "win screen");
+            yield return WaitScreen(ScreenId.Win, 6f, "win screen");
+            var win = FindRouter().Get<WinScreen>();
             yield return new WaitForSecondsRealtime(1.2f);
             yield return Capture("ui_win");
             Assert.AreEqual(2, PlayerData.Current.highestUnlocked);
             Assert.AreEqual(3, PlayerData.Current.StarsOf(1));
             Assert.Greater(PlayerData.Current.coins, 0);
 
+            // Следующий уровень открывается в той же сцене, без перезагрузки.
+            var scene = SceneManager.GetActiveScene();
             Click(win.transform, "Content/Next");
-            yield return WaitUntil(() => router.Current == game && !game.IsBusy, 5f, "level 2");
-            Assert.AreEqual(2, game.Level);
+            yield return WaitLevel(2, 5f, "level 2");
+            Assert.AreEqual(scene, SceneManager.GetActiveScene(), "next level must not reload the scene");
             yield return new WaitForSecondsRealtime(1.2f);
             yield return Capture("ui_level2");
 
-            Click(game.transform, "Content/Home/Face");
-            yield return WaitUntil(() => router.Current.Id == ScreenId.Menu, 3f, "menu again");
-            Click(router.Current.transform, "Content/Levels");
-            yield return WaitUntil(() => router.Current.Id == ScreenId.Levels, 3f, "levels");
+            Click(Game.transform, "Content/Home/Face");
+            yield return WaitScreen(ScreenId.Menu, 5f, "menu again");
+            Click(FindRouter().Current.transform, "Content/Levels");
+            yield return WaitScreen(ScreenId.Levels, 3f, "levels");
             yield return new WaitForSecondsRealtime(0.5f);
             yield return Capture("ui_levels");
 
-            router.Show(ScreenId.Shop);
+            FindRouter().Show(ScreenId.Shop);
             yield return new WaitForSecondsRealtime(0.5f);
             yield return Capture("ui_shop");
 
-            router.Show(ScreenId.Menu);
-            Click(router.Current.transform, "Content/Settings/Face");
+            FindRouter().Show(ScreenId.Menu);
+            Click(FindRouter().Current.transform, "Content/Settings/Face");
             yield return new WaitForSecondsRealtime(0.5f);
             yield return Capture("ui_settings");
+        }
+
+        // Сцену игры можно открыть напрямую (из редактора): уровень берётся текущий у игрока.
+        [UnityTest]
+        public IEnumerator GameSceneStartsOnPlayersLevel()
+        {
+            var data = PlayerData.Current;
+            data.highestUnlocked = 7;
+            data.tutorialGiftTaken = true;
+            data.Save();
+
+            SceneManager.LoadScene(SceneLoader.GameScene);
+            yield return null;
+            yield return WaitLevel(7, 20f, "level 7");
+        }
+
+        static GameScreen Game => FindRouter().Get<GameScreen>();
+
+        static IEnumerator WaitScreen(ScreenId id, float seconds, string what)
+        {
+            yield return WaitUntil(() =>
+            {
+                var router = FindRouter();
+                return !SceneLoader.IsBusy && router != null && router.Current != null && router.Current.Id == id;
+            }, seconds, what);
+        }
+
+        static IEnumerator WaitLevel(int level, float seconds, string what)
+        {
+            yield return WaitScreen(ScreenId.Game, seconds, what);
+            var game = Game;
+            yield return WaitUntil(() => !game.IsBusy, seconds, what);
+            Assert.AreEqual(level, game.Level, what);
         }
 
         [UnityTest]
@@ -126,10 +158,10 @@ namespace BottleSort.UI.Tests
             data.extraBottleCount = 1;
             data.Save();
 
-            SceneManager.LoadScene("Main");
+            SceneManager.LoadScene(SceneLoader.GameScene);
             yield return null;
-            ScreenRouter router = null;
-            yield return WaitUntil(() => (router = FindRouter()) != null, 5f, "router");
+            yield return WaitLevel(46, 20f, "level 46 on start");
+            var router = FindRouter();
             var game = router.Get<GameScreen>();
             Vector3[] header = null;
 
@@ -160,12 +192,10 @@ namespace BottleSort.UI.Tests
             data.tutorialGiftTaken = true;
             data.Save();
 
-            SceneManager.LoadScene("Main");
+            SceneManager.LoadScene(SceneLoader.MenuScene);
             yield return null;
-            ScreenRouter router = null;
-            yield return WaitUntil(() => (router = FindRouter()) != null, 5f, "router");
-            router.Show(ScreenId.Menu, false);
-            yield return null;
+            yield return WaitScreen(ScreenId.Menu, 5f, "menu");
+            var router = FindRouter();
 
             var canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
             Assert.AreEqual(RenderMode.ScreenSpaceOverlay, canvas.renderMode);

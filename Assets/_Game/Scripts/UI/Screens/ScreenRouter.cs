@@ -4,9 +4,12 @@ using UnityEngine.InputSystem;
 
 namespace BottleSort.UI
 {
+    // У каждой сцены (Splash, Menu, Game) свой роутер со своими экранами. Экраны из другой сцены
+    // открываются через SceneLoader.
     public sealed class ScreenRouter : MonoBehaviour
     {
         [SerializeField] UiScreen[] screens;
+        [SerializeField] ScreenId startScreen = ScreenId.Splash;
         [SerializeField] ThemeBackdrop backdrop;
 
         readonly Dictionary<ScreenId, UiScreen> _byId = new Dictionary<ScreenId, UiScreen>();
@@ -29,7 +32,17 @@ namespace BottleSort.UI
             }
         }
 
-        void Start() => Show(ScreenId.Splash, false);
+        // Сцену можно открыть и напрямую из редактора: тогда Game берёт текущий уровень игрока.
+        void Start()
+        {
+            var first = SceneLoader.TakePendingScreen() ?? startScreen;
+            int? level = SceneLoader.TakePendingLevel();
+            if (!_byId.ContainsKey(first))
+                first = startScreen;
+            if (first == ScreenId.Game)
+                Get<GameScreen>().Prepare(level ?? PlayerData.Current.highestUnlocked);
+            Show(first, false);
+        }
 
         public T Get<T>() where T : UiScreen
         {
@@ -41,8 +54,12 @@ namespace BottleSort.UI
 
         public void Show(ScreenId id, bool animated = true)
         {
+            if (!_byId.TryGetValue(id, out var next))
+            {
+                SceneLoader.Open(id);
+                return;
+            }
             CloseAllPopups();
-            var next = _byId[id];
             if (_current != null && _current != next)
                 _current.Close(animated);
             _current = next;
@@ -53,7 +70,11 @@ namespace BottleSort.UI
 
         public void ShowPopup(ScreenId id)
         {
-            var popup = _byId[id];
+            if (!_byId.TryGetValue(id, out var popup))
+            {
+                Debug.LogWarning($"[ScreenRouter] Popup {id} is not in this scene");
+                return;
+            }
             if (_popups.Contains(popup))
                 return;
             _popups.Add(popup);
@@ -67,9 +88,16 @@ namespace BottleSort.UI
                 popup.Close(true);
         }
 
+        // В сцене игры следующий уровень открывается без перезагрузки, из меню — через сцену Game.
         public void PlayLevel(int level)
         {
-            Get<GameScreen>().Prepare(level);
+            var game = Get<GameScreen>();
+            if (game == null)
+            {
+                SceneLoader.Open(ScreenId.Game, level);
+                return;
+            }
+            game.Prepare(level);
             Show(ScreenId.Game);
         }
 

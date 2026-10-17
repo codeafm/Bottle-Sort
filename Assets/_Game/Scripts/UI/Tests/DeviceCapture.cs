@@ -76,13 +76,17 @@ namespace BottleSort.UI.Tests
             data.extraBottleCount = 1;
             data.Save();
 
-            SceneManager.LoadScene("Main");
+            SceneManager.LoadScene(SceneLoader.GameScene);
             yield return null;
             ScreenRouter router = null;
             float deadline = Time.realtimeSinceStartup + 5f;
             while ((router = FindRouter()) == null && Time.realtimeSinceStartup < deadline)
                 yield return null;
             Assert.IsNotNull(router, "router");
+            var startLevel = router.Get<GameScreen>();
+            deadline = Time.realtimeSinceStartup + 20f;
+            while ((router.Current != startLevel || startLevel.IsBusy) && Time.realtimeSinceStartup < deadline)
+                yield return null;
             _camera = Camera.main;
             var canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
@@ -105,8 +109,6 @@ namespace BottleSort.UI.Tests
                         yield return null;
                     yield return Shot($"{device.Name}_level{level}", device);
                     Check(device.Name + " L" + level, canvas, game, problems);
-                    router.Show(ScreenId.Menu, false);
-                    yield return null;
                 }
             }
             Assert.IsEmpty(problems, string.Join("\n", problems));

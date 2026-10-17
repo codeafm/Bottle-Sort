@@ -124,11 +124,13 @@ namespace BottleSort.UI.Tests
 
         static IEnumerator OpenLevel(int level, Action<ScreenRouter, GameScreen> found)
         {
-            SceneManager.LoadScene("Main");
+            SceneManager.LoadScene(SceneLoader.GameScene);
             yield return null;
             ScreenRouter router = null;
             yield return WaitUntil(() => (router = FindRouter()) != null, 5f, "router");
             var game = router.Get<GameScreen>();
+            // Сцена сама открывает текущий уровень игрока, дожидаемся его и переходим на нужный.
+            yield return WaitUntil(() => router.Current == game && !game.IsBusy, 20f, "start level");
             router.PlayLevel(level);
             yield return WaitUntil(() => router.Current == game && !game.IsBusy, 20f, "level " + level);
             found(router, game);

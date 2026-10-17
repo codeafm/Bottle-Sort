@@ -1,13 +1,11 @@
 using BottleSort.Core;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace BottleSort
 {
-    public sealed class Bootstrap : MonoBehaviour
+    // Настройки запуска до первой сцены, с какой бы сцены ни стартовала игра.
+    public static class Bootstrap
     {
-        public const string MainScene = "Main";
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void ApplyRuntimeSettings()
         {
@@ -15,11 +13,6 @@ namespace BottleSort
             QualitySettings.vSyncCount = 0;
             Screen.orientation = ScreenOrientation.Portrait;
             Screen.sleepTimeout = SleepTimeout.SystemSetting;
-        }
-
-        void Start()
-        {
-            SceneManager.LoadScene(MainScene);
         }
     }
 }

@@ -25,8 +25,13 @@ namespace BottleSort.Editor
         const string RendererPath = SettingsDir + "/Renderer2D.asset";
         const string PipelinePath = SettingsDir + "/URP_Mobile.asset";
         const string ScenesDir = "Assets/_Game/Scenes";
-        const string BootScenePath = ScenesDir + "/Boot.unity";
-        const string MainScenePath = ScenesDir + "/Main.unity";
+        // Порядок = Build Settings: заставка, меню, игра. Интерфейс в них собирает UiSceneBuilder.
+        static readonly string[] ScenePaths =
+        {
+            ScenesDir + "/Splash.unity",
+            ScenesDir + "/Menu.unity",
+            ScenesDir + "/Game.unity"
+        };
 
         static readonly Color BackgroundColor = new Color(0.06f, 0.07f, 0.12f, 1f);
 
@@ -142,27 +147,14 @@ namespace BottleSort.Editor
         {
             Directory.CreateDirectory(ScenesDir);
 
-            if (!File.Exists(BootScenePath))
-                CreateBootScene();
-            if (!File.Exists(MainScenePath))
-                CreateMainScene();
+            foreach (string path in ScenePaths)
+                if (!File.Exists(path))
+                    CreateUiScene(path);
 
-            EditorBuildSettings.scenes = new[]
-            {
-                new EditorBuildSettingsScene(BootScenePath, true),
-                new EditorBuildSettingsScene(MainScenePath, true),
-            };
+            EditorBuildSettings.scenes = ScenePaths.Select(path => new EditorBuildSettingsScene(path, true)).ToArray();
         }
 
-        static void CreateBootScene()
-        {
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            CreateCamera();
-            new GameObject("Bootstrap", typeof(Bootstrap));
-            EditorSceneManager.SaveScene(scene, BootScenePath);
-        }
-
-        static void CreateMainScene()
+        static void CreateUiScene(string path)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             CreateCamera();
@@ -188,7 +180,7 @@ namespace BottleSort.Editor
 
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
-            EditorSceneManager.SaveScene(scene, MainScenePath);
+            EditorSceneManager.SaveScene(scene, path);
         }
 
         static void CreateCamera()

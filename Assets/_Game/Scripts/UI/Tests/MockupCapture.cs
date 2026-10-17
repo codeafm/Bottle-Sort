@@ -64,40 +64,29 @@ namespace BottleSort.UI.Tests
             int[] stars = { 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 1 };
             data.stars = new List<int>(stars);
             data.Save();
+            SimulateNotch();
 
-            float top = TopInsetPoints * PointsToPixels / Height;
-            SafeAreaFitter.Simulated = new Rect(0f, 0f, Screen.width, Screen.height * (1f - top));
-
-            SceneManager.LoadScene("Main");
-            yield return null;
-            ScreenRouter router = null;
-            float deadline = Time.realtimeSinceStartup + 5f;
-            while ((router = FindRouter()) == null && Time.realtimeSinceStartup < deadline)
-                yield return null;
-            Assert.IsNotNull(router, "router");
-            RenderToPhone();
-            yield return null;
-
-            var splash = router.Get<SplashScreen>();
-            splash.Freeze(4, 0.41f);
+            yield return Open(SceneLoader.SplashScene);
+            Router.Get<SplashScreen>().Freeze(4, 0.41f);
             yield return Settle(0.4f);
             yield return Shot("00_splash");
 
-            router.Show(ScreenId.Menu, false);
+            // Заставка уже грузит меню, переход идёт через неё.
+            Router.Show(ScreenId.Menu, false);
+            yield return Arrive();
             yield return Settle(0.6f);
             yield return Shot("01_main");
 
-            router.Show(ScreenId.Levels, false);
+            Router.Show(ScreenId.Levels, false);
             yield return Settle(0.6f);
             yield return Shot("02_levels");
 
-            yield return Level(router, MockupLevels.Normal(), "03a_game_normal");
-            yield return Level(router, MockupLevels.Special(), "03b_game_special");
-            yield return Level(router, MockupLevels.Big(), "03c_game_big");
+            yield return Level(MockupLevels.Normal(), "03a_game_normal");
+            yield return Level(MockupLevels.Special(), "03b_game_special");
+            yield return Level(MockupLevels.Big(), "03c_game_big");
 
-            var win = router.Get<WinScreen>();
-            win.Setup(new WinResult { Level = 24, Stars = 3, Moves = 18, Reward = 170, IsBest = true });
-            router.Show(ScreenId.Win, false);
+            Router.Get<WinScreen>().Setup(new WinResult { Level = 24, Stars = 3, Moves = 18, Reward = 170, IsBest = true });
+            Router.Show(ScreenId.Win, false);
             yield return Settle(1.4f);
             yield return Shot("04_win");
 
@@ -107,7 +96,8 @@ namespace BottleSort.UI.Tests
             data.bottleSkin = "wine";
             data.theme = "violet";
             data.Save();
-            router.Show(ScreenId.Shop, false);
+            Router.Show(ScreenId.Shop, false);
+            yield return Arrive();
             yield return Settle(0.6f);
             yield return Shot("05_shop");
             data.bottleSkin = "classic";
@@ -116,8 +106,8 @@ namespace BottleSort.UI.Tests
 
             for (int level = 1; level <= 3; level++)
             {
-                router.PlayLevel(level);
-                yield return WaitReady(router);
+                Router.PlayLevel(level);
+                yield return WaitReady();
                 yield return Settle(1.2f);
                 yield return Shot($"1{level - 1}_tutorial_{level}");
             }
@@ -125,7 +115,7 @@ namespace BottleSort.UI.Tests
             string[] names = { "20_level_100", "21_level_200", "22_level_500", "23_level_1000", "24_level_1500", "25_level_2000" };
             var generated = MockupLevels.Late();
             for (int i = 0; i < generated.Count; i++)
-                yield return Level(router, generated[i], names[i]);
+                yield return Level(generated[i], names[i]);
         }
 
         // Три кадра Wheel.dc.html: покой (1 попытка), вращение (rotate 1290°) и выигрыш джекпота (сектор +150 под стрелкой).
@@ -139,28 +129,16 @@ namespace BottleSort.UI.Tests
             data.wheelSpins = 1;
             data.wheelDate = "";
             data.Save();
+            SimulateNotch();
 
-            float top = TopInsetPoints * PointsToPixels / Height;
-            SafeAreaFitter.Simulated = new Rect(0f, 0f, Screen.width, Screen.height * (1f - top));
-
-            SceneManager.LoadScene("Main");
-            yield return null;
-            ScreenRouter router = null;
-            float deadline = Time.realtimeSinceStartup + 5f;
-            while ((router = FindRouter()) == null && Time.realtimeSinceStartup < deadline)
-                yield return null;
-            Assert.IsNotNull(router, "router");
-            RenderToPhone();
-            yield return null;
-
-            router.Show(ScreenId.Menu, false);
+            yield return Open(SceneLoader.MenuScene);
             yield return Settle(0.6f);
             data.wheelSpins = 1;
-            router.ShowPopup(ScreenId.Wheel);
+            Router.ShowPopup(ScreenId.Wheel);
             yield return Settle(1f);
             yield return Shot("06_wheel_live");
 
-            var wheel = router.Get<WheelPopup>();
+            var wheel = Router.Get<WheelPopup>();
             data.wheelSpins = 0;
             wheel.ShowSpinningFrame(-1290f);
             yield return Settle(0.3f);
@@ -171,20 +149,54 @@ namespace BottleSort.UI.Tests
             yield return Shot("06_wheel_reward");
         }
 
-        IEnumerator Level(ScreenRouter router, GeneratedLevel level, string name)
+        static ScreenRouter Router => FindRouter();
+
+        static void SimulateNotch()
+        {
+            float top = TopInsetPoints * PointsToPixels / Height;
+            SafeAreaFitter.Simulated = new Rect(0f, 0f, Screen.width, Screen.height * (1f - top));
+        }
+
+        IEnumerator Open(string scene)
+        {
+            SceneManager.LoadScene(scene);
+            yield return null;
+            yield return Arrive();
+        }
+
+        // Дождаться конца перехода между сценами; в новой сцене свои камера и канвас, их снова переводим на телефон.
+        IEnumerator Arrive()
+        {
+            float deadline = Time.realtimeSinceStartup + 10f;
+            while ((SceneLoader.IsBusy || Router == null || Router.Current == null) && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.IsNotNull(Router, "router");
+            Assert.IsNotNull(Router.Current, "first screen");
+            if (_camera != Camera.main)
+            {
+                RenderToPhone();
+                yield return null;
+            }
+        }
+
+        IEnumerator Level(GeneratedLevel level, string name)
         {
             LevelLoader.Put(level.Spec.Number, level);
-            router.PlayLevel(level.Spec.Number);
-            yield return WaitReady(router);
+            Router.PlayLevel(level.Spec.Number);
+            yield return WaitReady();
             yield return Settle(0.8f);
             yield return Shot(name);
         }
 
-        static IEnumerator WaitReady(ScreenRouter router)
+        IEnumerator WaitReady()
         {
-            var game = router.Get<GameScreen>();
+            // Из меню уровень открывается в сцене Game: сначала ждём сам переход.
+            yield return null;
+            yield return Arrive();
+            var game = Router.Get<GameScreen>();
+            Assert.IsNotNull(game, "game scene");
             float deadline = Time.realtimeSinceStartup + 20f;
-            while ((router.Current != game || game.IsBusy) && Time.realtimeSinceStartup < deadline)
+            while ((Router.Current != game || game.IsBusy) && Time.realtimeSinceStartup < deadline)
                 yield return null;
             Assert.IsFalse(game.IsBusy, "level did not start");
         }
@@ -206,6 +218,8 @@ namespace BottleSort.UI.Tests
         // а камера рисует в текстуру размера телефона: раскладка сразу считается под 1080×2337.
         void RenderToPhone()
         {
+            if (_target != null)
+                _target.Release();
             _camera = Camera.main;
             _target = new RenderTexture(Width, Height, 24);
             _camera.targetTexture = _target;

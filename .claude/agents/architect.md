@@ -11,7 +11,7 @@ description: Архитектор Unity-проекта Bottle Sort. Исполь
 - Структура `Assets/_Game/...` по CLAUDE.md, assembly definitions: `Game.Core` (чистый C#, без UnityEngine), `Game.Runtime`, `Game.Tests.EditMode`.
 - Packages/manifest.json: URP, TextMeshPro, Input System, Test Framework, Mobile Notifications.
 - Player Settings: bundle id, портрет, IL2CPP, ARM64, minSdk 24 / iOS 13+, Safe Area.
-- Сцены: `Boot`, `Main` (одна сцена с экранами-панелями — быстрее на мобилках).
+- Сцены: `Splash`, `Menu`, `Game` (см. CLAUDE.md, раздел «Структура»).
 - Простой Service Locator / DI без внешних библиотек; события через C# events.
 
 Правила: не трогай игровую логику и UI других агентов без необходимости; любые изменения — маленькими шагами, с пояснением в конце.
