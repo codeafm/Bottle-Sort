@@ -131,6 +131,40 @@ namespace BottleSort.UI.Editor
             return gradient;
         }
 
+        // box-shadow из макета: мягкая тень за элементом, со смещением вниз и размытием в pt.
+        // Ставится соседом перед target, поэтому target должен быть уже размещён.
+        public static Image SoftShadow(RectTransform target, float offsetY, float blur, Color color)
+        {
+            var shadow = Image(target.parent, target.name + " Shadow", "shadow", color);
+            shadow.type = UnityEngine.UI.Image.Type.Sliced;
+            float extent = M(blur);
+            shadow.pixelsPerUnitMultiplier = 64f / extent;
+            var rect = shadow.rectTransform;
+            rect.anchorMin = target.anchorMin;
+            rect.anchorMax = target.anchorMax;
+            rect.pivot = target.pivot;
+            rect.offsetMin = target.offsetMin + new Vector2(-extent, -extent - M(offsetY));
+            rect.offsetMax = target.offsetMax + new Vector2(extent, extent - M(offsetY));
+            rect.SetSiblingIndex(target.GetSiblingIndex());
+            return shadow;
+        }
+
+        public static Image SoftShadow(RectTransform target, float offsetY, float blur, float alpha) =>
+            SoftShadow(target, offsetY, blur, new Color(0f, 0f, 0f, alpha));
+
+        // inset 0 -4px 0 из макета: тёмный серп по нижнему краю кнопки.
+        public static Image InsetBottom(Transform face, float radius, Color color)
+        {
+            var inset = Image(face, "Inset", "inset_bottom", color);
+            inset.type = UnityEngine.UI.Image.Type.Sliced;
+            inset.pixelsPerUnitMultiplier = 64f / M(radius);
+            inset.rectTransform.Fill();
+            return inset;
+        }
+
+        // Межбуквенный интервал из CSS (px при данном кегле) в единицы TMP (сотые доли em).
+        public static float Spacing(float letterSpacing, float fontSize) => letterSpacing / fontSize * 100f;
+
         public static TextMeshProUGUI Text(Transform parent, string name, TMP_FontAsset font, float size, Color color,
             TextAlignmentOptions align = TextAlignmentOptions.Center, string key = null, bool upper = false)
         {

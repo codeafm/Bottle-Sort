@@ -3,6 +3,7 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TextCore.LowLevel;
+using Object = UnityEngine.Object;
 
 namespace BottleSort.UI.Editor
 {
@@ -10,10 +11,12 @@ namespace BottleSort.UI.Editor
     public static class UiAssets
     {
         public const string ArtDir = "Assets/_Game/Art/UI";
+        const string BottleArtDir = "Assets/_Game/Art/Bottles";
         public const string FontsDir = "Assets/_Game/Fonts";
         public const string FredokaAsset = FontsDir + "/Fredoka-Bold SDF.asset";
         public const string NunitoAsset = FontsDir + "/Nunito-ExtraBold SDF.asset";
         public const string NunitoBlackAsset = FontsDir + "/Nunito-Black SDF.asset";
+        public const string ArimoAsset = FontsDir + "/Arimo-Bold SDF.asset";
 
         const string TmpEssentials = "Packages/com.unity.ugui/Package Resources/TMP Essential Resources.unitypackage";
         const string TmpSettingsPath = "Assets/TextMesh Pro/Resources/TMP Settings.asset";
@@ -42,7 +45,8 @@ namespace BottleSort.UI.Editor
 
         public static void SetupSprites()
         {
-            foreach (string path in Directory.GetFiles(ArtDir, "*.png"))
+            BakeBottleMasks();
+            foreach (string path in Directory.GetFiles(ArtDir, "*.png", SearchOption.AllDirectories))
             {
                 string assetPath = path.Replace('\\', '/');
                 var importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
@@ -51,10 +55,12 @@ namespace BottleSort.UI.Editor
 
                 string name = Path.GetFileNameWithoutExtension(assetPath);
                 var border = Vector4.zero;
-                if (name == "rounded" || name == "rounded_line")
+                if (name == "rounded" || name == "rounded_line" || name == "inset_bottom")
                     border = new Vector4(64, 64, 64, 64);
                 else if (name == "shelf")
                     border = new Vector4(16, 0, 16, 0);
+                else if (name == "shadow")
+                    border = new Vector4(128, 128, 128, 128);
 
                 bool changed = importer.textureType != TextureImporterType.Sprite
                                || importer.spriteBorder != border || importer.mipmapEnabled;
@@ -71,16 +77,56 @@ namespace BottleSort.UI.Editor
             }
         }
 
+        // Бутылки в меню, на заставке и в магазине рисуются на uGUI, но из арта vfx-art: стекло берём как есть,
+        // а из маски (R — жидкость, G — свечение, B — тело) делаем спрайты, у которых нужное лежит в альфе.
+        static void BakeBottleMasks()
+        {
+            string output = ArtDir + "/Bottles";
+            Directory.CreateDirectory(output);
+            foreach (string path in Directory.GetFiles(BottleArtDir, "*_mask.png"))
+            {
+                string id = Path.GetFileNameWithoutExtension(path).Replace("_mask", "");
+                string liquidPath = $"{output}/{id}_liquid.png";
+                string glowPath = $"{output}/{id}_glow.png";
+                if (File.Exists(liquidPath) && File.GetLastWriteTimeUtc(liquidPath) >= File.GetLastWriteTimeUtc(path))
+                    continue;
+
+                var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                source.LoadImage(File.ReadAllBytes(path));
+                var pixels = source.GetPixels32();
+                var liquid = new Color32[pixels.Length];
+                var glow = new Color32[pixels.Length];
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    var p = pixels[i];
+                    liquid[i] = new Color32(255, 255, 255, p.r);
+                    glow[i] = new Color32(255, 255, 255, (byte)(p.g * (1f - 0.96f * p.b / 255f)));
+                }
+                WritePng(liquidPath, source.width, source.height, liquid);
+                WritePng(glowPath, source.width, source.height, glow);
+                Object.DestroyImmediate(source);
+            }
+            AssetDatabase.Refresh();
+        }
+
+        static void WritePng(string path, int width, int height, Color32[] pixels)
+        {
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.SetPixels32(pixels);
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+        }
+
         public static void SetupFonts()
         {
             var black = CreateFont(FontsDir + "/Nunito-Black.ttf", NunitoBlackAsset, 2048);
             var body = CreateFont(FontsDir + "/Nunito-ExtraBold.ttf", NunitoAsset, 2048);
             var display = CreateFont(FontsDir + "/Fredoka-Bold.ttf", FredokaAsset, 1024);
+            var cyrillic = CreateFont(FontsDir + "/Arimo-Bold.ttf", ArimoAsset, 2048);
 
-            // У Fredoka нет кириллицы: русские буквы в заголовках берутся из Nunito Black.
-            display.fallbackFontAssetTable ??= new System.Collections.Generic.List<TMP_FontAsset>();
-            if (!display.fallbackFontAssetTable.Contains(black))
-                display.fallbackFontAssetTable.Add(black);
+            // У Fredoka нет кириллицы. В макете браузер дорисовывает её системным sans-serif, это Arial Bold,
+            // поэтому берём Arimo — шрифт с метриками и рисунком Arial.
+            display.fallbackFontAssetTable = new System.Collections.Generic.List<TMP_FontAsset> { cyrillic };
             EditorUtility.SetDirty(display);
 
             var settings = AssetDatabase.LoadAssetAtPath<TMP_Settings>(TmpSettingsPath);

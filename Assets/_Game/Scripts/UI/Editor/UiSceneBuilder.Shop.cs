@@ -12,15 +12,17 @@ namespace BottleSort.UI.Editor
             var screen = ScreenRoot<ShopScreen>(safeArea, "ShopScreen", out var content);
 
             var back = BackButton(content);
-            ((RectTransform)back.transform.parent).Place(new Vector2(0f, 1f), new Vector2(16, -10), new Vector2(48, 48));
+            ((RectTransform)back.transform.parent).Place(new Vector2(0f, 1f), new Vector2(16, -10),
+                new Vector2(IconButtonSize, IconButtonSize));
             var title = Text(content, "Title", DisplayFont, 28, Color.white, TextAlignmentOptions.Center, "shop_title");
-            title.rectTransform.TopBand(10, 48, 80, 80);
+            title.rectTransform.TopBand(10, IconButtonSize, 80, 80);
             Shadow(title, Hex("#001446", 0.7f), -0.8f);
-            var coinsRoot = CoinPill(content, "Coins", 110, 44, false, out var coins);
-            coinsRoot.Place(new Vector2(1f, 1f), new Vector2(-16, -12), new Vector2(110, 44));
+            var coinsRoot = CoinPill(content, "Coins", 96, 47, false, out var coins);
+            coinsRoot.Place(new Vector2(1f, 1f), new Vector2(-16, -12), new Vector2(96, 47));
 
             // Витрина: вращающееся свечение, подсветка подставки, парящая бутылка и название.
-            var showcase = Node("Showcase", content).TopBand(58, 236, 16, 16);
+            // Отступы из Shop.dc.html: витрина сразу под шапкой, вкладки через 14, подсказка через 8, сетка через 10.
+            var showcase = Node("Showcase", content).TopBand(10 + IconButtonSize, 236, 16, 16);
             var spin = Image(showcase, "Spin", "glow", Hex("#35F4FF", 0.4f));
             spin.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -16), new Vector2(200, 200), new Vector2(0.5f, 1f));
             Motion(spin.gameObject, IdleMotion.Kind.Pulse, 8f, 0.12f);
@@ -31,17 +33,18 @@ namespace BottleSort.UI.Editor
             Motion(hover.gameObject, IdleMotion.Kind.Float, 3f, M(6));
             var preview = PlaceBottle(hover, "Preview", 84);
             var previewName = Text(showcase, "Name", DisplayFont, 20, Color.white, TextAlignmentOptions.Center, "shape_classic");
-            previewName.rectTransform.BottomBand(0, 26);
+            previewName.rectTransform.BottomBand(0, 24);
 
             var tabs = Rounded(content, "Tabs", 18, Hex("#081440", 0.8f));
-            tabs.rectTransform.TopBand(308, 50, 16, 16);
+            tabs.rectTransform.TopBand(10 + IconButtonSize + 236 + 14, 53, 16, 16);
             Border(tabs.transform, 18, Hex("#96C8FF", 0.25f));
             var bottlesTab = Tab(tabs.transform, "Bottles", 0f, "shop_tab_bottles", out var bottlesBackground);
             var themesTab = Tab(tabs.transform, "Themes", 0.5f, "shop_tab_themes", out var themesBackground);
             var hint = Text(content, "Hint", BodyFont, 12, Hex("#A9CCF2"), TextAlignmentOptions.Center, "shop_hint_bottles");
-            hint.rectTransform.TopBand(364, 18);
+            hint.rectTransform.TopBand(10 + IconButtonSize + 236 + 14 + 53 + 8, 16.4f);
 
-            var scrollRect = Node("Scroll", content).Fill(16, 392, 16, 10);
+            // Сверху запас 12 pt под бейджи «НОВИНКА», они выступают над карточкой.
+            var scrollRect = Node("Scroll", content).Fill(16, 10 + IconButtonSize + 236 + 14 + 53 + 8 + 16.4f + 10 - 12, 16, 0);
             var scroll = scrollRect.gameObject.AddComponent<ScrollRect>();
             scroll.horizontal = false;
             var viewport = Node("Viewport", scrollRect).Fill();
@@ -52,8 +55,8 @@ namespace BottleSort.UI.Editor
             grid.anchorMax = new Vector2(1f, 1f);
             grid.pivot = new Vector2(0.5f, 1f);
             var layout = grid.gameObject.AddComponent<GridLayoutGroup>();
-            layout.cellSize = M(110, 170);
-            layout.spacing = M(10, 14);
+            layout.cellSize = M((358f - 20f) / 3f, 170);
+            layout.spacing = M(10, 10);
             layout.padding = new RectOffset(0, 0, (int)M(12), (int)M(12));
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -100,10 +103,11 @@ namespace BottleSort.UI.Editor
             var root = Node("CardTemplate", grid);
             var card = root.gameObject.AddComponent<ShopCard>();
 
-            var glow = Image(root, "Glow", "glow", Hex("#9BFF4F", 0.55f));
-            glow.rectTransform.Fill(-14, -14, -14, -14);
             var face = Rounded(root, "Face", 20, Color.white, true);
             face.rectTransform.Fill();
+            SoftShadow(face.rectTransform, 6, 14, 0.35f);
+            var glow = SoftShadow(face.rectTransform, 0, 18, Hex("#9BFF4F", 0.55f));
+            glow.name = "Glow";
             Gradient(face, Hex("#163880", 0.92f), Hex("#081842", 0.92f));
             var border = Border(face.transform, 20, Hex("#96C8FF", 0.3f));
 
@@ -122,7 +126,7 @@ namespace BottleSort.UI.Editor
             Border(themeRoot, 14, White(0.4f));
 
             var name = Text(face.transform, "Name", DisplayFont, 14, Color.white, TextAlignmentOptions.Center, "shape_classic");
-            name.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0, 44), new Vector2(104, 20), new Vector2(0.5f, 0f));
+            name.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0, 51), new Vector2(104, 16), new Vector2(0.5f, 0.5f));
 
             var pill = Rounded(face.transform, "Pill", 12, Color.white);
             pill.rectTransform.anchorMin = new Vector2(0f, 0f);
@@ -139,13 +143,10 @@ namespace BottleSort.UI.Editor
             pillLabel.rectTransform.Fill(14, 0, 4, 0);
             pillLabel.text = "0";
 
-            var badge = Rounded(root, "New", 8, Color.white);
-            badge.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, 8), new Vector2(74, 18), new Vector2(0.5f, 1f));
+            var badge = Pill(root, "New", 20.6f, 8, 8, 1.5f, 10, Color.white, out var badgeLabel, "shop_new");
+            badge.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, 8), new Vector2(74, 20.6f), new Vector2(0.5f, 1f));
             Gradient(badge, Hex("#FF8BCB"), Hex("#D81B60"));
-            Border(badge.transform, 8, Color.white);
-            var badgeLabel = Text(badge.transform, "Label", HeavyFont, 10, Color.white, TextAlignmentOptions.Center, "shop_new");
-            badgeLabel.characterSpacing = 4f;
-            badgeLabel.rectTransform.Fill();
+            badgeLabel.characterSpacing = Spacing(0.5f, 10);
 
             var button = Button(face.gameObject, root);
             Set(card, "button", button);

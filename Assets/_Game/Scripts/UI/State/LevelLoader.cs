@@ -23,6 +23,9 @@ namespace BottleSort.UI
 
         public static void Preload(int level) => Get(level);
 
+        // Готовый уровень под номером вместо генератора: раскладки из макета для сравнения экранов, отладка.
+        public static void Put(int level, GeneratedLevel generated) => Cache[level] = Task.FromResult(generated);
+
         static GeneratedLevel Build(int level)
         {
             try

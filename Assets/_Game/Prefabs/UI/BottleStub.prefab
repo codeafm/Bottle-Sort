@@ -68,23 +68,73 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a142cddcae6e17f40a3a7949d840c65f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Runtime::BottleSort.UI.BottleStubView
-  classic:
-    back: {fileID: 21300000, guid: 0b6af5198fa416c4cb3e0dd6bf57db60, type: 3}
-    front: {fileID: 21300000, guid: a82414eb3fde206429ac2d6d62ff3cae, type: 3}
-    mask: {fileID: 21300000, guid: a382190e168ad1642818ede4f263dff8, type: 3}
-    glow: {fileID: 21300000, guid: 63bc8abfb957bcb439815f5f6d25cb10, type: 3}
+  shapes:
+  - id: classic
+    back: {fileID: 2800000, guid: f6d7d048832fc4b4d889a4c1e814b303, type: 3}
+    front: {fileID: 2800000, guid: 0caebeaaf593e9349897e473acf46c98, type: 3}
+    liquid: {fileID: 21300000, guid: 65779b5982168d74392e8be91dff1ca8, type: 3}
+    glow: {fileID: 21300000, guid: a3ee9126390f89c4aad25443a9bf0860, type: 3}
     liquidTop: 66
     liquidBottom: 226
-  cylinder:
-    back: {fileID: 21300000, guid: 3c4e187ee22cb0647b5f5db10cf573b9, type: 3}
-    front: {fileID: 21300000, guid: d1347d656797f244d94e0697c74657c3, type: 3}
-    mask: {fileID: 21300000, guid: 3d88c3b31f1e5ab40b676df82fc36fae, type: 3}
-    glow: {fileID: 21300000, guid: 8ee7ce27892cab346a568823a78679f0, type: 3}
+  - id: cylinder
+    back: {fileID: 2800000, guid: 8941f589470c4f343bd130a40845bf97, type: 3}
+    front: {fileID: 2800000, guid: a2f986c033e39a34d9f238f1d94db499, type: 3}
+    liquid: {fileID: 21300000, guid: b28186a09a35f0240a31cd01f7c1f7df, type: 3}
+    glow: {fileID: 21300000, guid: c3efebf4fd308bd4180d5d5fd3c13072, type: 3}
     liquidTop: 36
     liquidBottom: 212
+  - id: wine
+    back: {fileID: 2800000, guid: ca71ce6d0aee9be4a91bb81d2b6630e0, type: 3}
+    front: {fileID: 2800000, guid: 293ed09e764e4b849a8c51ad96bc1a01, type: 3}
+    liquid: {fileID: 21300000, guid: 667ec3342beefa44f9e60a4971ea3320, type: 3}
+    glow: {fileID: 21300000, guid: 35a3688e46b173e45ae3f27436188c62, type: 3}
+    liquidTop: 106
+    liquidBottom: 226
+  - id: jug
+    back: {fileID: 2800000, guid: 5b266db275afcf746882a2260302b1b5, type: 3}
+    front: {fileID: 2800000, guid: d800a14280326034491688e15cb49079, type: 3}
+    liquid: {fileID: 21300000, guid: a239920eecc80e2488ce797339f85b10, type: 3}
+    glow: {fileID: 21300000, guid: e9ea67db50e4e4c4eb44f2f2ccf200ea, type: 3}
+    liquidTop: 104
+    liquidBottom: 226
+  - id: teapot
+    back: {fileID: 2800000, guid: ea36faad546405a409123693d425c742, type: 3}
+    front: {fileID: 2800000, guid: 0c3de26093319d1468a4d68323448dd0, type: 3}
+    liquid: {fileID: 21300000, guid: f3b25dad9a1921a4ba535fbbd84e3bec, type: 3}
+    glow: {fileID: 21300000, guid: e2ee04150b1a57c4ab88f4f4b9f8cb6f, type: 3}
+    liquidTop: 120
+    liquidBottom: 225
+  - id: glass
+    back: {fileID: 2800000, guid: d986e8858b9148548b1922a136f73039, type: 3}
+    front: {fileID: 2800000, guid: 4f5cb32b3cc8eb847b64925d684c2445, type: 3}
+    liquid: {fileID: 21300000, guid: 709d415f2c8be5640ab47de5f7a26b66, type: 3}
+    glow: {fileID: 21300000, guid: 9f8cf33ebe199764abc06ea617343463, type: 3}
+    liquidTop: 100
+    liquidBottom: 220
+  - id: flask
+    back: {fileID: 2800000, guid: 67d3c20c6965fd549a6798025682d55d, type: 3}
+    front: {fileID: 2800000, guid: a2c336fe79288584e8f5875f753c400d, type: 3}
+    liquid: {fileID: 21300000, guid: 63a5b6036095c2f40ac0c9c5ff6b36b1, type: 3}
+    glow: {fileID: 21300000, guid: 502c1bfbb59ce56468d57c6fe1f61f6a, type: 3}
+    liquidTop: 106
+    liquidBottom: 226
+  - id: potion
+    back: {fileID: 2800000, guid: 1a7fa6e990eebfe40bb3e59c7339ba9b, type: 3}
+    front: {fileID: 2800000, guid: 82f68a8707f046b4db53fe05e729a18c, type: 3}
+    liquid: {fileID: 21300000, guid: c1c4ce30cafe9e74abec802a12af48f5, type: 3}
+    glow: {fileID: 21300000, guid: 0453dd53c87175e4a9939fd6a796ce86, type: 3}
+    liquidTop: 140
+    liquidBottom: 224
+  - id: jar
+    back: {fileID: 2800000, guid: 65a4c8f446ff3734ba12eaa3692f454c, type: 3}
+    front: {fileID: 2800000, guid: 7f26fe55e65507d4fbbf12f15214ddae, type: 3}
+    liquid: {fileID: 21300000, guid: e9fc8fc6c986d9a44af951282ed9d39b, type: 3}
+    glow: {fileID: 21300000, guid: be02a0c7a5ea6e848a097c629875ed68, type: 3}
+    liquidTop: 106
+    liquidBottom: 226
   glow: {fileID: 3999671242696044429}
-  back: {fileID: 3946603487265236470}
-  front: {fileID: 7159728720052971956}
+  back: {fileID: 4543915141358652655}
+  front: {fileID: 8287476846171998543}
   mask: {fileID: 8396236770710062582}
   layers: {fileID: 8456303686448907893}
   shade: {fileID: 8765339828794270157}
@@ -105,7 +155,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7341329890594179081}
   - component: {fileID: 4209814484315803191}
-  - component: {fileID: 7159728720052971956}
+  - component: {fileID: 8287476846171998543}
   m_Layer: 5
   m_Name: Front
   m_TagString: Untagged
@@ -127,8 +177,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 7432084121857305266}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: -0.3, y: -0.125}
+  m_AnchorMax: {x: 1.3, y: 1.125}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -140,7 +190,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1775019278690607093}
   m_CullTransparentMesh: 1
---- !u!114 &7159728720052971956
+--- !u!114 &8287476846171998543
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -149,9 +199,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1775019278690607093}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
@@ -160,16 +210,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a82414eb3fde206429ac2d6d62ff3cae, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_Texture: {fileID: 0}
+  m_UVRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
 --- !u!1 &2179901726499976539
 GameObject:
   m_ObjectHideFlags: 0
@@ -202,8 +249,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 7432084121857305266}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: -0.3, y: -0.125}
+  m_AnchorMax: {x: 1.3, y: 1.125}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -235,7 +282,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a382190e168ad1642818ede4f263dff8, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -544,7 +591,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6280557193822280274}
   - component: {fileID: 2683655340017896525}
-  - component: {fileID: 3946603487265236470}
+  - component: {fileID: 4543915141358652655}
   m_Layer: 5
   m_Name: Back
   m_TagString: Untagged
@@ -566,8 +613,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 7432084121857305266}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: -0.3, y: -0.125}
+  m_AnchorMax: {x: 1.3, y: 1.125}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -579,7 +626,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4444262605173563594}
   m_CullTransparentMesh: 1
---- !u!114 &3946603487265236470
+--- !u!114 &4543915141358652655
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -588,9 +635,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 4444262605173563594}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: 1344c3c82d62a2a41a3576d8abb8e3ea, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
@@ -599,16 +646,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 0b6af5198fa416c4cb3e0dd6bf57db60, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_Texture: {fileID: 0}
+  m_UVRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
 --- !u!1 &5249902726162581487
 GameObject:
   m_ObjectHideFlags: 0
@@ -641,10 +685,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 8456303686448907893}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 0}
+  m_AnchorMin: {x: 0.2875, y: 0}
+  m_AnchorMax: {x: 0.7125, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &4440721264603499986
 CanvasRenderer:
@@ -793,8 +837,8 @@ RectTransform:
   - {fileID: 2404817729967195679}
   m_Father: {fileID: 576506859831841164}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0, y: 0.1}
+  m_AnchorMax: {x: 1, y: 0.9}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -809,6 +853,7 @@ GameObject:
   - component: {fileID: 7404246787762591877}
   - component: {fileID: 893962933152908707}
   - component: {fileID: 5694091887856774578}
+  - component: {fileID: 5448665692736184411}
   m_Layer: 5
   m_Name: LayerTemplate
   m_TagString: Untagged
@@ -873,6 +918,24 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5448665692736184411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8454541847365569505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9d75f40d6f3dca4db3a9718666db14d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.UI.UiGradient
+  top: {r: 1, g: 1, b: 1, a: 1}
+  bottom: {r: 1, g: 1, b: 1, a: 1}
+  horizontal: 0
+  hasMiddle: 0
+  middle: {r: 1, g: 1, b: 1, a: 1}
+  middleAt: 0.5
 --- !u!1 &8467577011486665827
 GameObject:
   m_ObjectHideFlags: 0
@@ -1044,8 +1107,8 @@ RectTransform:
   - {fileID: 8456303686448907893}
   m_Father: {fileID: 7432084121857305266}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: -0.3, y: -0.125}
+  m_AnchorMax: {x: 1.3, y: 1.125}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1077,7 +1140,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: a382190e168ad1642818ede4f263dff8, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1207,8 +1270,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 7432084121857305266}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: -0.3, y: -0.125}
+  m_AnchorMax: {x: 1.3, y: 1.125}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1240,7 +1303,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 63bc8abfb957bcb439815f5f6d25cb10, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

@@ -22,14 +22,15 @@ namespace BottleSort.UI
 
         static readonly Item[] Bottles =
         {
-            new Item { Id = "classic", NameKey = "shape_classic", Colors = "RYBG" },
+            // Порядок и цвета как в Shop.dc.html; классическая и стакан — в конце, их в макете нет.
             new Item { Id = "wine", NameKey = "shape_wine", Colors = "BCKY" },
-            new Item { Id = "glass", NameKey = "shape_glass", Colors = "ROYL" },
-            new Item { Id = "flask", NameKey = "shape_flask", Colors = "CBPK" },
             new Item { Id = "jug", NameKey = "shape_jug", Colors = "PKOY" },
-            new Item { Id = "jar", NameKey = "shape_jar", Colors = "NOYL" },
             new Item { Id = "teapot", NameKey = "shape_teapot", Colors = "GLYO" },
-            new Item { Id = "potion", NameKey = "shape_potion", Colors = "PKRO" }
+            new Item { Id = "flask", NameKey = "shape_flask", Colors = "CBPK" },
+            new Item { Id = "potion", NameKey = "shape_potion", Colors = "PKRO" },
+            new Item { Id = "jar", NameKey = "shape_jar", Colors = "NOYL" },
+            new Item { Id = "glass", NameKey = "shape_glass", Colors = "ROYL" },
+            new Item { Id = "classic", NameKey = "shape_classic", Colors = "RYBG" }
         };
 
         static readonly Item[] Themes =
@@ -126,13 +127,13 @@ namespace BottleSort.UI
                     continue;
                 var item = items[i];
                 if (_bottlesTab)
-                    _cards[i].ShowBottle(item.NameKey, item.Colors);
+                    _cards[i].ShowBottle(item.NameKey, item.Id, item.Colors);
                 else
                     _cards[i].ShowTheme(item.NameKey, item.Theme ?? LevelPlan.ThemeOf(PlayerData.Current.highestUnlocked), item.Colors);
                 _cards[i].SetState(StateOf(item), item.Data.Price, item.Data.UnlockLevel, IsNew(item));
             }
 
-            var bottle = new Bottle(4);
+            var bottle = new Bottle(4, _previewItem.Id);
             foreach (char letter in _previewItem.Colors)
                 bottle.Push(Palette.FromLetter(letter));
             preview.Show(bottle, 4);

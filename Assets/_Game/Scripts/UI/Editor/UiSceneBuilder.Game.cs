@@ -14,11 +14,12 @@ namespace BottleSort.UI.Editor
         const float ProgressTop = HeaderTop + HeaderHeight + 6f;
         const float ProgressHeight = 54f;
         const float InfoTop = ProgressTop + ProgressHeight + 8f;
-        const float InfoHeight = 40f;
-        const float FieldTop = InfoTop + InfoHeight + 4f;
-        // Снизу: отступ 18, место под баннер 50, зазор 14, бустеры 86, зазор 8.
-        const float BoostersBottom = 18f + 50f + 14f;
-        const float BoostersHeight = 86f;
+        const float InfoHeight = 28f;
+        const float FieldTop = InfoTop + InfoHeight;
+        // Снизу: отступ 18, место под баннер 50 + рамка 3, зазор 14, бустеры, зазор 8.
+        const float BoostersBottom = 18f + 53f + 14f;
+        // Кнопка 62 + рамка 4, зазор 6, подпись 13 px с line-height 1.36.
+        const float BoostersHeight = 66f + 6f + 17.7f;
         const float FieldBottom = BoostersBottom + BoostersHeight + 8f;
 
         static UiScreen BuildGame(Transform safeArea)
@@ -28,22 +29,26 @@ namespace BottleSort.UI.Editor
 
             // Шапка: сетка 112 | центр | 112, все блоки фиксированного размера.
             var home = IconButton(content, "Home", "home", true);
-            ((RectTransform)home.transform.parent).Place(new Vector2(0f, 1f), new Vector2(16, -(HeaderTop + 4)), new Vector2(48, 48));
+            ((RectTransform)home.transform.parent).Place(new Vector2(0f, 1f), new Vector2(16, -(HeaderTop + 4)),
+                new Vector2(IconButtonSize, IconButtonSize));
+            IconButtonShadow(home);
 
+            // Плашка 150×58 плюс рамка 1.5 снаружи.
             var plate = Rounded(content, "LevelPlate", 20, Color.white);
-            plate.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -HeaderTop), new Vector2(150, 58), new Vector2(0.5f, 1f));
+            plate.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -HeaderTop), new Vector2(153, 61), new Vector2(0.5f, 1f));
+            SoftShadow(plate.rectTransform, 8, 18, 0.35f);
             Gradient(plate, White(0.24f), White(0.08f));
             Border(plate.transform, 20, Hex("#E6F0FF", 0.55f));
             var levelCaption = Text(plate.transform, "Caption", HeavyFont, 11, Hex("#EBF3FF", 0.85f), TextAlignmentOptions.Center, "hud_level");
-            levelCaption.characterSpacing = 22f;
-            levelCaption.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -9), new Vector2(150, 14), new Vector2(0.5f, 1f));
+            levelCaption.characterSpacing = Spacing(2.5f, 11);
+            levelCaption.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -8.5f), new Vector2(150, 14), new Vector2(0.5f, 1f));
             var levelNumber = Text(plate.transform, "Number", DisplayFont, 28, Color.white);
             levelNumber.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0, 7), new Vector2(150, 32), new Vector2(0.5f, 0f));
             levelNumber.text = "1";
             Shadow(levelNumber, new Color(0f, 0f, 0f, 0.3f), -0.7f);
 
             var tag = Rounded(plate.transform, "Tag", 10, Color.white);
-            tag.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0, -12), new Vector2(110, 20), new Vector2(0.5f, 0f));
+            tag.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0, -10.5f), new Vector2(110, 20), new Vector2(0.5f, 0f));
             var tagGradient = Gradient(tag, Hex("#7BE84A"), Hex("#1E9A2C"));
             Border(tag.transform, 10, White(0.9f)).gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
             var tagLayout = tag.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -52,11 +57,12 @@ namespace BottleSort.UI.Editor
             tagLayout.childControlWidth = tagLayout.childControlHeight = true;
             tag.gameObject.AddComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             var tagLabel = Text(tag.transform, "Label", HeavyFont, 10.5f, Color.white, TextAlignmentOptions.Center, "tag_normal");
-            tagLabel.characterSpacing = 6f;
+            tagLabel.characterSpacing = Spacing(0.6f, 10.5f);
             Shadow(tagLabel, new Color(0f, 0f, 0f, 0.3f), -0.5f);
 
             var coinsRoot = CoinPill(content, "Coins", 104, 44, true, out var coins);
             coinsRoot.Place(new Vector2(1f, 1f), new Vector2(-16, -(HeaderTop + 6)), new Vector2(104, 44));
+            SoftShadow(coinsRoot, 6, 14, 0.3f);
 
             // Панель прогресса: собрано · ходы · звёзды.
             var progress = Rounded(content, "Progress", 18, Color.white);
@@ -67,13 +73,13 @@ namespace BottleSort.UI.Editor
             var collected = Text(progress.transform, "Collected", HeavyFont, 12, Hex("#EBF3FF", 0.9f), TextAlignmentOptions.MidlineLeft, "hud_collected");
             collected.rectTransform.anchorMin = new Vector2(0f, 0.5f);
             collected.rectTransform.anchorMax = new Vector2(1f, 0.5f);
-            collected.rectTransform.offsetMin = new Vector2(M(16), M(2));
-            collected.rectTransform.offsetMax = new Vector2(-M(16 + 74 + 68 + 24), M(18));
+            collected.rectTransform.offsetMin = new Vector2(M(16), M(-0.5f));
+            collected.rectTransform.offsetMax = new Vector2(-M(16 + 74 + 68 + 24), M(16));
             var bar = Rounded(progress.transform, "Bar", 5, Hex("#000000", 0.35f));
             bar.rectTransform.anchorMin = new Vector2(0f, 0.5f);
             bar.rectTransform.anchorMax = new Vector2(1f, 0.5f);
-            bar.rectTransform.offsetMin = new Vector2(M(16), -M(13));
-            bar.rectTransform.offsetMax = new Vector2(-M(16 + 74 + 68 + 24), -M(4));
+            bar.rectTransform.offsetMin = new Vector2(M(16), -M(15.7f));
+            bar.rectTransform.offsetMax = new Vector2(-M(16 + 74 + 68 + 24), -M(6.7f));
             var fill = Rounded(bar.transform, "Fill", 5, Color.white);
             fill.rectTransform.anchorMin = Vector2.zero;
             fill.rectTransform.anchorMax = new Vector2(0f, 1f);
@@ -85,7 +91,9 @@ namespace BottleSort.UI.Editor
             moves.anchorMax = new Vector2(1f, 1f);
             moves.pivot = new Vector2(1f, 0.5f);
             moves.anchoredPosition = new Vector2(-M(16 + 68 + 12), 0f);
-            moves.sizeDelta = new Vector2(M(74), -M(16));
+            // Колонка высотой по содержимому (33 pt), разделители такой же высоты.
+            moves.anchorMin = moves.anchorMax = new Vector2(1f, 0.5f);
+            moves.sizeDelta = new Vector2(M(74), M(33));
             var movesGroup = Group(moves.gameObject, 1f, false);
             var dividerLeft = Image(moves, "Left", null, White(0.18f));
             dividerLeft.rectTransform.anchorMin = new Vector2(0f, 0f);
@@ -96,10 +104,10 @@ namespace BottleSort.UI.Editor
             dividerRight.rectTransform.anchorMax = new Vector2(1f, 1f);
             dividerRight.rectTransform.sizeDelta = new Vector2(M(1), 0f);
             var movesCaption = Text(moves, "Caption", HeavyFont, 10, Hex("#EBF3FF", 0.75f), TextAlignmentOptions.Center, "hud_moves");
-            movesCaption.characterSpacing = 8f;
-            movesCaption.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 9), new Vector2(74, 14));
+            movesCaption.characterSpacing = Spacing(1f, 10);
+            movesCaption.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, 11.5f), new Vector2(74, 14));
             var movesValue = Text(moves, "Value", DisplayFont, 20, Color.white);
-            movesValue.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, -8), new Vector2(74, 24));
+            movesValue.rectTransform.Place(new Vector2(0.5f, 0.5f), new Vector2(0, -5.5f), new Vector2(74, 24));
             movesValue.text = "0";
 
             var stars = new List<Image>();
@@ -116,10 +124,10 @@ namespace BottleSort.UI.Editor
             var infoPill = Rounded(infoBand, "Pill", 12, new Color(0f, 0f, 0f, 0.25f));
             infoPill.rectTransform.anchorMin = infoPill.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             infoPill.rectTransform.sizeDelta = M(300, 28);
-            var info = Text(infoBand, "Text", BodyFont, 12.5f, Hex("#DCEBFF"), TextAlignmentOptions.Center);
+            var info = Text(infoBand, "Text", BodyFont, 12, Hex("#DCEBFF"), TextAlignmentOptions.Center);
             info.rectTransform.Fill(14, 0, 14, 0);
             info.textWrappingMode = TextWrappingModes.Normal;
-            info.overflowMode = TextOverflowModes.Ellipsis;
+            info.overflowMode = TextOverflowModes.Overflow;
             info.lineSpacing = -8f;
             info.text = Loc.Get("info_normal");
 
@@ -134,15 +142,10 @@ namespace BottleSort.UI.Editor
             board.anchorMin = board.anchorMax = new Vector2(0.5f, 0.5f);
             board.sizeDelta = new Vector2(358, 420);
             var slot = BuildSlotTemplate(fieldRect);
-            var shelf = Shelf(fieldRect, "ShelfTemplate", 200);
             // Полки строятся в пикселях макета внутри доски, которая уже масштабирована.
-            shelf.sizeDelta = new Vector2(200, 12);
-            shelf.GetComponent<Image>().pixelsPerUnitMultiplier = 16f / 6f;
+            var shelf = Shelf(fieldRect, "ShelfTemplate", 200, 1f);
             shelf.anchorMin = shelf.anchorMax = new Vector2(0.5f, 0.5f);
             shelf.pivot = new Vector2(0.5f, 0f);
-            var shelfGlow = (RectTransform)shelf.Find("Glow");
-            shelfGlow.offsetMin = new Vector2(-8f, -10f);
-            shelfGlow.offsetMax = new Vector2(8f, 4f);
             shelf.gameObject.SetActive(false);
 
             var toast = BuildToast(fieldRect, 0);
@@ -239,34 +242,36 @@ namespace BottleSort.UI.Editor
             return slot;
         }
 
+        // Бустеры: сетка в 4 колонки с зазором 8 pt по ширине поля (358 pt), как grid в Game.dc.html.
         static BoosterButton BuildBooster(Transform row, int column, Booster kind, string icon, string key)
         {
+            const float columnWidth = (358f - 3 * 8f) / 4f;
             var root = Node(kind.ToString(), row);
-            root.anchorMin = new Vector2(column / 4f, 0f);
-            root.anchorMax = new Vector2((column + 1) / 4f, 1f);
-            root.offsetMin = new Vector2(M(4), 0f);
-            root.offsetMax = new Vector2(-M(4), 0f);
+            root.Place(new Vector2(0.5f, 1f), new Vector2(column * (columnWidth + 8f) + columnWidth / 2f - 179f, 0f),
+                new Vector2(columnWidth, BoostersHeight), new Vector2(0.5f, 1f));
             var group = Group(root.gameObject);
             var button = Button(root.gameObject);
             var booster = root.gameObject.AddComponent<BoosterButton>();
 
-            var face = Rounded(root, "Face", 22, Color.white);
-            face.rectTransform.Place(new Vector2(0.5f, 1f), Vector2.zero, new Vector2(62, 62), new Vector2(0.5f, 1f));
-            Gradient(face, Hex("#35C7FF"), Hex("#0548A8"));
+            // 62 pt плюс рамка 2 pt снаружи.
+            var faceRoot = Node("FaceRoot", root);
+            faceRoot.Place(new Vector2(0.5f, 1f), Vector2.zero, new Vector2(66, 66), new Vector2(0.5f, 1f));
+            SoftShadow(faceRoot, 8, 16, 0.4f);
+            var face = Rounded(faceRoot, "Face", 22, Color.white);
+            face.rectTransform.Fill();
+            Gradient(face, Hex("#35C7FF"), Hex("#0548A8")).SetColors(Hex("#35C7FF"), Hex("#0870E8"), 0.6f, Hex("#0548A8"));
+            InsetBottom(face.transform, 22, Hex("#001E5A", 0.4f));
             Border(face.transform, 22, White(0.5f));
             var glyph = Image(face.transform, "Icon", "icon_" + icon, Color.white);
-            glyph.rectTransform.sizeDelta = M(28, 28);
+            glyph.rectTransform.sizeDelta = M(28, 28) * (27f / 24f);
 
-            var badge = Rounded(face.transform, "Badge", 12, Color.white);
-            badge.rectTransform.Place(new Vector2(1f, 1f), new Vector2(7, 7), new Vector2(28, 24), new Vector2(1f, 1f));
+            var badge = Pill(face.transform, "Badge", 24, 5, 12, 2, 12, Hex("#3A1A00"), out var badgeLabel);
+            badge.rectTransform.Place(new Vector2(1f, 1f), new Vector2(5, 5), new Vector2(24, 24), new Vector2(1f, 1f));
             var badgeGradient = Gradient(badge, Hex("#FFC107"), Hex("#FF8A00"));
-            Border(badge.transform, 12, Color.white);
-            var badgeLabel = Text(badge.transform, "Count", HeavyFont, 12, Hex("#3A1A00"));
-            badgeLabel.rectTransform.Fill();
             badgeLabel.text = "3";
 
             var label = Text(root, "Label", BodyFont, 13, Color.white, TextAlignmentOptions.Center, key);
-            label.rectTransform.Place(new Vector2(0.5f, 0f), Vector2.zero, new Vector2(90, 18), new Vector2(0.5f, 0f));
+            label.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0, -72), new Vector2(100, 18), new Vector2(0.5f, 1f));
 
             Set(booster, "booster", kind);
             Set(booster, "button", button);
@@ -275,6 +280,21 @@ namespace BottleSort.UI.Editor
             Set(booster, "badgeBackground", badgeGradient);
             Set(booster, "group", group);
             return booster;
+        }
+
+        // Бейдж-«таблетка» с белой рамкой: ширина по тексту, но не меньше высоты (min-width из макета).
+        static Image Pill(Transform parent, string name, float height, float paddingX, float radius, float border,
+            float fontSize, Color ink, out TextMeshProUGUI label, string key = null)
+        {
+            var pill = Rounded(parent, name, radius, Color.white);
+            Border(pill.transform, radius, Color.white);
+            label = Text(pill.transform, "Label", HeavyFont, fontSize, ink, TextAlignmentOptions.Center, key);
+            label.rectTransform.Fill();
+            var fit = pill.gameObject.AddComponent<TextPill>();
+            Set(fit, "label", label);
+            Set(fit, "padding", M(paddingX + border));
+            Set(fit, "minWidth", M(height));
+            return pill;
         }
 
         static TutorialHand BuildHand(Transform layer)
@@ -335,25 +355,28 @@ namespace BottleSort.UI.Editor
                 piece.rectTransform.localRotation = Quaternion.Euler(0f, 0f, random.Next(360));
             }
 
+            // Отступы ниже — из Win.dc.html, в pt от верха экрана минус 44 pt выреза (safe area).
             var ribbonRoot = Node("Ribbon", content);
-            ribbonRoot.Place(new Vector2(0.5f, 1f), new Vector2(0, -42), new Vector2(330, 76), new Vector2(0.5f, 1f));
-            var tailLeft = Rounded(ribbonRoot, "TailLeft", 6, Hex("#B8105A"));
+            ribbonRoot.Place(new Vector2(0.5f, 1f), new Vector2(0, -52), new Vector2(330, 76), new Vector2(0.5f, 1f));
+            var tailLeft = Image(ribbonRoot, "TailLeft", "ribbon_tail", Hex("#B8105A"));
             tailLeft.rectTransform.Place(new Vector2(0f, 1f), new Vector2(0, -18), new Vector2(50, 50), new Vector2(0f, 1f));
-            var tailRight = Rounded(ribbonRoot, "TailRight", 6, Hex("#B8105A"));
-            tailRight.rectTransform.Place(new Vector2(1f, 1f), new Vector2(0, -18), new Vector2(50, 50), new Vector2(1f, 1f));
+            var tailRight = Image(ribbonRoot, "TailRight", "ribbon_tail", Hex("#B8105A"));
+            tailRight.rectTransform.Place(new Vector2(1f, 1f), new Vector2(0, -18), new Vector2(50, 50), new Vector2(0f, 1f));
+            tailRight.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
             var ribbon = Rounded(ribbonRoot, "Body", 14, Color.white);
-            ribbon.rectTransform.Place(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(270, 64));
-            Gradient(ribbon, Hex("#FF8BCB"), Hex("#D81B60"));
+            ribbon.rectTransform.Place(new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(276, 70));
+            SoftShadow(ribbon.rectTransform, 8, 20, 0.45f);
+            Gradient(ribbon, Color.white, Color.white).SetColors(Hex("#FF8BCB"), Hex("#FF3D8D"), 0.5f, Hex("#D81B60"));
             Border(ribbon.transform, 14, Hex("#FFE1F0"));
             var ribbonText = Text(ribbon.transform, "Label", DisplayFont, 36, Color.white, TextAlignmentOptions.Center, "win_title");
-            ribbonText.characterSpacing = 10f;
+            ribbonText.characterSpacing = Spacing(2f, 36);
             ribbonText.rectTransform.Fill();
             Shadow(ribbonText, Hex("#8A0A3E"), -0.9f);
 
             var starsRow = Node("Stars", content);
-            starsRow.Place(new Vector2(0.5f, 1f), new Vector2(0, -152), new Vector2(280, 126), new Vector2(0.5f, 1f));
+            starsRow.Place(new Vector2(0.5f, 1f), new Vector2(0, -162), new Vector2(272, 126), new Vector2(0.5f, 1f));
             var stars = new List<Image>();
-            var starSpecs = new[] { (-92f, 78f, 0f), (0f, 104f, 22f), (92f, 78f, 0f) };
+            var starSpecs = new[] { (-97f, 78f, 0f), (0f, 104f, 22f), (97f, 78f, 0f) };
             for (int i = 0; i < 3; i++)
             {
                 var (x, size, lift) = starSpecs[i];
@@ -365,10 +388,10 @@ namespace BottleSort.UI.Editor
             }
 
             var levelDone = Text(content, "LevelDone", DisplayFont, 26, Color.white, TextAlignmentOptions.Center, "win_level_done");
-            levelDone.rectTransform.TopBand(296, 34);
+            levelDone.rectTransform.TopBand(306, 32);
             Shadow(levelDone, new Color(0f, 0f, 0f, 0.5f), -0.7f);
 
-            var chips = Node("Chips", content).TopBand(340, 30);
+            var chips = Node("Chips", content).TopBand(347, 34);
             var chipsLayout = chips.gameObject.AddComponent<HorizontalLayoutGroup>();
             chipsLayout.childAlignment = TextAnchor.MiddleCenter;
             chipsLayout.spacing = M(10);
@@ -378,12 +401,14 @@ namespace BottleSort.UI.Editor
             var bestChip = Chip(chips, "Best", "win_best");
 
             var rewardPanel = Rounded(content, "Reward", 24, Color.white);
-            rewardPanel.rectTransform.TopBand(396, 96, 24, 24);
+            rewardPanel.rectTransform.TopBand(407, 108, 24, 24);
             Gradient(rewardPanel, Hex("#123C87", 0.92f), Hex("#061B42", 0.92f));
             Border(rewardPanel.transform, 24, Hex("#78C8FF", 0.5f));
             var rewardCaption = Text(rewardPanel.transform, "Caption", HeavyFont, 13, Hex("#9FDDFF"), TextAlignmentOptions.MidlineLeft, "win_reward");
-            rewardCaption.characterSpacing = 6f;
-            rewardCaption.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(18, 24), new Vector2(160, 18), new Vector2(0f, 0.5f));
+            rewardCaption.characterSpacing = Spacing(1f, 13);
+            rewardCaption.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(18, 25), new Vector2(160, 18), new Vector2(0f, 0.5f));
+            var coinGlow = Image(rewardPanel.transform, "CoinGlow", "glow", Hex("#FFC83C", 0.7f));
+            coinGlow.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(18 - 10, -10), new Vector2(58, 58), new Vector2(0f, 0.5f));
             var coin = Image(rewardPanel.transform, "Coin", "coin", Color.white);
             coin.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(18, -10), new Vector2(38, 38), new Vector2(0f, 0.5f));
             var reward = Text(rewardPanel.transform, "Amount", DisplayFont, 40, Hex("#FFD957"), TextAlignmentOptions.MidlineLeft);
@@ -392,26 +417,19 @@ namespace BottleSort.UI.Editor
             Shadow(reward, Hex("#A84A00"), -0.8f);
             var doubleButton = ColorButton(rewardPanel.transform, "Double", Hex("#E474FF"), Hex("#7E25D4"), 20, Hex("#4A0E8A"), 5,
                 out var doubleFace);
-            ((RectTransform)doubleButton.transform).Place(new Vector2(1f, 0.5f), new Vector2(-18, 2), new Vector2(140, 60),
+            ((RectTransform)doubleButton.transform).Place(new Vector2(1f, 0.5f), new Vector2(-18, 2.5f), new Vector2(151, 64),
                 new Vector2(1f, 0.5f));
-            var video = Image(doubleFace, "Icon", "icon_video", Color.white);
-            video.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(14, 0), new Vector2(22, 22), new Vector2(0f, 0.5f));
-            var doubleLabel = Text(doubleFace, "Label", DisplayFont, 20, Color.white, TextAlignmentOptions.MidlineLeft, "win_double");
-            doubleLabel.rectTransform.Fill(42, 0, 8, 0);
+            var doubleLabel = IconLabel(doubleFace, "icon_video", 22, "win_double", 20, 8, out _);
 
             var next = ColorButton(content, "Next", Hex("#B6FF6E"), Hex("#17A523"), 26, Hex("#0E6B17"), 7, out var nextFace);
-            ((RectTransform)next.transform).BottomBand(84, 76, 24, 24);
-            var nextLabel = Text(nextFace, "Label", DisplayFont, 26, Color.white, TextAlignmentOptions.Center, "win_next");
-            nextLabel.rectTransform.Fill(24, 0, 64, 0);
-            nextLabel.enableAutoSizing = true;
-            nextLabel.fontSizeMin = M(16);
-            nextLabel.fontSizeMax = M(26);
+            ((RectTransform)next.transform).BottomBand(84, 81, 24, 24);
+            nextFace.GetComponent<UiGradient>().SetColors(Hex("#B6FF6E"), Hex("#5BDB33"), 0.45f, Hex("#17A523"));
+            SoftShadow((RectTransform)next.transform, 16 + 7, 28, 0.45f);
+            var nextLabel = IconLabel(nextFace, "icon_arrow_right", 24, "win_next", 26, 10, out _, iconFirst: false);
             Shadow(nextLabel, Hex("#0E6B17"), -0.8f);
-            var arrow = Image(nextFace, "Icon", "icon_arrow_right", Color.white);
-            arrow.rectTransform.Place(new Vector2(1f, 0.5f), new Vector2(-34, 0), new Vector2(24, 24), new Vector2(1f, 0.5f));
 
             var menuRoot = Node("Menu", content);
-            menuRoot.Place(new Vector2(0.5f, 0f), new Vector2(0, 24), new Vector2(220, 48), new Vector2(0.5f, 0f));
+            menuRoot.Place(new Vector2(0.5f, 0f), new Vector2(0, 30), new Vector2(220, 38), new Vector2(0.5f, 0f));
             var menuLabel = Text(menuRoot, "Label", HeavyFont, 16, Hex("#CFE6FF"), TextAlignmentOptions.Center, "win_menu");
             menuLabel.rectTransform.Fill();
             var menu = Button(menuRoot.gameObject);
@@ -435,8 +453,9 @@ namespace BottleSort.UI.Editor
             var chip = Rounded(parent, name, 14, Hex("#0A1A50", 0.7f));
             Border(chip.transform, 14, Hex("#96C8FF", 0.35f)).gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
             var layout = chip.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset((int)M(14), (int)M(14), (int)M(6), (int)M(6));
+            layout.padding = new RectOffset((int)M(15.5f), (int)M(15.5f), (int)M(7.5f), (int)M(7.5f));
             layout.childControlWidth = layout.childControlHeight = true;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
             var label = Text(chip.transform, "Label", HeavyFont, 14, Color.white, TextAlignmentOptions.Center, key);
             return chip.rectTransform;
         }

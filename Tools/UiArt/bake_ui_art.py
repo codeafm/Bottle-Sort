@@ -583,11 +583,40 @@ def bake_bottles():
     cv.save("liquid_shade.png")
 
 
+# Мягкая тень под панели и кнопки (box-shadow из макета): 9-slice, граница 128 px.
+# Внутренний прямоугольник отстоит от края на 64 px, столько же занимает размытие.
+def bake_shadow():
+    cv = Canvas(256, 256)
+    cv.fill(rect(64, 64, 128, 128, 32), WHITE)
+    a = blur(cv, 22)
+    cv.rgba[..., :3] = 0
+    cv.rgba[..., 3] = np.clip(a, 0, 1)
+    cv.save("shadow.png")
+
+
+# Хвост ленты «ОТЛИЧНО!» с вырезом, clip-path из Win.dc.html; правый — зеркальный.
+def bake_ribbon_tail():
+    cv = Canvas(100, 100)
+    cv.fill(poly("0 0 100 0 100 100 0 100 30 50", True), WHITE)
+    cv.save("ribbon_tail.png")
+
+
+# Внутренняя тень снизу (inset 0 -4px 0): серп между скруглённым прямоугольником и им же, поднятым на 12 px.
+# 9-slice с границей 64, как rounded.png, поэтому радиус и толщина задаются одним множителем.
+def bake_inset_bottom():
+    cv = Canvas(160, 160)
+    full = cv.fill_mask(rect(0, 0, 160, 160, 64))
+    raised = cv.fill_mask(rect(0, -12, 160, 160, 64))
+    cv.rgba[..., :3] = 1
+    cv.rgba[..., 3] = np.clip(full - raised, 0, 1)
+    cv.save("inset_bottom.png")
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     only = set(sys.argv[1:])
     steps = [("icons", bake_icons), ("stars", bake_stars), ("hand", bake_hand), ("crown", bake_crown),
-             ("primitives", bake_primitives), ("nodes", bake_nodes), ("bottles", bake_bottles)]
+             ("primitives", bake_primitives), ("shadow", bake_shadow), ("ribbon", bake_ribbon_tail), ("inset", bake_inset_bottom), ("nodes", bake_nodes), ("bottles", bake_bottles)]
     for name, fn in steps:
         if not only or name in only:
             fn()

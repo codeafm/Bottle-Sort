@@ -36,12 +36,12 @@ namespace BottleSort.UI
 
         void Awake() => button.onClick.AddListener(() => Pressed?.Invoke());
 
-        public void ShowBottle(string nameKey, string colors)
+        public void ShowBottle(string nameKey, string shape, string colors)
         {
             bottleRoot.SetActive(true);
             themeRoot.SetActive(false);
             nameLabel.SetKey(nameKey);
-            bottle.Show(MakeBottle(colors), 4);
+            bottle.Show(MakeBottle(colors, shape), 4);
         }
 
         public void ShowTheme(string nameKey, Theme theme, string colors)
@@ -50,7 +50,7 @@ namespace BottleSort.UI
             themeRoot.SetActive(true);
             nameLabel.SetKey(nameKey);
             themeThumb.texture = ThemeBackdrop.TextureFor(theme);
-            themeBottle.Show(MakeBottle(colors), 4);
+            themeBottle.Show(MakeBottle(colors, Bottle.DefaultShape), 4);
         }
 
         public void SetState(State state, int price, int unlockLevel, bool isNew)
@@ -88,9 +88,9 @@ namespace BottleSort.UI
             }
         }
 
-        static Bottle MakeBottle(string colors)
+        static Bottle MakeBottle(string colors, string shape)
         {
-            var result = new Bottle(4);
+            var result = new Bottle(4, shape);
             foreach (char letter in colors)
                 result.Push(Palette.FromLetter(letter));
             return result;

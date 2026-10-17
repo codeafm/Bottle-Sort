@@ -38,6 +38,7 @@ namespace BottleSort.UI
         float _shownProgress;
         Task _loading;
         bool _leaving;
+        bool _frozen;
 
         public override ScreenId Id => ScreenId.Splash;
         public override Theme? BackdropTheme => Theme.Violet;
@@ -71,7 +72,7 @@ namespace BottleSort.UI
 
         void Update()
         {
-            if (!IsOpen)
+            if (!IsOpen || _frozen)
                 return;
             float dt = Time.unscaledDeltaTime;
             _elapsed += dt;
@@ -92,6 +93,21 @@ namespace BottleSort.UI
 
             if (!_leaving && _shownProgress >= 0.999f)
                 Leave();
+        }
+
+        // Остановить заставку на нужном шаге налива и проценте загрузки: для сравнения с макетом.
+        public void Freeze(int step, float progress)
+        {
+            _frozen = true;
+            _step = step;
+            foreach (var motion in GetComponentsInChildren<IdleMotion>())
+                motion.enabled = false;
+            ShowStep();
+            Tweens.Kill(logo, "logo");
+            logo.localScale = Vector3.one;
+            logoGroup.alpha = 1f;
+            progressFill.anchorMax = new Vector2(progress, 1f);
+            loadingLabel.SetArgs(Mathf.RoundToInt(progress * 100f));
         }
 
         void Leave()

@@ -11,7 +11,11 @@ namespace BottleSort.UI
             Pulse,
             Spin,
             Twinkle,
-            Sweep
+            Sweep,
+            // Пульсирующее кольцо (box-shadow 0 0 0 Npx, растёт и гаснет): amount — насколько раздвинуть края.
+            Ripple,
+            // Кольцо, которое расходится и тает (keyframes ring): масштаб от 1 до 1 + amount.
+            RingOut
         }
 
         [SerializeField] Kind kind = Kind.Float;
@@ -25,6 +29,7 @@ namespace BottleSort.UI
         RectTransform _rect;
         CanvasGroup _group;
         Vector2 _basePosition;
+        Vector2 _baseSize;
         Vector3 _baseScale;
         float _time;
 
@@ -47,7 +52,10 @@ namespace BottleSort.UI
             _rect = transform as RectTransform;
             _group = GetComponent<CanvasGroup>();
             if (_rect != null)
+            {
                 _basePosition = _rect.anchoredPosition;
+                _baseSize = _rect.sizeDelta;
+            }
             _baseScale = transform.localScale;
             _time = phase * period;
         }
@@ -56,8 +64,10 @@ namespace BottleSort.UI
         {
             if (_rect != null && (kind == Kind.Float || kind == Kind.Sweep))
                 _rect.anchoredPosition = _basePosition;
-            if (kind == Kind.Pulse || kind == Kind.Twinkle)
+            if (kind == Kind.Pulse || kind == Kind.Twinkle || kind == Kind.RingOut)
                 transform.localScale = _baseScale;
+            if (_rect != null && kind == Kind.Ripple)
+                _rect.sizeDelta = _baseSize;
         }
 
         void Update()
@@ -83,6 +93,16 @@ namespace BottleSort.UI
                     transform.localScale = _baseScale * (0.6f + 0.4f * wave);
                     if (_group != null)
                         _group.alpha = 0.1f + 0.65f * wave;
+                    break;
+                case Kind.Ripple:
+                    _rect.sizeDelta = _baseSize + Vector2.one * (2f * amount * wave);
+                    if (_group != null)
+                        _group.alpha = 1f - wave;
+                    break;
+                case Kind.RingOut:
+                    transform.localScale = _baseScale * (1f + amount * cycle);
+                    if (_group != null)
+                        _group.alpha = 0.85f * (1f - cycle);
                     break;
                 case Kind.Sweep:
                     float moving = 1f - sweepPause;

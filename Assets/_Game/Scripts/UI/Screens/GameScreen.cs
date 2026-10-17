@@ -137,7 +137,7 @@ namespace BottleSort.UI
             _generated = generated;
             _session = generated.CreateSession();
             _guide = generated.IsTutorial ? HandmadeLevels.CreateGuide(generated, _session) : null;
-            field.Build(_session.State, generated.IsTutorial);
+            field.Build(_session.State);
             tutorial.SetHandScale(field.Scale / 2.5f);
             _ready = true;
 
@@ -493,7 +493,7 @@ namespace BottleSort.UI
             Deselect();
             if (_guide != null) _guide.Restart(); else _session.Restart();
             GameEvents.RaiseRestartUsed();
-            field.Build(_session.State, _generated.IsTutorial);
+            field.Build(_session.State);
             hud.SetInfo(DefaultInfo());
             RefreshHud();
             tutorial.OnUndoOrRestart();
@@ -557,7 +557,7 @@ namespace BottleSort.UI
             GameEvents.RaiseExtraBottleAdded();
             SkipPours();
             Deselect();
-            field.Build(_session.State, _generated.IsTutorial);
+            field.Build(_session.State);
             RefreshHud();
             RefreshBoosters();
         }

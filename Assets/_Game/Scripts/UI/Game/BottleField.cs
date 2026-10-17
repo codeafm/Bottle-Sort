@@ -10,6 +10,7 @@ namespace BottleSort.UI
     public sealed class BottleField : MonoBehaviour
     {
         const float MaxScale = 2.5f;
+        const float MaxAvailableHeight = 420f;
         const float Gap = 12f;
         const float RowPadding = 10f;
         const float TopPadding = 24f;
@@ -38,15 +39,16 @@ namespace BottleSort.UI
             public float Height;
         }
 
-        public void Build(LevelState state, bool singleRow)
+        public void Build(LevelState state)
         {
             Clear();
             var placements = new Placement[state.BottleCount];
             int flask = FindFlask(state);
-            if (flask >= 0 && !singleRow)
+            // Сетка с колбой посередине — как уровень 45 в макете; когда бутылок больше, колба просто стоит в ряду (L1500).
+            if (flask >= 0 && state.BottleCount <= 9)
                 LayoutGrid(state, flask, placements);
             else
-                LayoutRows(state, singleRow, placements);
+                LayoutRows(state, placements);
 
             for (int i = 0; i < placements.Length; i++)
             {
@@ -98,7 +100,9 @@ namespace BottleSort.UI
             var area = ((RectTransform)transform).rect;
             if (area.width <= 0f || area.height <= 0f)
                 return;
-            float scale = Mathf.Min(MaxScale, area.width / _boardSize.x, area.height / _boardSize.y);
+            // Как zoom в Game.dc.html: высота берётся не больше 420 pt, поэтому на длинных экранах бутылки не раздуваются.
+            float height = Mathf.Min(area.height, MaxAvailableHeight * MaxScale);
+            float scale = Mathf.Min(MaxScale, area.width / _boardSize.x, height / _boardSize.y);
             board.sizeDelta = _boardSize;
             board.localScale = new Vector3(scale, scale, 1f);
         }
@@ -121,12 +125,12 @@ namespace BottleSort.UI
             return -1;
         }
 
-        void LayoutRows(LevelState state, bool singleRow, Placement[] result)
+        void LayoutRows(LevelState state, Placement[] result)
         {
             int count = state.BottleCount;
-            int rows = singleRow ? 1 : count <= 10 ? 2 : 3;
+            int rows = count <= 10 ? 2 : 3;
             int perRow = Mathf.CeilToInt(count / (float)rows);
-            float baseSize = singleRow || count <= 8 ? 70f : count <= 10 ? 58f : 50f;
+            float baseSize = count <= 8 ? 70f : count <= 10 ? 58f : 50f;
             float rowGap = rows == 3 ? 22f : 34f;
 
             var rowWidths = new List<float>();

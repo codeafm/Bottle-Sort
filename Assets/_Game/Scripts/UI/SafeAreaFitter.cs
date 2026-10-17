@@ -7,6 +7,9 @@ namespace BottleSort.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class SafeAreaFitter : MonoBehaviour
     {
+        // Подменная safe area в пикселях экрана: в batchmode её нет, а сравнение с макетом идёт с вырезом iPhone.
+        public static Rect? Simulated;
+
         RectTransform _rect;
         Rect _lastSafeArea;
         Vector2Int _lastScreenSize;
@@ -19,14 +22,16 @@ namespace BottleSort.UI
 
         void Update()
         {
-            if (Screen.safeArea != _lastSafeArea ||
+            if (SafeArea != _lastSafeArea ||
                 Screen.width != _lastScreenSize.x || Screen.height != _lastScreenSize.y)
                 Apply();
         }
 
+        static Rect SafeArea => Simulated ?? Screen.safeArea;
+
         void Apply()
         {
-            _lastSafeArea = Screen.safeArea;
+            _lastSafeArea = SafeArea;
             _lastScreenSize = new Vector2Int(Screen.width, Screen.height);
             if (Screen.width <= 0 || Screen.height <= 0)
                 return;

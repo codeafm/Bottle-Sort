@@ -40,6 +40,7 @@ namespace BottleSort.UI.Editor
 
             var scene = EditorSceneManager.OpenScene(MainScenePath, OpenSceneMode.Single);
             var canvas = GameObject.Find("Canvas");
+            SetupScaler(canvas.GetComponent<CanvasScaler>());
             var safeArea = canvas.transform.Find("SafeArea");
             ClearOld(canvas.transform, safeArea);
 
@@ -82,6 +83,17 @@ namespace BottleSort.UI.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             Debug.Log("[UiSceneBuilder] Main scene UI built");
+        }
+
+        // Макет нарисован на 390 pt в ширину, в Canvas это 975 единиц (2.5 на pt). На вытянутых телефонах
+        // ширина всегда ровно 390 pt, как в макете; на коротких экранах и планшетах Expand держит высоту
+        // не меньше 693 pt, тогда добавляется ширина, а не съёживается шапка.
+        static void SetupScaler(CanvasScaler scaler)
+        {
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(M(390), M(693));
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+            scaler.referencePixelsPerUnit = 100f;
         }
 
         static void ClearOld(Transform canvas, Transform safeArea)
@@ -153,20 +165,26 @@ namespace BottleSort.UI.Editor
             return screen;
         }
 
-        // Стеклянная квадратная кнопка 48×48 (домой, назад, настройки).
+        // Квадратная кнопка 48×48 (домой, назад, настройки). В макете рамка 1.5 pt снаружи
+        // (content-box), поэтому снаружи кнопка 51×51; размещать по IconButtonSize.
+        const float IconButtonSize = 51f;
+
         static Button IconButton(Transform parent, string name, string icon, bool glass)
         {
             var root = Node(name, parent);
-            root.sizeDelta = M(48, 48);
+            root.sizeDelta = M(IconButtonSize, IconButtonSize);
             var face = Rounded(root, "Face", 16, glass ? Color.white : Hex("#0A1A50", 0.55f), true);
             face.rectTransform.Fill();
             if (glass)
                 Gradient(face, White(0.2f), White(0.06f));
             Border(face.transform, 16, glass ? Hex("#DCEBFF", 0.4f) : Hex("#AAD2FF", 0.35f));
             var glyph = Image(face.transform, "Icon", "icon_" + icon, Color.white);
-            glyph.rectTransform.sizeDelta = M(26, 26);
+            glyph.rectTransform.sizeDelta = M(24, 24) * (27f / 24f);
             return Button(face.gameObject, root);
         }
+
+        static void IconButtonShadow(Button button) =>
+            SoftShadow((RectTransform)button.transform.parent, 6, 14, 0.3f);
 
         static Button BackButton(Transform parent) => IconButton(parent, "Back", "back", false);
 
@@ -182,12 +200,18 @@ namespace BottleSort.UI.Editor
                 Gradient(face, White(0.2f), White(0.06f));
             Border(face.transform, height / 2f, Hex("#FFD66E", 0.6f));
 
+            float coinSize = plus ? 26f : 28f;
+            var coinGlow = Image(face.transform, "CoinGlow", "glow", Hex("#FFC83C", 0.5f));
+            coinGlow.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(6f - 6f, 0f), new Vector2(coinSize + 12, coinSize + 12),
+                new Vector2(0f, 0.5f));
             var coin = Image(face.transform, "Coin", "coin", Color.white);
-            coin.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(28, 28), new Vector2(0f, 0.5f));
+            coin.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(plus ? 8f : 6f, 0f), new Vector2(coinSize, coinSize),
+                new Vector2(0f, 0.5f));
 
-            float right = plus ? 40f : 12f;
-            label = Text(face.transform, "Amount", DisplayFont, height >= 44 ? 20 : 18, Color.white, TextAlignmentOptions.MidlineRight);
-            label.rectTransform.Fill(36, 0, right, 0);
+            float right = plus ? 44f : 12f;
+            label = Text(face.transform, "Amount", DisplayFont, plus ? 20 : 18, Color.white,
+                plus ? TextAlignmentOptions.Center : TextAlignmentOptions.MidlineRight);
+            label.rectTransform.Fill(plus ? 40 : 36, 0, right, 0);
             label.text = "0";
 
             if (plus)
@@ -220,16 +244,53 @@ namespace BottleSort.UI.Editor
             return button;
         }
 
-        static RectTransform Shelf(Transform parent, string name, float width)
+        static TextMeshProUGUI IconLabel(RectTransform face, string icon, float iconSize, string key, float fontSize, float gap,
+            out Image iconImage, bool iconFirst = true)
         {
-            var shelf = Image(parent, name, "shelf", Color.white);
-            shelf.type = UnityEngine.UI.Image.Type.Sliced;
-            shelf.pixelsPerUnitMultiplier = 16f / M(6f);
-            shelf.rectTransform.sizeDelta = M(width, 12);
-            var glow = Image(shelf.transform, "Glow", "glow", Hex("#8CC8FF", 0.25f));
-            glow.rectTransform.Fill(-20, -10, -20, -26);
-            glow.transform.SetAsFirstSibling();
-            return shelf.rectTransform;
+            var row = Node("Content", face).Fill();
+            var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = M(gap);
+            layout.childControlWidth = layout.childControlHeight = true;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+
+            iconImage = Image(row, "Icon", icon, Color.white);
+            var iconElement = iconImage.gameObject.AddComponent<LayoutElement>();
+            iconElement.preferredWidth = iconElement.preferredHeight = M(iconSize) * (27f / 24f);
+            var label = Text(row, "Label", DisplayFont, fontSize, Color.white, TextAlignmentOptions.Center, key);
+            if (!iconFirst)
+                iconImage.transform.SetAsLastSibling();
+            return label;
+        }
+
+        // Стеклянная полка: box-shadow 0 12px 22px rgba(0,0,0,.35) и 0 0 22px rgba(140,200,255,.25) под ней.
+        // unit — сколько единиц в pt: на экранах K, внутри доски поля 1 (доска масштабируется целиком).
+        static RectTransform Shelf(Transform parent, string name, float width, float unit = K)
+        {
+            var root = Node(name, parent);
+            root.sizeDelta = new Vector2(width, 12f) * unit;
+            float blur = 22f * unit;
+            // Полка тоньше размытия, поэтому у CSS-тени пик заметно ниже заявленной альфы: берём примерно половину.
+            ShelfHalo(root, "Shadow", new Color(0f, 0f, 0f, 0.16f), blur, 12f * unit);
+            ShelfHalo(root, "Glow", Hex("#8CC8FF", 0.12f), blur, 0f);
+            var bar = Image(root, "Bar", "shelf", Color.white);
+            bar.type = UnityEngine.UI.Image.Type.Sliced;
+            bar.pixelsPerUnitMultiplier = 16f / (6f * unit);
+            bar.rectTransform.anchorMin = Vector2.zero;
+            bar.rectTransform.anchorMax = Vector2.one;
+            bar.rectTransform.offsetMin = bar.rectTransform.offsetMax = Vector2.zero;
+            return root;
+        }
+
+        static void ShelfHalo(RectTransform shelf, string name, Color color, float blur, float offsetY)
+        {
+            var halo = Image(shelf, name, "shadow", color);
+            halo.type = UnityEngine.UI.Image.Type.Sliced;
+            halo.pixelsPerUnitMultiplier = 64f / blur;
+            halo.rectTransform.anchorMin = Vector2.zero;
+            halo.rectTransform.anchorMax = Vector2.one;
+            halo.rectTransform.offsetMin = new Vector2(-blur, -blur - offsetY);
+            halo.rectTransform.offsetMax = new Vector2(blur, blur - offsetY);
         }
 
         static Toast BuildToast(Transform parent, float top)
@@ -280,6 +341,19 @@ namespace BottleSort.UI.Editor
             return panel;
         }
 
+        // Текстуры vfx-art покрывают область viewBox от -30 до 130 по x и от -30 до 270 по y,
+        // в долях коробки бутылки 100×240 это якоря ниже.
+        static readonly Vector2 ArtMin = new Vector2(-0.3f, -0.125f);
+        static readonly Vector2 ArtMax = new Vector2(1.3f, 1.125f);
+
+        static RectTransform FillArtArea(RectTransform rect)
+        {
+            rect.anchorMin = ArtMin;
+            rect.anchorMax = ArtMax;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            return rect;
+        }
+
         static BottleStubView BuildBottleStub()
         {
             var root = Node("BottleStub", null);
@@ -289,26 +363,35 @@ namespace BottleSort.UI.Editor
             var group = Group(root.gameObject, 1f, false);
             var view = root.gameObject.AddComponent<BottleStubView>();
 
-            var glow = Image(root, "Glow", "bottle_classic_glow", Color.white);
-            glow.rectTransform.Fill();
+            var glow = Image(root, "Glow", null, Color.white);
+            FillArtArea(glow.rectTransform);
             glow.gameObject.SetActive(false);
-            var back = Image(root, "Back", "bottle_classic_back", Color.white);
-            back.rectTransform.Fill();
+            var back = Node("Back", root);
+            FillArtArea(back);
+            var backImage = back.gameObject.AddComponent<RawImage>();
+            backImage.raycastTarget = false;
 
-            var mask = Image(root, "Liquid", "bottle_classic_mask", Color.white);
-            mask.rectTransform.Fill();
+            var mask = Image(root, "Liquid", null, Color.white);
+            FillArtArea(mask.rectTransform);
             mask.gameObject.AddComponent<Mask>().showMaskGraphic = false;
-            var layers = Node("Layers", mask.transform).Fill();
+            // Внутри маски координаты снова коробки 100×240 по высоте, а по ширине — вся текстура:
+            // слои шире бутылки, лишнее срезает маска (как прямоугольники 400×h в Bottle.dc.html).
+            var layers = Node("Layers", mask.transform);
+            layers.anchorMin = new Vector2(0f, 0.125f / 1.25f);
+            layers.anchorMax = new Vector2(1f, 1.125f / 1.25f);
+            layers.offsetMin = layers.offsetMax = Vector2.zero;
 
             var shade = Image(layers, "Shade", "liquid_shade", Color.white);
-            shade.rectTransform.anchorMin = new Vector2(0f, 0f);
-            shade.rectTransform.anchorMax = new Vector2(1f, 0f);
+            shade.rectTransform.anchorMin = new Vector2((0.3f + 0.16f) / 1.6f, 0f);
+            shade.rectTransform.anchorMax = new Vector2((0.3f + 0.84f) / 1.6f, 0f);
             shade.rectTransform.pivot = new Vector2(0.5f, 0f);
+            shade.rectTransform.sizeDelta = Vector2.zero;
 
             var layer = Image(layers, "LayerTemplate", null, Color.white);
             layer.rectTransform.anchorMin = new Vector2(0f, 0f);
             layer.rectTransform.anchorMax = new Vector2(1f, 0f);
             layer.rectTransform.pivot = new Vector2(0.5f, 0f);
+            Gradient(layer, Color.white, Color.white);
             layer.gameObject.SetActive(false);
 
             var hidden = Text(layers, "HiddenTemplate", DisplayFont, 16, White(0.85f));
@@ -317,11 +400,13 @@ namespace BottleSort.UI.Editor
             hidden.rectTransform.sizeDelta = M(40, 30);
             hidden.gameObject.SetActive(false);
 
-            var front = Image(root, "Front", "bottle_classic_front", Color.white);
-            front.rectTransform.Fill();
+            var front = Node("Front", root);
+            FillArtArea(front);
+            var frontImage = front.gameObject.AddComponent<RawImage>();
+            frontImage.raycastTarget = false;
 
-            var frozenTint = Image(root, "Ice", "bottle_classic_mask", Hex("#D8F4FF", 0.55f));
-            frozenTint.rectTransform.Fill();
+            var frozenTint = Image(root, "Ice", null, Hex("#D8F4FF", 0.55f));
+            FillArtArea(frozenTint.rectTransform);
             frozenTint.gameObject.SetActive(false);
 
             // Значки льда и замка на высоте 150 из 240, как в Bottle.dc.html.
@@ -346,21 +431,10 @@ namespace BottleSort.UI.Editor
             lockIcon.rectTransform.offsetMin = lockIcon.rectTransform.offsetMax = Vector2.zero;
             lockBadge.gameObject.SetActive(false);
 
-            Set(view, "classic.back", Sprite("bottle_classic_back"));
-            Set(view, "classic.front", Sprite("bottle_classic_front"));
-            Set(view, "classic.mask", Sprite("bottle_classic_mask"));
-            Set(view, "classic.glow", Sprite("bottle_classic_glow"));
-            Set(view, "classic.liquidTop", 66f);
-            Set(view, "classic.liquidBottom", 226f);
-            Set(view, "cylinder.back", Sprite("bottle_cylinder_back"));
-            Set(view, "cylinder.front", Sprite("bottle_cylinder_front"));
-            Set(view, "cylinder.mask", Sprite("bottle_cylinder_mask"));
-            Set(view, "cylinder.glow", Sprite("bottle_cylinder_glow"));
-            Set(view, "cylinder.liquidTop", 36f);
-            Set(view, "cylinder.liquidBottom", 212f);
+            FillShapes(view);
             Set(view, "glow", glow);
-            Set(view, "back", back);
-            Set(view, "front", front);
+            Set(view, "back", backImage);
+            Set(view, "front", frontImage);
             Set(view, "mask", mask);
             Set(view, "layers", layers);
             Set(view, "shade", shade.rectTransform);
@@ -375,6 +449,28 @@ namespace BottleSort.UI.Editor
             var prefab = PrefabUtility.SaveAsPrefabAsset(root.gameObject, BottleStubPath);
             Object.DestroyImmediate(root.gameObject);
             return prefab.GetComponent<BottleStubView>();
+        }
+
+        // Формы берём из VfxArt: те же текстуры стекла и те же границы жидкости, что у BottleView на поле.
+        static void FillShapes(BottleStubView view)
+        {
+            var art = VfxArt.Default;
+            var so = new SerializedObject(view);
+            var list = so.FindProperty("shapes");
+            list.arraySize = art.shapes.Length;
+            for (int i = 0; i < art.shapes.Length; i++)
+            {
+                var shape = art.shapes[i];
+                var element = list.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("id").stringValue = shape.id;
+                element.FindPropertyRelative("back").objectReferenceValue = shape.back;
+                element.FindPropertyRelative("front").objectReferenceValue = shape.front;
+                element.FindPropertyRelative("liquid").objectReferenceValue = Sprite("Bottles/" + shape.id + "_liquid");
+                element.FindPropertyRelative("glow").objectReferenceValue = Sprite("Bottles/" + shape.id + "_glow");
+                element.FindPropertyRelative("liquidTop").floatValue = shape.liquidTop;
+                element.FindPropertyRelative("liquidBottom").floatValue = shape.liquidBottom;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static BottleViewAdapter BuildBottleAdapter()

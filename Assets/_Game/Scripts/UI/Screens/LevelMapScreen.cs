@@ -9,12 +9,19 @@ namespace BottleSort.UI
     // Карта уровней одной главы: извилистая дорожка снизу вверх, как в Levels.dc.html.
     public sealed class LevelMapScreen : UiScreen
     {
-        const float StepY = 205f;
-        const float DotSpacing = 32f;
+        const float Pt = 2.5f;
+        const float DotSpacing = 13f * Pt;
         const float EdgePadding = 300f;
+        // Текущий уровень при открытии стоит на этой доле высоты видимой части сверху (в макете 24-й на y 492).
+        const float CurrentAt = 0.46f;
 
-        // X узлов в долях ширины, повторяется по кругу — та же «змейка», что в макете.
-        static readonly float[] Path = { 0.5f, 0.75f, 0.78f, 0.54f, 0.28f, 0.24f, 0.49f, 0.74f, 0.77f, 0.51f, 0.24f, 0.26f };
+        // «Змейка» из Levels.dc.html (узлы 20–29): x узла в pt и подъём от узла с номером на 0. Период 547 pt.
+        static readonly Vector2[] Pattern =
+        {
+            new Vector2(292, 0), new Vector2(305, 70), new Vector2(212, 118), new Vector2(108, 160), new Vector2(92, 238),
+            new Vector2(190, 298), new Vector2(290, 338), new Vector2(300, 408), new Vector2(200, 458), new Vector2(92, 492)
+        };
+        const float PatternRise = 547f;
 
         [SerializeField] Button backButton;
         [SerializeField] TMP_Text totalStars;
@@ -93,16 +100,15 @@ namespace BottleSort.UI
             Canvas.ForceUpdateCanvases();
             var data = PlayerData.Current;
             int count = last - first + 1;
-            float width = content.rect.width;
-            content.sizeDelta = new Vector2(content.sizeDelta.x, count * StepY + EdgePadding * 2f);
+            content.sizeDelta = new Vector2(content.sizeDelta.x, Rise(last) - Rise(first) + EdgePadding * 2f);
             float height = content.sizeDelta.y;
 
             var points = new Vector2[count];
             for (int i = 0; i < count; i++)
             {
-                float x = (Path[i % Path.Length] - 0.5f) * width;
+                float x = (Pattern[PatternIndex(first + i)].x - 195f) * Pt;
                 // Уровни идут снизу вверх, content растёт вниз от верхнего края.
-                float y = -(height - EdgePadding - i * StepY);
+                float y = -(height - EdgePadding - (Rise(first + i) - Rise(first)));
                 points[i] = new Vector2(x, y);
             }
 
@@ -117,7 +123,7 @@ namespace BottleSort.UI
                     var dot = DotAt(dotIndex++);
                     dot.rectTransform.anchoredPosition = Vector2.Lerp(points[i], points[i + 1], d / (float)dots);
                     dot.color = walked ? UiColors.Hex("#FFC83D") : new Color(1f, 1f, 1f, 0.35f);
-                    dot.rectTransform.sizeDelta = Vector2.one * (walked ? 18f : 15f);
+                    dot.rectTransform.sizeDelta = Vector2.one * (walked ? 7f : 6f) * Pt;
                 }
             }
 
@@ -144,10 +150,15 @@ namespace BottleSort.UI
 
             Canvas.ForceUpdateCanvases();
             float viewport = scroll.viewport.rect.height;
-            float target = height - EdgePadding - currentIndex * StepY - viewport * 0.5f;
+            float target = height - EdgePadding - (Rise(first + currentIndex) - Rise(first)) - viewport * CurrentAt;
             float range = Mathf.Max(1f, height - viewport);
             scroll.verticalNormalizedPosition = 1f - Mathf.Clamp01(target / range);
         }
+
+        // Фаза считается от номера уровня, а не от начала главы: 24-й всегда слева, как в макете.
+        static int PatternIndex(int level) => level % Pattern.Length;
+
+        static float Rise(int level) => (level / Pattern.Length * PatternRise + Pattern[PatternIndex(level)].y) * Pt;
 
         LevelNode NodeAt(int index)
         {

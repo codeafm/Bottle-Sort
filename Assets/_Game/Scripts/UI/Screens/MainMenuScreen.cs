@@ -19,6 +19,9 @@ namespace BottleSort.UI
         [SerializeField] Button giftButton;
         [SerializeField] Button bonusButton;
         [SerializeField] Button luckButton;
+        [SerializeField] GameObject giftBadge;
+        [SerializeField] GameObject luckBadge;
+        [SerializeField] TMP_Text luckCount;
         [SerializeField] Button playButton;
         [SerializeField] LocalizedText playLevel;
         [SerializeField] Button levelsButton;
@@ -63,6 +66,10 @@ namespace BottleSort.UI
             coins.text = Loc.Number(data.coins);
             playLevel.SetKey("menu_play_level", data.highestUnlocked);
             levelsProgress.SetKey("menu_levels_progress", data.highestUnlocked, TotalLevels);
+            // Красная «1» — подарок дня ещё не забран, жёлтое число — бесплатные вращения колеса.
+            giftBadge.SetActive(DailyRewards.GiftAvailable(data, DateTime.Now));
+            luckBadge.SetActive(data.wheelSpins > 0);
+            luckCount.text = data.wheelSpins.ToString();
         }
 
         void OpenDailyGift()

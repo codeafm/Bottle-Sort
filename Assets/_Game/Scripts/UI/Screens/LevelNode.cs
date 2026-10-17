@@ -24,6 +24,7 @@ namespace BottleSort.UI
         [SerializeField] GameObject lockIcon;
         [SerializeField] GameObject crown;
         [SerializeField] GameObject ring;
+        [SerializeField] GameObject currentGlow;
         [SerializeField] GameObject playBubble;
         [SerializeField] GameObject tutorialLabel;
         [SerializeField] Sprite doneSprite;
@@ -44,8 +45,8 @@ namespace BottleSort.UI
             _level = level;
             number.text = level.ToString();
 
-            // Размеры из Levels.dc.html: текущий 78, босс 56, остальные 58.
-            float size = state == State.Current ? 78f : state == State.Boss ? 64f : 58f;
+            // Размеры из Levels.dc.html: текущий 78, остальные 58; ромб босса — квадрат 56, повёрнутый на 45°.
+            float size = state == State.Current ? 78f : state == State.Boss ? 72f : 58f;
             faceRect.sizeDelta = new Vector2(size, size) * 2.5f;
 
             switch (state)
@@ -78,6 +79,7 @@ namespace BottleSort.UI
             lockIcon.SetActive(state == State.Locked);
             crown.SetActive(state == State.Boss);
             ring.SetActive(state == State.Current);
+            currentGlow.SetActive(state == State.Current);
             playBubble.SetActive(state == State.Current);
             tutorialLabel.SetActive(tutorial && state == State.Done);
             number.rectTransform.anchoredPosition = state == State.Locked || state == State.Boss

@@ -116,10 +116,12 @@ namespace BottleSort.UI
         void ApplyInfo(string text)
         {
             info.text = text;
-            const float padding = 30f;
+            // padding: 5px 12px из макета, в единицах Canvas (2.5 на pt).
+            const float paddingX = 30f;
+            const float paddingY = 12.5f;
             float maxWidth = info.rectTransform.rect.width;
             var size = info.GetPreferredValues(text, maxWidth, 0f);
-            infoPill.sizeDelta = new Vector2(Mathf.Min(size.x, maxWidth) + padding * 2f, size.y + padding * 0.6f);
+            infoPill.sizeDelta = new Vector2(Mathf.Min(size.x, maxWidth) + paddingX * 2f, size.y + paddingY * 2f);
             infoPill.gameObject.SetActive(!string.IsNullOrEmpty(text));
         }
     }

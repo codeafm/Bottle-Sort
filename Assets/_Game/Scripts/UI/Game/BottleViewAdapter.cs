@@ -123,6 +123,8 @@ namespace BottleSort.UI
             Vector2 right = RectTransformUtility.WorldToScreenPoint(uiCamera, Corners[3]);
             var bottom = (left + right) * 0.5f;
             float widthPixels = right.x - left.x;
+            // Ячейка — коробка viewBox 100×240, а BottleView ставится точкой дна стекла (y = 230), на 10 единиц выше.
+            bottom.y += widthPixels * 0.1f;
             float unitsPerPixel = 2f * _camera.orthographicSize / _camera.pixelHeight;
 
             var world = _camera.ScreenToWorldPoint(new Vector3(bottom.x, bottom.y, 0f));

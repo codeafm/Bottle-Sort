@@ -6,16 +6,17 @@ using UnityEngine.UI;
 
 namespace BottleSort.UI
 {
-    // Простая бутылка на uGUI: стекло, слои под маской, «?», лёд и замок значками.
-    // Временная, до BottleView от vfx-art; форм только две — classic и мерная колба.
+    // Бутылка на uGUI для меню, заставки и магазина: там нужны маски и прокрутка, а мировой BottleView
+    // в Canvas не встанет. Стекло — текстуры vfx-art, жидкость — слои под маской той же формы.
     public sealed class BottleStubView : MonoBehaviour, IBottleView
     {
         [System.Serializable]
         public struct ShapeArt
         {
-            public Sprite back;
-            public Sprite front;
-            public Sprite mask;
+            public string id;
+            public Texture back;
+            public Texture front;
+            public Sprite liquid;
             public Sprite glow;
             // Где в viewBox 100×240 лежит жидкость.
             public float liquidTop;
@@ -24,11 +25,10 @@ namespace BottleSort.UI
 
         const float ViewBoxHeight = 240f;
 
-        [SerializeField] ShapeArt classic;
-        [SerializeField] ShapeArt cylinder;
+        [SerializeField] ShapeArt[] shapes;
         [SerializeField] Image glow;
-        [SerializeField] Image back;
-        [SerializeField] Image front;
+        [SerializeField] RawImage back;
+        [SerializeField] RawImage front;
         [SerializeField] Image mask;
         [SerializeField] RectTransform layers;
         [SerializeField] RectTransform shade;
@@ -41,8 +41,9 @@ namespace BottleSort.UI
         [SerializeField] CanvasGroup group;
 
         readonly List<Image> _layerImages = new List<Image>();
+        readonly List<UiGradient> _layerShades = new List<UiGradient>();
         readonly List<TMP_Text> _hiddenMarks = new List<TMP_Text>();
-        string _shape;
+        int _shape = -1;
         BottleGlow _glow;
         bool _completed;
 
@@ -51,9 +52,9 @@ namespace BottleSort.UI
 
         public void Show(Bottle bottle, int unit)
         {
-            ApplyShape(bottle.Shape);
-            var art = bottle.Shape == LevelGenerator.FlaskShape ? cylinder : classic;
-            float height = Root.rect.height;
+            var art = ApplyShape(bottle.Shape);
+            // Слои считаются в коробке viewBox, она совпадает с размером самой бутылки.
+            float height = layers.rect.height;
             float top = art.liquidTop / ViewBoxHeight * height;
             float bottom = art.liquidBottom / ViewBoxHeight * height;
             float layerHeight = (bottom - top) / bottle.Capacity;
@@ -70,7 +71,9 @@ namespace BottleSort.UI
                     continue;
 
                 bool hidden = bottle.IsLayerHidden(i);
-                image.color = hidden ? UiColors.Hex("#3E4A68") : UiColors.Liquid(bottle[i]);
+                var color = hidden ? UiColors.Hex("#3E4A68") : UiColors.Liquid(bottle[i]);
+                // gLayer из Bottle.dc.html: светлее у верхней границы слоя, чуть темнее у нижней.
+                _layerShades[i].SetColors(Color.Lerp(color, Color.white, 0.12f), color, 0.14f, Color.Lerp(color, Color.black, 0.07f));
                 var rect = image.rectTransform;
                 // Чуть больше слоя, чтобы между слоями не просвечивало стекло.
                 rect.anchoredPosition = new Vector2(0f, bottomFromBase + layerHeight * i);
@@ -82,9 +85,9 @@ namespace BottleSort.UI
 
             shade.gameObject.SetActive(bottle.Count > 0);
             shade.anchoredPosition = new Vector2(0f, bottomFromBase);
-            shade.sizeDelta = new Vector2(0f, layerHeight * bottle.Count);
+            shade.sizeDelta = new Vector2(shade.sizeDelta.x, layerHeight * bottle.Count);
 
-            // Значки в долях ширины: одна и та же бутылка бывает и в поле, и крупно на заставке.
+            // Значки в долях ширины: одна и та же бутылка бывает и маленькой в карточке, и крупно на заставке.
             float width = Root.rect.width;
             ((RectTransform)frozenBadge.transform).sizeDelta = Vector2.one * width * 0.38f;
             ((RectTransform)lockBadge.transform).sizeDelta = Vector2.one * width * 0.44f;
@@ -109,8 +112,13 @@ namespace BottleSort.UI
             ApplyGlow();
         }
 
-        // Трясёт ячейка поля, у заглушки своей анимации нет.
+        // Трясёт ячейка поля, у этой бутылки своей анимации нет.
         public void Shake() { }
+
+        public void SetDimmed(bool dimmed)
+        {
+            group.alpha = dimmed ? 0.6f : 1f;
+        }
 
         void ApplyGlow()
         {
@@ -119,25 +127,33 @@ namespace BottleSort.UI
             {
                 case BottleGlow.Selected: glow.color = UiColors.Selected; break;
                 case BottleGlow.Hint: glow.color = UiColors.HintGlow; break;
-                default: glow.color = UiColors.DoneGlow * new Color(1f, 1f, 1f, 0.85f); break;
+                default: glow.color = UiColors.DoneGlow * new Color(1f, 1f, 1f, 0.9f); break;
             }
         }
 
-        public void SetDimmed(bool dimmed)
+        ShapeArt ApplyShape(string shape)
         {
-            group.alpha = dimmed ? 0.6f : 1f;
+            int index = IndexOf(shape);
+            if (index < 0)
+                index = Mathf.Max(0, IndexOf(Bottle.DefaultShape));
+            var art = shapes[index];
+            if (index == _shape)
+                return art;
+            _shape = index;
+            back.texture = art.back;
+            front.texture = art.front;
+            mask.sprite = art.liquid;
+            frozenTint.sprite = art.liquid;
+            glow.sprite = art.glow;
+            return art;
         }
 
-        void ApplyShape(string shape)
+        int IndexOf(string id)
         {
-            if (shape == _shape)
-                return;
-            _shape = shape;
-            var art = shape == LevelGenerator.FlaskShape ? cylinder : classic;
-            back.sprite = art.back;
-            front.sprite = art.front;
-            mask.sprite = art.mask;
-            glow.sprite = art.glow;
+            for (int i = 0; i < shapes.Length; i++)
+                if (shapes[i].id == id)
+                    return i;
+            return -1;
         }
 
         void EnsureLayers(int count)
@@ -147,7 +163,9 @@ namespace BottleSort.UI
                 var image = Instantiate(layerTemplate, layers);
                 image.gameObject.name = "Layer " + _layerImages.Count;
                 image.gameObject.SetActive(true);
+                image.color = Color.white;
                 _layerImages.Add(image);
+                _layerShades.Add(image.GetComponent<UiGradient>());
                 var mark = Instantiate(hiddenTemplate, layers);
                 mark.gameObject.name = "Hidden " + _hiddenMarks.Count;
                 _hiddenMarks.Add(mark);
