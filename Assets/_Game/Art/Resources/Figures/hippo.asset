@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f467bc09933f425fa407015b7ab36795, type: 3}
+  m_Name: hippo
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.Gameplay.FigureArt
+  shape:
+    id: hippo
+    back: {fileID: 2800000, guid: 6a30ff509e4a1934e90afac769b14b13, type: 3}
+    front: {fileID: 2800000, guid: b488ffd80a5c708438896d745de0a211, type: 3}
+    mask: {fileID: 2800000, guid: e16d6e566db57a54fb6678238a1ee99f, type: 3}
+    liquidTop: 84
+    liquidBottom: 226
+    mouth: {x: 50, y: 16}
+    outline:
+      serializedVersion: 2
+      x: -46.020718
+      y: 16
+      width: 192.04146
+      height: 214
+    textureArea:
+      serializedVersion: 2
+      x: -80
+      y: -30
+      width: 260
+      height: 300
+    boxWidth: 200
+    liquidSpan: {x: -42.020718, y: 142.02074}
+    isFigure: 1

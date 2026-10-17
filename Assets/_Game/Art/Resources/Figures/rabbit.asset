@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f467bc09933f425fa407015b7ab36795, type: 3}
+  m_Name: rabbit
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.Gameplay.FigureArt
+  shape:
+    id: rabbit
+    back: {fileID: 2800000, guid: 489750469e1e53c47a2371411703d3b5, type: 3}
+    front: {fileID: 2800000, guid: a7b4909ca991e194492876c42174e804, type: 3}
+    mask: {fileID: 2800000, guid: e573b5962e5e3d1438be43be15865b05, type: 3}
+    liquidTop: 84
+    liquidBottom: 226
+    mouth: {x: 50, y: 16}
+    outline:
+      serializedVersion: 2
+      x: -30.74991
+      y: -14.5
+      width: 174.74991
+      height: 252.5
+    textureArea:
+      serializedVersion: 2
+      x: -80
+      y: -30
+      width: 260
+      height: 300
+    boxWidth: 200
+    liquidSpan: {x: -26.74991, y: 126.74991}
+    isFigure: 1

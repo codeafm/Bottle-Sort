@@ -178,9 +178,18 @@ namespace BottleSort.UI
         void RefreshHud(bool animated = true)
         {
             var state = _session.State;
-            hud.SetProgress(state.CompletedCount, state.CountColors(), animated);
+            hud.SetProgress(CollectedColors(state), state.CountColors(), animated);
             hud.SetMoves(_session.MovesMade, !_session.IsTutorial);
             hud.SetStars(_session.Stars);
+        }
+
+        // Фигурка засчитывает каждый налитый по рецепту цвет, а не «одноцветную бутылку»
+        public static int CollectedColors(LevelState state)
+        {
+            int count = 0;
+            foreach (var bottle in state.Bottles)
+                count += bottle.Recipe != null ? bottle.Count / state.Unit : bottle.IsCompleted(state.Unit) ? 1 : 0;
+            return count;
         }
 
         void RefreshBoosters()
@@ -257,6 +266,8 @@ namespace BottleSort.UI
                 Deselect();
                 if (_guide == null && (error == MoveError.TargetLocked || error == MoveError.TargetFrozen))
                     ShowBlockedToast(index, error);
+                else if (_guide == null && error == MoveError.TargetRejectsColor && state[index].Recipe != null)
+                    ShowFigureNeeds(state[index]);
                 tutorial.OnMistake(error);
                 return;
             }
@@ -345,7 +356,18 @@ namespace BottleSort.UI
                     SyncSlot(i, true);
             RefreshHud();
 
-            if (outcome.CompletedBottle)
+            // В фигурку цвета идут по рецепту, и «собрана» она только целиком — тогда котик выпрыгивает
+            var target = move.Kind == MoveKind.Pour ? state[move.To] : null;
+            if (target != null && target.Recipe != null)
+            {
+                if (target.IsFull)
+                {
+                    GameEvents.RaiseBottleCompleted(move.To, outcome.Color);
+                    if (_guide == null)
+                        toast.ShowKey("toast_rescued", 1.6f);
+                }
+            }
+            else if (outcome.CompletedBottle)
             {
                 int completed = state[move.To].IsCompleted(state.Unit) ? move.To : move.From;
                 GameEvents.RaiseBottleCompleted(completed, outcome.Color);
@@ -368,20 +390,27 @@ namespace BottleSort.UI
             TryScheduleWin();
         }
 
-        // Победа — только когда долита последняя бутылка.
+        // Победа — только когда долита последняя бутылка и котик успел выпрыгнуть из фигурки.
         void TryScheduleWin()
         {
             if (!_finished || _winScheduled || _active.Count > 0 || !_session.IsWon)
                 return;
             _winScheduled = true;
-            Tweens.Delay(this, "win", WinDelay, ShowWin);
+            float rescue = 0f;
+            for (int i = 0; i < field.Slots.Count; i++)
+            {
+                var view = WorldViewAt(i);
+                if (view != null)
+                    rescue = Mathf.Max(rescue, view.RescueTimeLeft + 0.3f);
+            }
+            Tweens.Delay(this, "win", Mathf.Max(WinDelay, rescue), ShowWin);
         }
 
         void SyncSlot(int index, bool animated)
         {
             var slot = field.SlotAt(index);
             var bottle = _session.State[index];
-            bool completed = bottle.IsCompleted(_session.State.Unit);
+            bool completed = BottleField.LooksCompleted(bottle, _session.State.Unit);
             slot.View.Show(bottle, _session.State.Unit);
             slot.View.SetCompleted(completed, animated);
             slot.SetDone(completed, animated);
@@ -411,6 +440,15 @@ namespace BottleSort.UI
 
         void RejectSelection(int index, MoveError error)
         {
+            // Из фигурки не выливают: трясём её и говорим, что делать.
+            if (error == MoveError.SourceNoPourOut)
+            {
+                field.SlotAt(index).Shake();
+                GameEvents.RaiseInvalidMove(error);
+                if (_guide == null)
+                    toast.ShowKey("toast_figure_no_pour", 1.8f);
+                return;
+            }
             // Пустая или уже собранная бутылка без выбора — просто ничего не происходит.
             if (error != MoveError.SourceLocked && error != MoveError.SourceFrozen)
                 return;
@@ -420,6 +458,12 @@ namespace BottleSort.UI
                 ShowBlockedToast(index, error);
             else
                 _guide.ReportMistake(error);
+        }
+
+        void ShowFigureNeeds(Bottle figure)
+        {
+            if (figure.Count < figure.Recipe.Length)
+                toast.Show(Loc.Format("toast_figure_needs", Loc.Get("color_" + figure.Recipe[figure.Count])), 1.6f);
         }
 
         void ShowBlockedToast(int index, MoveError error)

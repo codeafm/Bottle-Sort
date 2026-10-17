@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f467bc09933f425fa407015b7ab36795, type: 3}
+  m_Name: elephant
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.Gameplay.FigureArt
+  shape:
+    id: elephant
+    back: {fileID: 2800000, guid: c67fa4b32563fb142b03ccb3101706e3, type: 3}
+    front: {fileID: 2800000, guid: cf4294a06af28a844927abe27c12d99c, type: 3}
+    mask: {fileID: 2800000, guid: a61977820db144047a6cb0632c543d73, type: 3}
+    liquidTop: 84
+    liquidBottom: 226
+    mouth: {x: 50, y: 16}
+    outline:
+      serializedVersion: 2
+      x: -52.156704
+      y: 16
+      width: 204.31342
+      height: 214.24994
+    textureArea:
+      serializedVersion: 2
+      x: -80
+      y: -30
+      width: 260
+      height: 300
+    boxWidth: 200
+    liquidSpan: {x: -24.012835, y: 124.01283}
+    isFigure: 1

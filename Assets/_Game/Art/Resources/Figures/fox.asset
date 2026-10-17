@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f467bc09933f425fa407015b7ab36795, type: 3}
+  m_Name: fox
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.Gameplay.FigureArt
+  shape:
+    id: fox
+    back: {fileID: 2800000, guid: b3fa29fd16b99c5469f79e31affa3987, type: 3}
+    front: {fileID: 2800000, guid: e6ceb0a9ff777c540b133d80a01d0bae, type: 3}
+    mask: {fileID: 2800000, guid: 2a036b5c8f1f376439942d702c2c9b75, type: 3}
+    liquidTop: 84
+    liquidBottom: 226
+    mouth: {x: 50, y: 16}
+    outline:
+      serializedVersion: 2
+      x: -26.225805
+      y: 14.193757
+      width: 180.57455
+      height: 215.80624
+    textureArea:
+      serializedVersion: 2
+      x: -80
+      y: -30
+      width: 260
+      height: 300
+    boxWidth: 200
+    liquidSpan: {x: -22.225805, y: 122.22579}
+    isFigure: 1

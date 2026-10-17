@@ -1,5 +1,6 @@
 // Бутылка целиком за один проход: свечение, стекло сзади, жидкость по маске, стекло спереди, лёд.
-// Координаты внутри — единицы макета (viewBox 100x240), текстуры покрывают x -30..130, y -30..270.
+// Координаты внутри — единицы макета (viewBox 100x240), _Area — какой кусок их покрывают текстуры.
+// У фигурки спасения стекло спереди рисует отдельный спрайт поверх котика, поэтому здесь его можно выключить.
 Shader "BottleSort/Bottle"
 {
     Properties
@@ -28,6 +29,10 @@ Shader "BottleSort/Bottle"
         _Ice ("Ice", Range(0, 1)) = 0
         _IceTurns ("Ice turns", Float) = 0
         _Alpha ("Alpha", Range(0, 1)) = 1
+        _Area ("Texture area in units (x, y, w, h)", Vector) = (-30, -30, 160, 300)
+        _ToneX ("Liquid shading from x to x", Vector) = (16, 84, 0, 0)
+        _Ghost ("Recipe layers shown pale", Float) = 0
+        _FrontAlpha ("Front glass in this pass", Range(0, 1)) = 1
     }
 
     SubShader
@@ -54,6 +59,8 @@ Shader "BottleSort/Bottle"
                 float _Fill, _Capacity, _Hidden, _LiquidTop, _LiquidBottom;
                 half4 _GlowColor, _Tint;
                 float _Ice, _IceTurns, _Alpha;
+                float4 _Area, _ToneX;
+                float _Ghost, _FrontAlpha;
             CBUFFER_END
 
             struct Attributes
@@ -74,7 +81,7 @@ Shader "BottleSort/Bottle"
                 Varyings o;
                 o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
                 o.uv = v.uv;
-                o.units = float2(-30.0 + v.uv.x * 160.0, 270.0 - v.uv.y * 300.0);
+                o.units = float2(_Area.x + v.uv.x * _Area.z, _Area.y + (1.0 - v.uv.y) * _Area.w);
                 return o;
             }
 
@@ -96,7 +103,7 @@ Shader "BottleSort/Bottle"
             // Горизонтальный градиент слоя из макета: тёмный край слева, мягкий блик, плоская середина, край справа темнее
             half3 Tone(half3 c, float x)
             {
-                float t = saturate((x - 16.0) / 68.0);
+                float t = saturate((x - _ToneX.x) / (_ToneX.y - _ToneX.x));
                 half3 highlight = lerp(c, 1.0, 0.28);
                 if (t < 0.12) return lerp(c * 0.79, c, t / 0.12);
                 if (t < 0.26) return lerp(c, highlight, (t - 0.12) / 0.14);
@@ -107,7 +114,7 @@ Shader "BottleSort/Bottle"
 
             half3 HiddenTone(float x)
             {
-                float t = saturate((x - 8.0) / 84.0);
+                float t = saturate((x - _ToneX.x + 8.0) / (_ToneX.y - _ToneX.x + 16.0));
                 return lerp(half3(0.137, 0.169, 0.251), half3(0.373, 0.435, 0.580), 1.0 - abs(t * 2.0 - 1.0));
             }
 
@@ -158,6 +165,19 @@ Shader "BottleSort/Bottle"
                 float level = _Fill * lh;
                 float d = _LiquidBottom - u.y;
                 float fw = max(fwidth(d), 1e-4);
+                float toneWidth = (_ToneX.y - _ToneX.x) / 68.0;
+
+                // Рецепт фигурки: будущие слои бледным цветом и тонкой линией по верху каждого
+                float ghostTop = _Ghost * lh;
+                if (mask.r > 0.002 && d > level - 1.0 && d < ghostTop + 1.0)
+                {
+                    float k = clamp(floor(d / lh), 0.0, 9.0);
+                    float inside = saturate((d - level) / fw + 0.5) * saturate((ghostTop - d) / fw + 0.5);
+                    float edge = (k + 1.0) * lh - d;
+                    float lineA = saturate((0.7 - abs(edge - 0.35)) / fw + 0.5) * 0.2;
+                    half ghostA = mask.r * inside * (0.25 + lineA);
+                    col = half4(LayerColor(k) * ghostA, ghostA) + col * (1.0 - ghostA);
+                }
 
                 if (mask.r > 0.002 && level > 0.01 && d > -1.0 && d < level + 1.0)
                 {
@@ -176,11 +196,11 @@ Shader "BottleSort/Bottle"
                     liquid = lerp(liquid, 1.0, 0.08 * saturate(1.0 - depth / 0.3));
                     liquid = lerp(liquid, half3(0.0, 0.0, 0.08), 0.04 * saturate((depth - 0.3) / 0.7));
 
-                    float2 glowR = float2(30.0, max(level * 0.42, 0.5));
+                    float2 glowR = float2(30.0 * toneWidth, max(level * 0.42, 0.5));
                     float glow = saturate(1.0 - length((u - float2(50.0, _LiquidBottom - level * 0.5)) / glowR));
                     liquid = lerp(liquid, 1.0, 0.1 * glow);
 
-                    float caustic = saturate((1.0 - length((u - float2(50.0, _LiquidBottom - 7.0)) / float2(22.0, 3.0))) * 3.0);
+                    float caustic = saturate((1.0 - length((u - float2(50.0, _LiquidBottom - 7.0)) / float2(22.0 * toneWidth, 3.0))) * 3.0);
                     liquid = lerp(liquid, 1.0, 0.1 * caustic * step(10.0, level));
 
                     float body = mask.r * saturate((level - d) / fw + 0.5) * saturate((d + 0.8) / fw + 0.5);
@@ -192,7 +212,7 @@ Shader "BottleSort/Bottle"
                     col = half4(surface * surfaceLine, surfaceLine) + col * (1.0 - surfaceLine);
                 }
 
-                col = front + col * (1.0 - front.a);
+                col = front * _FrontAlpha + col * (1.0 - front.a * _FrontAlpha);
 
                 if (_Ice > 0.0)
                 {

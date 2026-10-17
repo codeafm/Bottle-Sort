@@ -35,6 +35,9 @@ booster_hint	Подсказка	Hint
 booster_bottle	+Бутылка	+Bottle
 badge_ad	AD	AD
 toast_color_done	Цвет собран: {0}!	Color sorted: {0}!
+toast_rescued	Котик спасён!	The kitty is saved!
+toast_figure_needs	Фигурке сейчас нужен цвет: {0}	The figure needs {0} now
+toast_figure_no_pour	Из фигурки не выливают — наливай в неё	You can't pour out of the figure, pour into it
 toast_unlocked	Замок открыт!	Lock opened!
 toast_thawed	Лёд растаял!	The ice melted!
 toast_locked	Закрыто — собери любой цвет	Locked — sort any color first

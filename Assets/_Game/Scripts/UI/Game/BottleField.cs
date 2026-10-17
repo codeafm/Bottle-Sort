@@ -17,6 +17,9 @@ namespace BottleSort.UI
         const float TopPadding = 24f;
         const float ShelfHeight = 12f;
         const float ShelfOverlap = 6f;
+        // Фигурка спасения в масштабе большой колбы: viewBox 200×240 при 1.12 px на единицу
+        const float FigureWidth = 224f;
+        const int BesideFigure = 8;
 
         [SerializeField] RectTransform board;
         [SerializeField] BottleSlot slotTemplate;
@@ -60,10 +63,12 @@ namespace BottleSort.UI
             Clear();
             _shelfPlan.Clear();
             var placements = new Placement[state.BottleCount];
-            int flask = FindFlask(state);
+            int center = FindCenterpiece(state);
+            bool figure = center >= 0 && state[center].Recipe != null;
             // Сетка с колбой посередине — как уровень 45 в макете; когда бутылок больше, колба просто стоит в ряду (L1500).
-            if (flask >= 0 && state.BottleCount <= 9)
-                LayoutGrid(state, flask, placements);
+            // Фигурка спасения всегда посередине, лишние бутылки встают рядом ниже.
+            if (figure || (center >= 0 && state.BottleCount <= 9))
+                LayoutGrid(state, center, figure, placements);
             else
                 LayoutRows(state, placements);
             foreach (var shelf in _shelfPlan)
@@ -111,7 +116,7 @@ namespace BottleSort.UI
             for (int i = 0; i < _slots.Count && i < state.BottleCount; i++)
             {
                 var bottle = state[i];
-                bool completed = bottle.IsCompleted(state.Unit);
+                bool completed = LooksCompleted(bottle, state.Unit);
                 _slots[i].View.Show(bottle, state.Unit);
                 _slots[i].View.SetCompleted(completed, animated);
                 _slots[i].SetDone(completed, animated);
@@ -119,6 +124,10 @@ namespace BottleSort.UI
         }
 
         public BottleSlot SlotAt(int index) => index >= 0 && index < _slots.Count ? _slots[index] : null;
+
+        // Фигурка «собрана», когда рецепт налит до верха; одноцветная половина двухцветного рецепта — ещё нет.
+        public static bool LooksCompleted(Bottle bottle, int unit) =>
+            bottle.Recipe != null ? bottle.IsFull : bottle.IsCompleted(unit);
 
         void OnSlotTapped(BottleSlot slot) => BottleTapped?.Invoke(slot.Index);
 
@@ -166,8 +175,12 @@ namespace BottleSort.UI
                 DestroyImmediate(target);
         }
 
-        static int FindFlask(LevelState state)
+        // Что ставить посередине на два ряда: фигурку спасения, иначе большую колбу.
+        static int FindCenterpiece(LevelState state)
         {
+            for (int i = 0; i < state.BottleCount; i++)
+                if (state[i].Recipe != null)
+                    return i;
             for (int i = 0; i < state.BottleCount; i++)
                 if (state[i].Capacity > state.Unit)
                     return i;
@@ -226,53 +239,83 @@ namespace BottleSort.UI
             }
         }
 
-        // Большая колба в центре на два ряда, остальные бутылки слева и справа, как раскладка grid в макете.
-        void LayoutGrid(LevelState state, int flask, Placement[] result)
+        // Большая колба или фигурка в центре на два ряда, остальные бутылки слева и справа, как раскладка grid в макете.
+        // Фигурка вдвое шире колбы, поэтому рядом с ней по две бутылки с каждой стороны, а лишние — рядом ниже.
+        void LayoutGrid(LevelState state, int center, bool figure, Placement[] result)
         {
             const float column = 52f;
-            const float flaskColumn = 116f;
             const float cellHeight = 150f;
             const float cellGap = 6f;
             const float gridTop = 20f;
+            const float rowGap = 30f;
+            float centerColumn = figure ? FigureWidth + 4f : 116f;
 
             var others = new List<int>();
             for (int i = 0; i < state.BottleCount; i++)
-                if (i != flask)
+                if (i != center)
                     others.Add(i);
+            int besideCount = figure ? Mathf.Min(others.Count, BesideFigure) : others.Count;
+            // Одна бутылка в нижнем ряду смотрится случайной: тогда рядом с фигуркой по одной с каждой стороны, внизу пять
+            if (figure && others.Count == BesideFigure + 1)
+                besideCount = BesideFigure / 2;
 
-            int perRow = Mathf.CeilToInt(others.Count / 2f);
+            int perRow = Mathf.CeilToInt(besideCount / 2f);
             int left = Mathf.CeilToInt(perRow / 2f);
             int columns = perRow + 1;
-            float gridWidth = perRow * column + flaskColumn + (columns - 1) * cellGap;
+            float gridWidth = perRow * column + centerColumn + (columns - 1) * cellGap;
             float shelfWidth = gridWidth + 8f;
-            _boardSize = new Vector2(shelfWidth, gridTop + cellHeight * 2f + cellGap + ShelfHeight - ShelfOverlap);
-            float x0 = (shelfWidth - gridWidth) / 2f;
+            float gridBottom = gridTop + cellHeight * 2f + cellGap;
+
+            int below = others.Count - besideCount;
+            float bottleHeight = Mathf.Round(50f * 2.4f) + 4f;
+            float belowWidth = below > 0 ? RowPadding * 2f + below * column + (below - 1) * Gap : 0f;
+            float boardWidth = Mathf.Max(shelfWidth, belowWidth + 16f);
+            float boardHeight = gridBottom + ShelfHeight - ShelfOverlap;
+            float belowBottom = boardHeight + rowGap + bottleHeight;
+            if (below > 0)
+                boardHeight = belowBottom + ShelfHeight - ShelfOverlap;
+            _boardSize = new Vector2(boardWidth, boardHeight);
+            float x0 = (boardWidth - gridWidth) / 2f;
 
             float ColumnCenter(int c)
             {
                 float x = x0;
                 for (int k = 0; k < c; k++)
-                    x += (k == left ? flaskColumn : column) + cellGap;
-                return x + (c == left ? flaskColumn : column) / 2f;
+                    x += (k == left ? centerColumn : column) + cellGap;
+                return x + (c == left ? centerColumn : column) / 2f;
             }
 
-            for (int n = 0; n < others.Count; n++)
+            for (int n = 0; n < besideCount; n++)
             {
                 int row = n / perRow;
                 int position = n % perRow;
                 int col = position < left ? position : position + 1;
                 int index = others[n];
                 result[index].Width = column;
-                result[index].Height = Mathf.Round(50f * 2.4f) + 4f;
+                result[index].Height = bottleHeight;
                 result[index].CenterX = ColumnCenter(col);
                 result[index].Bottom = gridTop + cellHeight * (row + 1) + cellGap * row;
             }
 
-            result[flask].Width = 114f;
-            result[flask].Height = Mathf.Round(112f * 2.4f) + 4f;
-            result[flask].CenterX = ColumnCenter(left);
-            result[flask].Bottom = gridTop + cellHeight * 2f + cellGap;
-            _shelfPlan.Add(new Vector3(shelfWidth / 2f, result[flask].Bottom - ShelfOverlap, shelfWidth));
+            result[center].Width = figure ? FigureWidth + 2f : 114f;
+            result[center].Height = figure ? Mathf.Round(FigureWidth * 1.2f) + 4f : Mathf.Round(112f * 2.4f) + 4f;
+            result[center].CenterX = ColumnCenter(left);
+            result[center].Bottom = gridBottom;
+            _shelfPlan.Add(new Vector3(boardWidth / 2f, gridBottom - ShelfOverlap, shelfWidth));
+
+            if (below == 0)
+                return;
+            float x = (boardWidth - belowWidth) / 2f + RowPadding;
+            for (int n = besideCount; n < others.Count; n++)
+            {
+                int index = others[n];
+                result[index].Width = column;
+                result[index].Height = bottleHeight;
+                result[index].CenterX = x + column / 2f;
+                result[index].Bottom = belowBottom;
+                x += column + Gap;
+            }
+            _shelfPlan.Add(new Vector3(boardWidth / 2f, belowBottom - ShelfOverlap, belowWidth + 16f));
         }
 
         static float SizeOf(Bottle bottle, int unit, float baseSize) =>

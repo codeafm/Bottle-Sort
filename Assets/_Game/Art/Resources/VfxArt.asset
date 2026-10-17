@@ -26,6 +26,15 @@ MonoBehaviour:
       y: 12
       width: 68
       height: 218
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: cylinder
     back: {fileID: 2800000, guid: 8941f589470c4f343bd130a40845bf97, type: 3}
     front: {fileID: 2800000, guid: a2f986c033e39a34d9f238f1d94db499, type: 3}
@@ -39,6 +48,15 @@ MonoBehaviour:
       y: 6
       width: 88
       height: 226
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: wine
     back: {fileID: 2800000, guid: ca71ce6d0aee9be4a91bb81d2b6630e0, type: 3}
     front: {fileID: 2800000, guid: 293ed09e764e4b849a8c51ad96bc1a01, type: 3}
@@ -52,6 +70,15 @@ MonoBehaviour:
       y: 6
       width: 72
       height: 224
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: jug
     back: {fileID: 2800000, guid: 5b266db275afcf746882a2260302b1b5, type: 3}
     front: {fileID: 2800000, guid: d800a14280326034491688e15cb49079, type: 3}
@@ -65,6 +92,15 @@ MonoBehaviour:
       y: 20
       width: 84.95759
       height: 210
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: teapot
     back: {fileID: 2800000, guid: ea36faad546405a409123693d425c742, type: 3}
     front: {fileID: 2800000, guid: 0c3de26093319d1468a4d68323448dd0, type: 3}
@@ -78,6 +114,15 @@ MonoBehaviour:
       y: 72.75
       width: 107.87721
       height: 157.25
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: glass
     back: {fileID: 2800000, guid: d986e8858b9148548b1922a136f73039, type: 3}
     front: {fileID: 2800000, guid: 4f5cb32b3cc8eb847b64925d684c2445, type: 3}
@@ -91,6 +136,15 @@ MonoBehaviour:
       y: 60
       width: 72
       height: 170
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: flask
     back: {fileID: 2800000, guid: 67d3c20c6965fd549a6798025682d55d, type: 3}
     front: {fileID: 2800000, guid: a2c336fe79288584e8f5875f753c400d, type: 3}
@@ -104,6 +158,15 @@ MonoBehaviour:
       y: 10
       width: 85.3332
       height: 220
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: potion
     back: {fileID: 2800000, guid: 1a7fa6e990eebfe40bb3e59c7339ba9b, type: 3}
     front: {fileID: 2800000, guid: 82f68a8707f046b4db53fe05e729a18c, type: 3}
@@ -117,6 +180,15 @@ MonoBehaviour:
       y: 22
       width: 95.99974
       height: 205.94678
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   - id: jar
     back: {fileID: 2800000, guid: 65a4c8f446ff3734ba12eaa3692f454c, type: 3}
     front: {fileID: 2800000, guid: 7f26fe55e65507d4fbbf12f15214ddae, type: 3}
@@ -130,6 +202,15 @@ MonoBehaviour:
       y: 22
       width: 80
       height: 208
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 16, y: 84}
+    isFigure: 0
   glyphs: {fileID: 2800000, guid: d40f790b9096d974f9ab73ddbe5b604d, type: 3}
   bottleShader: {fileID: 4800000, guid: 79e5c1ea094b2bd4590740c4b0bb08f9, type: 3}
   streamShader: {fileID: 4800000, guid: df3dd9990deeffc40a4806a7643e3467, type: 3}
@@ -144,3 +225,9 @@ MonoBehaviour:
   flashSprite: {fileID: 21300000, guid: 42f2ca936a382c343b1b6b3f24b6fa5a, type: 3}
   sparkSprite: {fileID: 21300000, guid: 6e37e9d8c0fb91a4eb3ce6c6e411e66e, type: 3}
   confettiSprite: {fileID: 21300000, guid: 7518cda6d2494fd4fabe94202a615d09, type: 3}
+  ringBackSprite: {fileID: 21300000, guid: 60cc02f8da8ec2c49b54da7e0bd2ddf4, type: 3}
+  ringFrontSprite: {fileID: 21300000, guid: 0f3440085617fde4cabf32803c995704, type: 3}
+  catSprite: {fileID: 21300000, guid: 3f2de720405db334eb46e742719a3e2d, type: 3}
+  catHappySprite: {fileID: 21300000, guid: be31b68f5a3a4244da3f8e5b3e2332e2, type: 3}
+  catPawSprite: {fileID: 21300000, guid: 5483e57ec9cba1c40a9b4a3e76040509, type: 3}
+  helpSignSprite: {fileID: 21300000, guid: 725a8ddd5a7ca1043a2beea79dc998f4, type: 3}

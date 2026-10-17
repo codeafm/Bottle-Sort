@@ -194,6 +194,57 @@ namespace BottleSort.Editor.Vfx
             BottleArtGenerator.Run();
             BuildScene();
             RenderScreens();
+            RenderRescueFigures();
+        }
+
+        // Все десять фигурок спасений настоящим шейдером в Docs/Screens/rescue_figures.jpg: рецепт налит
+        // наполовину, котик на поверхности. -executeMethod BottleSort.Editor.Vfx.VfxSandboxBuilder.RenderRescueFigures (без -nographics)
+        [MenuItem("BottleSort/VFX/Render Rescue Figures")]
+        public static void RenderRescueFigures()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var cam = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<Camera>();
+            cam.orthographic = true;
+            cam.orthographicSize = 9.6f;
+            cam.transform.position = new Vector3(0f, 0f, -10f);
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.016f, 0.039f, 0.133f);
+            cam.aspect = 16f / 9f;
+            var background = new GameObject("Background").AddComponent<BackgroundView>();
+            background.TargetCamera = cam;
+            background.SetTheme(BackgroundTheme.Teal, true);
+
+            const float scale = 1.45f;
+            const float columnStep = 6.6f;
+            float[] rowBase = { 1.2f, -8.4f };
+            string[] recipes = { "PPPP", "KKKKGGGG" };
+            for (int i = 0; i < BottleShapeIds.Figures.Length; i++)
+            {
+                int row = i / 5, column = i % 5;
+                var go = new GameObject(BottleShapeIds.Figures[i]);
+                go.transform.position = new Vector3((column - 2) * columnStep, rowBase[row], 0f);
+                go.transform.localScale = Vector3.one * scale;
+                var view = go.AddComponent<BottleView>();
+                var recipe = ParseColors(recipes[i % 2]);
+                view.SetShape(BottleShapeIds.Figures[i]);
+                view.SetRecipe(recipe);
+                int poured = recipe.Length / 2 + (i % 3 == 0 ? 1 : 0);
+                view.SetLayers(new List<int>(recipe).GetRange(0, poured), recipe.Length);
+            }
+            for (int row = 0; row < rowBase.Length; row++)
+            {
+                var shelf = new GameObject($"Shelf {row + 1}", typeof(SpriteRenderer)).AddComponent<ShelfView>();
+                shelf.transform.position = new Vector3(0f, rowBase[row], 0f);
+                shelf.Width = columnStep * 4f + 5f;
+            }
+
+            Directory.CreateDirectory(ScreensDir);
+            var sheet = new Texture2D(1920, 1080, TextureFormat.RGBA32, false);
+            sheet.SetPixels32(Render(cam, 1920, 1080));
+            sheet.Apply();
+            File.WriteAllBytes(ScreensDir + "/rescue_figures.jpg", sheet.EncodeToJPG(88));
+            Object.DestroyImmediate(sheet);
+            Debug.Log("[VfxSandboxBuilder] Rescue figures saved to " + ScreensDir + "/rescue_figures.jpg");
         }
 
         static void Capture(Camera cam, int width, int height, string path)

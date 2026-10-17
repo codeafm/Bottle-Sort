@@ -80,6 +80,27 @@ namespace BottleSort.Tests
         }
 
         [Test]
+        public void CompletedBottle_CanBeTakenWhileTheFigureWantsItsColor()
+        {
+            var figure = Figure("RRRRBBBB");
+            var state = new LevelState(4, new[] { Full("RRRR"), Full("BBBB"), figure });
+
+            Assert.AreEqual(MoveError.None, state.CheckSelection(0), "the figure waits for red");
+            Assert.AreEqual(MoveError.SourceCompleted, state.CheckSelection(1), "blue goes only after red");
+
+            state.Apply(Move.Pour(0, 2));
+            Assert.AreEqual(MoveError.None, state.CheckSelection(1));
+        }
+
+        [Test]
+        public void CompletedBottle_StaysPutWithoutAFigure()
+        {
+            var state = new LevelState(4, new[] { Full("RRRR"), new Bottle(4) });
+
+            Assert.AreEqual(MoveError.SourceCompleted, state.CheckSelection(0));
+        }
+
+        [Test]
         public void GeneratedRescueLevels_AreSolvable()
         {
             foreach (int level in new[] { 78, 128, 328, 378 })

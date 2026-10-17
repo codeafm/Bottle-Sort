@@ -27,6 +27,14 @@ namespace BottleSort.Gameplay
         public Sprite sparkSprite;
         public Sprite confettiSprite;
 
+        // Котик в спасательном круге внутри фигурки: круг сзади, котик, круг спереди с лапой, табличка
+        public Sprite ringBackSprite;
+        public Sprite ringFrontSprite;
+        public Sprite catSprite;
+        public Sprite catHappySprite;
+        public Sprite catPawSprite;
+        public Sprite helpSignSprite;
+
         static VfxArt loaded;
 
         public static VfxArt Default
@@ -49,7 +57,7 @@ namespace BottleSort.Gameplay
                 if (shape.id == BottleShapeIds.Classic)
                     fallback = shape;
             }
-            return fallback;
+            return FigureArt.Load(id) ?? fallback;
         }
     }
 }

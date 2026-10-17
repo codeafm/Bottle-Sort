@@ -101,11 +101,20 @@ namespace BottleSort.Core
                 return MoveError.SourceFrozen;
             if (bottle.IsEmpty)
                 return MoveError.SourceEmpty;
-            if (bottle.IsCompleted(Unit))
+            // Собранный цвет ещё может понадобиться фигурке спасения: тогда бутылку можно взять.
+            if (bottle.IsCompleted(Unit) && !FigureWaitsFor(bottle.TopColor))
                 return MoveError.SourceCompleted;
             if (!bottle.CanPourOut)
                 return MoveError.SourceNoPourOut;
             return MoveError.None;
+        }
+
+        private bool FigureWaitsFor(int color)
+        {
+            foreach (var bottle in bottles)
+                if (bottle.Recipe != null && !bottle.IsFull && bottle.Accepts(color))
+                    return true;
+            return false;
         }
 
         public MoveError Check(Move move)

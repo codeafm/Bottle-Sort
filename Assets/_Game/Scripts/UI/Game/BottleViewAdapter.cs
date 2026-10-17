@@ -10,7 +10,7 @@ namespace BottleSort.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class BottleViewAdapter : MonoBehaviour, IBottleView
     {
-        // Масштаб 1 у BottleView — ширина 2 мировых единицы (viewBox 100 из макета).
+        // Масштаб 1 у BottleView — ширина 2 мировых единицы на каждые 100 единиц viewBox из макета.
         const float WorldWidthAtScaleOne = 2f;
         const float DimmedAlpha = 0.6f;
 
@@ -123,15 +123,17 @@ namespace BottleSort.UI
             Vector2 right = RectTransformUtility.WorldToScreenPoint(uiCamera, Corners[3]);
             var bottom = (left + right) * 0.5f;
             float widthPixels = right.x - left.x;
-            // Ячейка — коробка viewBox 100×240, а BottleView ставится точкой дна стекла (y = 230), на 10 единиц выше.
-            bottom.y += widthPixels * 0.1f;
+            // Ячейка — коробка viewBox (100×240, у фигурки 200×240), а BottleView ставится точкой дна стекла
+            // (y = 230), на 10 единиц выше.
+            float box = _view.BoxWidth;
+            bottom.y += widthPixels * 10f / box;
             float unitsPerPixel = 2f * _camera.orthographicSize / _camera.pixelHeight;
 
             var world = _camera.ScreenToWorldPoint(new Vector3(bottom.x, bottom.y, 0f));
             world.z = 0f;
             var bottleTransform = _view.transform;
             bottleTransform.position = world;
-            float scale = widthPixels * unitsPerPixel / WorldWidthAtScaleOne;
+            float scale = widthPixels * unitsPerPixel / (WorldWidthAtScaleOne * box / 100f);
             bottleTransform.localScale = new Vector3(scale, scale, 1f);
 
             float alpha = _dimmed ? DimmedAlpha : 1f;

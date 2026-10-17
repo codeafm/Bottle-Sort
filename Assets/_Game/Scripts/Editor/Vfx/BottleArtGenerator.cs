@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using BottleSort.Gameplay;
 using UnityEditor;
@@ -21,6 +22,8 @@ namespace BottleSort.Editor.Vfx
         const string MaterialsDir = ArtDir + "/Materials";
         const string ResourcesDir = ArtDir + "/Resources";
         const string ArtAssetPath = ResourcesDir + "/VfxArt.asset";
+        const string FiguresDir = ArtDir + "/Figures";
+        const string FigureAssetsDir = ResourcesDir + "/Figures";
         public const string BottlePrefabPath = BottlesDir + "/Bottle.prefab";
 
         // Пикселей на единицу макета: классическая бутылка шириной 100 единиц выходит в 320 px текстуры
@@ -147,12 +150,14 @@ namespace BottleSort.Editor.Vfx
         public static void Run()
         {
             var started = DateTime.Now;
-            foreach (var dir in new[] { BottlesDir, EffectsDir, MaterialsDir, ResourcesDir })
+            foreach (var dir in new[] { BottlesDir, EffectsDir, MaterialsDir, ResourcesDir, FiguresDir, FigureAssetsDir })
                 Directory.CreateDirectory(dir);
 
             var shapeFiles = new List<(ShapeDef def, Rect outline)>();
             foreach (var def in Shapes)
                 shapeFiles.Add((def, DrawBottle(def)));
+            var figures = DrawFigures();
+            DrawCatSprites();
 
             DrawGlyphs(EffectsDir + "/glyphs.png");
             DrawLock(EffectsDir + "/lock.png");
@@ -180,13 +185,10 @@ namespace BottleSort.Editor.Vfx
             ImportSprite(EffectsDir + "/flash.png", 256f / 3f, new Vector2(0.5f, 0.5f));
             ImportSprite(EffectsDir + "/spark.png", 64f, new Vector2(0.5f, 0.5f));
             ImportSprite(EffectsDir + "/confetti.png", 64f, new Vector2(0.5f, 0.5f));
+            ImportFigures(figures);
+            ImportCatSprites();
 
-            var art = AssetDatabase.LoadAssetAtPath<VfxArt>(ArtAssetPath);
-            if (art == null)
-            {
-                art = ScriptableObject.CreateInstance<VfxArt>();
-                AssetDatabase.CreateAsset(art, ArtAssetPath);
-            }
+            var art = LoadOrCreateArt();
 
             art.bottleShader = Shader.Find("BottleSort/Bottle");
             art.streamShader = Shader.Find("BottleSort/PourStream");
@@ -202,6 +204,7 @@ namespace BottleSort.Editor.Vfx
             art.flashSprite = LoadSprite("flash");
             art.sparkSprite = LoadSprite("spark");
             art.confettiSprite = LoadSprite("confetti");
+            AssignCatSprites(art);
 
             var shapes = new List<BottleShapeArt>();
             foreach (var (def, outline) in shapeFiles)
@@ -220,11 +223,43 @@ namespace BottleSort.Editor.Vfx
             }
             art.shapes = shapes.ToArray();
             EditorUtility.SetDirty(art);
+            SaveFigureAssets(figures);
             AssetDatabase.SaveAssets();
 
             CreateBottlePrefab(art);
             AssetDatabase.SaveAssets();
             Debug.Log($"[BottleArtGenerator] Done in {(DateTime.Now - started).TotalSeconds:0.0}s");
+        }
+
+        // Только фигурки спасений и котик, без перерисовки бутылок: -executeMethod BottleSort.Editor.Vfx.BottleArtGenerator.RunFigures
+        [MenuItem("BottleSort/VFX/Generate Rescue Figures")]
+        public static void RunFigures()
+        {
+            var started = DateTime.Now;
+            foreach (var dir in new[] { EffectsDir, ResourcesDir, FiguresDir, FigureAssetsDir })
+                Directory.CreateDirectory(dir);
+            var figures = DrawFigures();
+            DrawCatSprites();
+            AssetDatabase.Refresh();
+            ImportFigures(figures);
+            ImportCatSprites();
+            var art = LoadOrCreateArt();
+            AssignCatSprites(art);
+            EditorUtility.SetDirty(art);
+            SaveFigureAssets(figures);
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[BottleArtGenerator] Figures done in {(DateTime.Now - started).TotalSeconds:0.0}s");
+        }
+
+        static VfxArt LoadOrCreateArt()
+        {
+            var art = AssetDatabase.LoadAssetAtPath<VfxArt>(ArtAssetPath);
+            if (art == null)
+            {
+                art = ScriptableObject.CreateInstance<VfxArt>();
+                AssetDatabase.CreateAsset(art, ArtAssetPath);
+            }
+            return art;
         }
 
         static Rect DrawBottle(ShapeDef def)
@@ -243,11 +278,7 @@ namespace BottleSort.Editor.Vfx
             var shadow = back.Fill(SvgPath.Ellipse(50, 234, 38, 6));
             back.Paint(shadow, Raster.Radial(new Vector2(50, 234), new Vector2(38, 6), (0f, new Color(0, 0, 0, 0.5f)), (1f, new Color(0, 0, 0, 0f))));
             if (!extra.IsEmpty)
-            {
-                back.Paint(back.Stroke(extra, 9f), Raster.Hex("#E1F2FF"), 0.85f);
-                back.Paint(back.Stroke(extra, 5.5f), Raster.Hex("#5A8FC8"), 0.55f);
-                back.Paint(back.Stroke(extra, 1.6f, 0.6f), Color.white, 0.75f);
-            }
+                DrawTube(back, extra, 9f);
             if (!deco.IsEmpty)
             {
                 back.Paint(back.Fill(deco), BoxGradient(deco, GlassFill));
@@ -290,6 +321,301 @@ namespace BottleSort.Editor.Vfx
                 outline = Encapsulate(outline, Rect.MinMaxRect(e.xMin - 4.5f, e.yMin - 4.5f, e.xMax + 4.5f, e.yMax + 4.5f), false);
             }
             return outline;
+        }
+
+        // Ручка, носик или хобот: стеклянная трубка без жидкости
+        static void DrawTube(Raster raster, SvgPath tube, float width)
+        {
+            raster.Paint(raster.Stroke(tube, width), Raster.Hex("#E1F2FF"), 0.85f);
+            raster.Paint(raster.Stroke(tube, width - 3.5f), Raster.Hex("#5A8FC8"), 0.55f);
+            raster.Paint(raster.Stroke(tube, 1.6f, 0.6f), Color.white, 0.75f);
+        }
+
+        static List<BottleShapeArt> DrawFigures()
+        {
+            var result = new List<BottleShapeArt>();
+            foreach (var def in FigureShapes.All)
+                result.Add(DrawFigure(def));
+            return result;
+        }
+
+        // Фигурка в viewBox 200×240 сдвигается на 50 влево: так её середина, как у бутылок, на x = 50.
+        // Жидкость — это тело, отступившее от стекла на 4 единицы, внутренний контур отдельно не рисуется.
+        static BottleShapeArt DrawFigure(FigureShapes.Def def)
+        {
+            var area = BottleGeometry.FigureTextureArea;
+            int width = Mathf.RoundToInt(area.width * BottleScale), height = Mathf.RoundToInt(area.height * BottleScale);
+            Raster NewRaster() => new Raster(width, height, area.position, BottleScale);
+            var shift = new Vector2(-50f, 0f);
+            SvgPath Path(string d) => SvgPath.Parse(d).Translate(shift);
+
+            var outer = Path(def.Outer);
+            var deco = Path(def.Deco);
+            var extra = Path(def.Extra);
+            var emboss = Path(def.Emboss);
+            var cap = Path(def.Cap);
+
+            var back = NewRaster();
+            var shadow = back.Fill(SvgPath.Ellipse(50, 234, 80, 7));
+            back.Paint(shadow, Raster.Radial(new Vector2(50, 234), new Vector2(80, 7), (0f, new Color(0, 0, 0, 0.5f)), (1f, new Color(0, 0, 0, 0f))));
+            if (!extra.IsEmpty && !def.ExtraInFront)
+                DrawTube(back, extra, def.ExtraWidth);
+            var body = back.Fill(outer);
+            if (!deco.IsEmpty)
+            {
+                // Уши и лапы срастаются с телом: их край внутри тела не рисуем
+                back.Paint(Raster.Subtract(back.Fill(deco), body), BoxGradient(deco, GlassFill));
+                back.Paint(Raster.Subtract(back.Stroke(deco, 2f), body), Raster.Hex("#E1F2FF"), 0.92f);
+            }
+            back.Paint(body, BoxGradient(outer, GlassFill));
+            back.SavePng($"{FiguresDir}/{def.Id}_back.png");
+
+            var front = NewRaster();
+            var wall = front.Stroke(outer, 8f);
+            var innerEdge = Raster.Multiply(Raster.Subtract(front.Stroke(outer, 9.4f), wall), body);
+            front.Paint(innerEdge, Color.white, 0.35f);
+            front.Paint(front.Stroke(outer, 2.6f), Raster.Hex("#DCEBFA"), 0.8f);
+            if (!extra.IsEmpty && def.ExtraInFront)
+                DrawTube(front, extra, def.ExtraWidth);
+            if (!emboss.IsEmpty)
+                front.Paint(front.Stroke(emboss, 1.8f, 0.4f), Color.white, 0.42f);
+            front.Paint(front.Stroke(Path(def.Hl1), 5f, 2.2f), Color.white, 0.5f);
+            front.Paint(front.Stroke(Path(def.Hl2), 2.2f, 1.2f), Color.white, 0.28f);
+            front.Paint(front.Stroke(Path(def.Hl3), 2f, 1f), Color.white, 0.45f);
+            DrawCap(front, cap, "glass");
+            front.SavePng($"{FiguresDir}/{def.Id}_front.png");
+
+            var mask = NewRaster();
+            var liquid = Raster.Subtract(body, wall);
+            var silhouette = Raster.Union(body, mask.Fill(cap), mask.Stroke(extra, def.ExtraWidth), mask.Fill(deco));
+            var near = mask.Blur(silhouette, 4.3f);
+            var far = mask.Blur(silhouette, 10f);
+            var glow = new float[near.Length];
+            for (int i = 0; i < glow.Length; i++)
+                glow[i] = near[i] + far[i] * 0.8f * (1f - near[i]);
+            SaveChannels($"{FiguresDir}/{def.Id}_mask.png", mask, liquid, glow, body, mask.Stroke(outer, 3f));
+
+            var outline = outer.Bounds;
+            outline = Encapsulate(outline, cap.Bounds, cap.IsEmpty);
+            outline = Encapsulate(outline, deco.Bounds, deco.IsEmpty);
+            if (!extra.IsEmpty)
+            {
+                var e = extra.Bounds;
+                float half = def.ExtraWidth * 0.5f;
+                outline = Encapsulate(outline, Rect.MinMaxRect(e.xMin - half, e.yMin - half, e.xMax + half, e.yMax + half), false);
+            }
+
+            var bodyBounds = outer.Bounds;
+            return new BottleShapeArt
+            {
+                id = def.Id,
+                liquidTop = def.Top,
+                liquidBottom = def.Bottom,
+                mouth = def.Mouth + shift,
+                outline = outline,
+                textureArea = area,
+                boxWidth = 200f,
+                liquidSpan = new Vector2(bodyBounds.xMin + 4f, bodyBounds.xMax - 4f),
+                isFigure = true
+            };
+        }
+
+        static void ImportFigures(List<BottleShapeArt> figures)
+        {
+            foreach (var figure in figures)
+            {
+                ImportBottleTexture($"{FiguresDir}/{figure.id}_back.png", true);
+                ImportBottleTexture($"{FiguresDir}/{figure.id}_front.png", true);
+                ImportBottleTexture($"{FiguresDir}/{figure.id}_mask.png", false);
+            }
+        }
+
+        static void SaveFigureAssets(List<BottleShapeArt> figures)
+        {
+            foreach (var figure in figures)
+            {
+                figure.back = AssetDatabase.LoadAssetAtPath<Texture2D>($"{FiguresDir}/{figure.id}_back.png");
+                figure.front = AssetDatabase.LoadAssetAtPath<Texture2D>($"{FiguresDir}/{figure.id}_front.png");
+                figure.mask = AssetDatabase.LoadAssetAtPath<Texture2D>($"{FiguresDir}/{figure.id}_mask.png");
+                string assetPath = $"{FigureAssetsDir}/{figure.id}.asset";
+                var asset = AssetDatabase.LoadAssetAtPath<FigureArt>(assetPath);
+                if (asset == null)
+                {
+                    asset = ScriptableObject.CreateInstance<FigureArt>();
+                    AssetDatabase.CreateAsset(asset, assetPath);
+                }
+                asset.shape = figure;
+                EditorUtility.SetDirty(asset);
+            }
+        }
+
+        // Котик для спасений нарисован в коробке 100×100, низ спасательного круга — точка (50, 96).
+        // В фигурке единица котика — 0.9 единицы макета: голова как раз проходит в горлышко.
+        const float CatScale = 0.9f;
+        static readonly Vector2 CatPivot = new Vector2(50f, 96f);
+        static readonly Rect RingArea = new Rect(5f, 60f, 90f, 40f);
+        static readonly Rect CatArea = new Rect(15f, 5f, 70f, 95f);
+        static readonly Rect PawArea = new Rect(25f, 75f, 30f, 25f);
+        static readonly Rect SignArea = new Rect(-5f, -5f, 50f, 50f);
+        static readonly Vector2 SignPivot = new Vector2(20f, 39f);
+        const string HelpLetters = "M5 6 V16 M5 11 H10 M10 6 V16 M16.5 6 H12.5 V16 H16.5 M12.5 11 H15.5 M19 6 V16 H23 "
+            + "M25 16 V6 H28 Q31 6 31 8.75 Q31 11.5 28 11.5 H25 M34.5 6 V12.5";
+
+        static readonly Color CatOutline = Raster.Hex("#4A2E22");
+        static readonly Color Fur = Raster.Hex("#F5C08A");
+        static readonly Color FurDark = Raster.Hex("#E0954C");
+        static readonly Color Cream = Raster.Hex("#FFF4E2");
+        static readonly Color Pink = Raster.Hex("#F4A0A8");
+        static readonly Color NoseColor = Raster.Hex("#EE7A88");
+        static readonly Color EyeColor = Raster.Hex("#2B2633");
+
+        static void DrawCatSprites()
+        {
+            DrawRing(EffectsDir + "/ring_back.png", false);
+            DrawRing(EffectsDir + "/ring_front.png", true);
+            DrawCat(EffectsDir + "/cat.png", false);
+            DrawCat(EffectsDir + "/cat_happy.png", true);
+            DrawPaw(EffectsDir + "/cat_paw.png");
+            DrawHelpSign(EffectsDir + "/help_sign.png");
+        }
+
+        static void ImportCatSprites()
+        {
+            float ppu = BottleScale / (CatScale * BottleGeometry.UnitSize);
+            ImportSprite(EffectsDir + "/ring_back.png", ppu, PivotIn(RingArea, CatPivot));
+            ImportSprite(EffectsDir + "/ring_front.png", ppu, PivotIn(RingArea, CatPivot));
+            ImportSprite(EffectsDir + "/cat.png", ppu, PivotIn(CatArea, CatPivot));
+            ImportSprite(EffectsDir + "/cat_happy.png", ppu, PivotIn(CatArea, CatPivot));
+            ImportSprite(EffectsDir + "/cat_paw.png", ppu, PivotIn(PawArea, CatPivot));
+            ImportSprite(EffectsDir + "/help_sign.png", ppu, PivotIn(SignArea, SignPivot));
+        }
+
+        static void AssignCatSprites(VfxArt art)
+        {
+            art.ringBackSprite = LoadSprite("ring_back");
+            art.ringFrontSprite = LoadSprite("ring_front");
+            art.catSprite = LoadSprite("cat");
+            art.catHappySprite = LoadSprite("cat_happy");
+            art.catPawSprite = LoadSprite("cat_paw");
+            art.helpSignSprite = LoadSprite("help_sign");
+        }
+
+        static Vector2 PivotIn(Rect area, Vector2 point) =>
+            new Vector2((point.x - area.x) / area.width, (area.yMax - point.y) / area.height);
+
+        static Raster CatRaster(Rect area) =>
+            new Raster(Mathf.RoundToInt(area.width * BottleScale), Mathf.RoundToInt(area.height * BottleScale), area.position, BottleScale);
+
+        static void FillOutlined(Raster raster, SvgPath path, Color fill, float outline = 2.2f)
+        {
+            raster.Paint(raster.Fill(path), fill);
+            raster.Paint(raster.Stroke(path, outline), CatOutline);
+        }
+
+        static string F(float value) => value.ToString(CultureInfo.InvariantCulture);
+
+        // Кусок спасательного круга между внешним краем и дыркой, углы от a0 до a1 (0 — вправо, y вниз)
+        static SvgPath RingBand(float a0, float a1)
+        {
+            var contour = new SvgPath.Contour { Closed = true };
+            const int steps = 32;
+            for (int i = 0; i <= steps; i++)
+            {
+                float a = Mathf.Lerp(a0, a1, i / (float)steps);
+                contour.Points.Add(new Vector2(50f + 40f * Mathf.Cos(a), 82f + 14f * Mathf.Sin(a)));
+            }
+            for (int i = steps; i >= 0; i--)
+            {
+                float a = Mathf.Lerp(a0, a1, i / (float)steps);
+                contour.Points.Add(new Vector2(50f + 22f * Mathf.Cos(a), 79f + 6.5f * Mathf.Sin(a)));
+            }
+            var path = new SvgPath();
+            path.Contours.Add(contour);
+            return path;
+        }
+
+        // Задняя половина круга лежит за котиком, передняя — перед ним
+        static void DrawRing(string path, bool front)
+        {
+            var raster = CatRaster(RingArea);
+            float a0 = front ? 0f : Mathf.PI, a1 = front ? Mathf.PI : Mathf.PI * 2f;
+            for (int k = 0; k < 4; k++)
+            {
+                bool red = (k + (front ? 0 : 1)) % 2 == 0;
+                var band = RingBand(Mathf.Lerp(a0, a1, k / 4f), Mathf.Lerp(a0, a1, (k + 1) / 4f));
+                raster.Paint(raster.Fill(band), Raster.Hex(red ? "#E5484D" : "#FFF8F0"));
+            }
+            raster.Paint(raster.Stroke(RingBand(a0, a1), 2.2f), CatOutline);
+            if (front)
+                raster.Paint(raster.Stroke(SvgPath.Parse("M22 86 Q50 96 78 86"), 2f, 0.6f), Color.white, 0.55f);
+            raster.SavePng(path);
+        }
+
+        static void DrawCat(string path, bool happy)
+        {
+            var r = CatRaster(CatArea);
+            FillOutlined(r, SvgPath.Parse("M34 82 C32 70 38 62 50 62 C62 62 68 70 66 82 Z"), Fur);
+            r.Paint(r.Fill(SvgPath.Parse("M42 82 C42 74 45 69 50 69 C55 69 58 74 58 82 Z")), Cream);
+            foreach (int side in new[] { 1, -1 })
+            {
+                string X(float x) => F(50f + (x - 50f) * side);
+                FillOutlined(r, SvgPath.Parse($"M{X(28)} 38 L{X(30)} 12 L{X(47)} 26 Z"), Fur);
+                r.Paint(r.Fill(SvgPath.Parse($"M{X(31.5f)} 32 L{X(32.5f)} 18 L{X(42)} 26 Z")), Pink);
+            }
+            FillOutlined(r, SvgPath.Ellipse(50f, 44f, 26f, 21.5f), Fur);
+            r.Paint(r.Stroke(SvgPath.Parse("M44 24 L46 31 M50 23 V31 M56 24 L54 31"), 2.4f), FurDark);
+            r.Paint(r.Fill(SvgPath.Ellipse(50f, 56f, 11f, 7.5f)), Cream);
+            float blush = happy ? 0.8f : 0.55f;
+            r.Paint(r.Fill(SvgPath.Ellipse(34.5f, 54f, 5f, 3f)), Pink, blush);
+            r.Paint(r.Fill(SvgPath.Ellipse(65.5f, 54f, 5f, 3f)), Pink, blush);
+
+            if (happy)
+            {
+                r.Paint(r.Stroke(SvgPath.Parse("M35 47 Q40 40 45 47 M55 47 Q60 40 65 47"), 2.6f), EyeColor);
+                var mouth = SvgPath.Parse("M45 56 Q50 66 55 56 Z");
+                r.Paint(r.Fill(mouth), Raster.Hex("#B8323F"));
+                r.Paint(r.Stroke(mouth, 1.6f), CatOutline);
+                r.Paint(r.Fill(SvgPath.Parse("M47.5 60.5 Q50 63.5 52.5 60.5 Z")), NoseColor);
+            }
+            else
+            {
+                // Испуганный: круглые глаза с бликами, брови домиком, ротик «о»
+                r.Paint(r.Fill(SvgPath.Ellipse(40f, 46f, 5f, 6.2f)), EyeColor);
+                r.Paint(r.Fill(SvgPath.Ellipse(60f, 46f, 5f, 6.2f)), EyeColor);
+                foreach (var (x, y, radius) in new[] { (41.8f, 43.6f, 1.9f), (61.8f, 43.6f, 1.9f), (38.6f, 48.6f, 0.9f), (58.6f, 48.6f, 0.9f) })
+                    r.Paint(r.Fill(SvgPath.Ellipse(x, y, radius, radius)), Color.white);
+                r.Paint(r.Stroke(SvgPath.Parse("M33 37.5 L43 34 M57 34 L67 37.5"), 1.8f), CatOutline);
+                var mouth = SvgPath.Ellipse(50f, 59f, 2.4f, 2.8f);
+                r.Paint(r.Fill(mouth), Raster.Hex("#8E2A36"));
+                r.Paint(r.Stroke(mouth, 1.2f), CatOutline);
+            }
+            var nose = SvgPath.Parse("M47.6 52 H52.4 L50 54.6 Z");
+            r.Paint(r.Fill(nose), NoseColor);
+            r.Paint(r.Stroke(nose, 1f), CatOutline);
+            r.Paint(r.Stroke(SvgPath.Parse("M37 55 L25 52.5 M37 57.5 L25 59 M63 55 L75 52.5 M63 57.5 L75 59"), 1f), CatOutline, 0.7f);
+            r.SavePng(path);
+        }
+
+        // Левая лапа держится за край круга, поверх него
+        static void DrawPaw(string path)
+        {
+            var r = CatRaster(PawArea);
+            FillOutlined(r, SvgPath.Ellipse(37f, 84f, 6.5f, 4.8f), Fur, 2f);
+            r.Paint(r.Stroke(SvgPath.Parse("M35 82.5 V85.5 M39 82.5 V85.5"), 1f), CatOutline);
+            r.SavePng(path);
+        }
+
+        // Табличка HELP! на палочке в лапе, вращается вокруг лапы
+        static void DrawHelpSign(string path)
+        {
+            var r = CatRaster(SignArea);
+            FillOutlined(r, SvgPath.RoundedRect(18.5f, 19f, 3f, 20f, 1.2f), Raster.Hex("#B07A45"), 1.4f);
+            FillOutlined(r, SvgPath.RoundedRect(1f, 1f, 38f, 20f, 4f), Raster.Hex("#FFFDF6"), 2f);
+            var red = Raster.Hex("#D63A3A");
+            r.Paint(r.Stroke(SvgPath.Parse(HelpLetters), 2.3f), red);
+            r.Paint(r.Fill(SvgPath.Ellipse(34.5f, 15.6f, 1.3f, 1.3f)), red);
+            FillOutlined(r, SvgPath.Ellipse(20f, 39f, 5.5f, 4.4f), Fur, 2f);
+            r.SavePng(path);
         }
 
         static void DrawCap(Raster raster, SvgPath cap, string type)

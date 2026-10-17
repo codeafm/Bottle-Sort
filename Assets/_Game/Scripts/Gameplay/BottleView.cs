@@ -14,6 +14,7 @@ namespace BottleSort.Gameplay
 
     // Вид одной бутылки. Позиция объекта — точка, где дно стоит на полке; масштаб задаёт раскладка.
     // Всё рисуется одним квадом с шейдером BottleSort/Bottle, замок — отдельным спрайтом поверх.
+    // У фигурки спасения внутри ещё котик (RescueCat), а стекло спереди — отдельный спрайт над ним.
     [ExecuteAlways]
     [DisallowMultipleComponent]
     public sealed class BottleView : MonoBehaviour
@@ -41,6 +42,10 @@ namespace BottleSort.Gameplay
         static readonly int IceId = Shader.PropertyToID("_Ice");
         static readonly int IceTurnsId = Shader.PropertyToID("_IceTurns");
         static readonly int AlphaId = Shader.PropertyToID("_Alpha");
+        static readonly int AreaId = Shader.PropertyToID("_Area");
+        static readonly int ToneXId = Shader.PropertyToID("_ToneX");
+        static readonly int GhostId = Shader.PropertyToID("_Ghost");
+        static readonly int FrontAlphaId = Shader.PropertyToID("_FrontAlpha");
         static readonly int[] ColorIds =
         {
             Shader.PropertyToID("_Color0"), Shader.PropertyToID("_Color1"), Shader.PropertyToID("_Color2"),
@@ -49,7 +54,7 @@ namespace BottleSort.Gameplay
             Shader.PropertyToID("_Color9")
         };
 
-        static Mesh quad;
+        static readonly Dictionary<Rect, Mesh> Quads = new Dictionary<Rect, Mesh>();
 
         [SerializeField] VfxArt art;
         [SerializeField] string shape = BottleShapeIds.Classic;
@@ -60,11 +65,17 @@ namespace BottleSort.Gameplay
         [SerializeField] bool locked;
         [SerializeField] int lockColor = Palette.AnyColor;
         [SerializeField] int tint = Palette.AnyColor;
+        // Рецепт фигурки снизу вверх: ещё не налитые слои видны бледными полосами
+        [SerializeField] List<int> recipe = new List<int>();
         [SerializeField] BottleVisualState state;
         [SerializeField] int sortingOrder;
 
         Transform body;
+        MeshFilter glassFilter;
         MeshRenderer glassRenderer;
+        SpriteRenderer frontRenderer;
+        Sprite frontSprite;
+        RescueCat rescue;
         SpriteRenderer lockRenderer;
         SpriteRenderer gemRenderer;
         Material material;
@@ -105,6 +116,30 @@ namespace BottleSort.Gameplay
         public bool IsLocked => locked;
         public int LockColor => lockColor;
         public bool IsAnimating => stepTime >= 0f || fillSteps.Count > 0 || liftTime >= 0f || shakeTime >= 0f;
+        public IReadOnlyList<int> Recipe => recipe;
+
+        public bool IsFigure
+        {
+            get
+            {
+                EnsureBuilt();
+                return shapeArt != null && shapeArt.isFigure;
+            }
+        }
+
+        // Ширина коробки viewBox, которую раскладка отводит под форму: 100 у бутылок, 200 у фигурок
+        public float BoxWidth
+        {
+            get
+            {
+                EnsureBuilt();
+                return shapeArt != null && shapeArt.boxWidth > 0f ? shapeArt.boxWidth : 100f;
+            }
+        }
+
+        public bool IsRescuing => rescue != null && rescue.IsJumping;
+        public bool IsCatInside => rescue != null && rescue.gameObject.activeSelf && rescue.IsSitting;
+        public float RescueTimeLeft => rescue != null ? rescue.JumpTimeLeft : 0f;
 
         // Контур стекла с ручками и носиками, в локальных координатах при масштабе 1 — для раскладки
         public Rect LocalOutline
@@ -177,6 +212,10 @@ namespace BottleSort.Gameplay
                 glassRenderer.sortingOrder = value;
                 lockRenderer.sortingOrder = value + 1;
                 gemRenderer.sortingOrder = value + 2;
+                if (frontRenderer != null)
+                    frontRenderer.sortingOrder = value + 6;
+                if (rescue != null)
+                    rescue.SortingOrder = value;
             }
         }
 
@@ -202,16 +241,24 @@ namespace BottleSort.Gameplay
             {
                 DestroyImmediate(body.gameObject);
                 body = null;
+                frontRenderer = null;
+                rescue = null;
+                shapeArt = null;
             }
         }
 
         void OnDestroy()
         {
-            if (material != null)
-            {
-                if (Application.isPlaying) Destroy(material);
-                else DestroyImmediate(material);
-            }
+            Discard(material);
+            Discard(frontSprite);
+        }
+
+        static void Discard(Object target)
+        {
+            if (target == null)
+                return;
+            if (Application.isPlaying) Destroy(target);
+            else DestroyImmediate(target);
         }
 
         void OnValidate()
@@ -245,6 +292,15 @@ namespace BottleSort.Gameplay
             hiddenShown = hidden;
             EnsureBuilt();
             ApplyShape();
+            if (rescue != null)
+                rescue.SetFull(colors.Count >= capacity);
+            ApplyLook();
+        }
+
+        // null или пусто — обычная бутылка без рецепта
+        public void SetRecipe(IReadOnlyList<int> recipeColors)
+        {
+            CopyColors(recipeColors, recipe);
             ApplyLook();
         }
 
@@ -341,6 +397,10 @@ namespace BottleSort.Gameplay
             var layerColors = new int[bottle.Count];
             for (int i = 0; i < bottle.Count; i++)
                 layerColors[i] = bottle[i];
+            recipe.Clear();
+            if (bottle.Recipe != null)
+                foreach (byte color in bottle.Recipe)
+                    recipe.Add(color);
             SetLayers(layerColors, bottle.Capacity, bottle.HiddenCount);
             SetFrozen(bottle.FrozenTurns);
             SetLocked(bottle.IsLocked, bottle.LockColor);
@@ -353,10 +413,13 @@ namespace BottleSort.Gameplay
             shakeTime = Application.isPlaying ? 0f : -1f;
         }
 
+        // У фигурки вместо вспышки котик выпрыгивает из горлышка
         public void PlayCompleted()
         {
             SetState(BottleVisualState.Completed);
-            if (Application.isPlaying && colors.Count > 0)
+            if (rescue != null && rescue.gameObject.activeSelf)
+                rescue.Jump();
+            else if (Application.isPlaying && colors.Count > 0)
                 BottleBurst.Play(this, LiquidPalette.Get(colors[colors.Count - 1]));
         }
 
@@ -437,6 +500,9 @@ namespace BottleSort.Gameplay
                     colors.AddRange(pendingColors);
                     pendingColors = null;
                 }
+                // Над полной фигуркой котику уже негде сидеть, он выпрыгивает сразу, не дожидаясь конца налива
+                if (fillSteps.Count == 0 && fill >= capacity && rescue != null && rescue.gameObject.activeSelf)
+                    rescue.Jump();
             }
         }
 
@@ -525,7 +591,8 @@ namespace BottleSort.Gameplay
 
             var glassObject = new GameObject("Glass") { hideFlags = hide };
             glassObject.transform.SetParent(body, false);
-            glassObject.AddComponent<MeshFilter>().sharedMesh = Quad;
+            glassFilter = glassObject.AddComponent<MeshFilter>();
+            glassFilter.sharedMesh = QuadFor(BottleGeometry.TextureArea);
             glassRenderer = glassObject.AddComponent<MeshRenderer>();
             glassRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             glassRenderer.receiveShadows = false;
@@ -559,16 +626,65 @@ namespace BottleSort.Gameplay
         {
             if (art == null || material == null)
                 return;
+            var previous = shapeArt;
             shapeArt = art.GetShape(shape);
+            var area = shapeArt.textureArea.width > 0f ? shapeArt.textureArea : BottleGeometry.TextureArea;
+            glassFilter.sharedMesh = QuadFor(area);
             material.SetTexture(BackTexId, shapeArt.back);
             material.SetTexture(FrontTexId, shapeArt.front);
             material.SetTexture(MaskTexId, shapeArt.mask);
             material.SetFloat(LiquidTopId, shapeArt.liquidTop);
             material.SetFloat(LiquidBottomId, shapeArt.liquidBottom);
+            material.SetVector(AreaId, new Vector4(area.x, area.y, area.width, area.height));
+            var span = shapeArt.liquidSpan.y > shapeArt.liquidSpan.x ? shapeArt.liquidSpan : new Vector2(16f, 84f);
+            material.SetVector(ToneXId, new Vector4(span.x, span.y, 0f, 0f));
+            material.SetFloat(FrontAlphaId, shapeArt.isFigure ? 0f : 1f);
 
             // Замок и лёд — по центру жидкости, а не на фиксированной высоте (BOTTLE_MODELS §1.5)
             float centerY = (shapeArt.liquidTop + shapeArt.liquidBottom) * 0.5f;
             lockRenderer.transform.localPosition = new Vector3(0f, BottleGeometry.ToLocalY(centerY), 0f);
+
+            if (shapeArt != previous)
+                ApplyFigureParts(area);
+        }
+
+        void ApplyFigureParts(Rect area)
+        {
+            if (!shapeArt.isFigure)
+            {
+                if (frontRenderer != null)
+                    frontRenderer.gameObject.SetActive(false);
+                if (rescue != null)
+                    rescue.gameObject.SetActive(false);
+                return;
+            }
+
+            var hide = Application.isPlaying ? HideFlags.None : HideFlags.DontSave;
+            if (frontRenderer == null)
+            {
+                var go = new GameObject("Front Glass") { hideFlags = hide };
+                go.transform.SetParent(body, false);
+                frontRenderer = go.AddComponent<SpriteRenderer>();
+                frontRenderer.sharedMaterial = art.spriteMaterial;
+            }
+            frontRenderer.gameObject.SetActive(true);
+            Discard(frontSprite);
+            var texture = shapeArt.front;
+            if (texture != null)
+            {
+                var pivot = new Vector2((BottleGeometry.Base.x - area.x) / area.width, (area.yMax - BottleGeometry.Base.y) / area.height);
+                frontSprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height), pivot,
+                    texture.width / (area.width * BottleGeometry.UnitSize), 0, SpriteMeshType.FullRect);
+                frontSprite.name = shapeArt.id + " front";
+                frontSprite.hideFlags = HideFlags.DontSave;
+            }
+            frontRenderer.sprite = frontSprite;
+
+            if (rescue == null)
+                rescue = RescueCat.Create(body, art, hide);
+            rescue.gameObject.SetActive(true);
+            rescue.SetFull(colors.Count >= capacity);
+            SortingOrder = sortingOrder;
         }
 
         void ApplyLook()
@@ -578,9 +694,12 @@ namespace BottleSort.Gameplay
 
             for (int i = 0; i < MaxLayers; i++)
             {
-                int color = i < colors.Count ? colors[i] : (colors.Count > 0 ? colors[colors.Count - 1] : 0);
+                int color = i < colors.Count ? colors[i]
+                    : i < recipe.Count ? recipe[i]
+                    : colors.Count > 0 ? colors[colors.Count - 1] : 0;
                 material.SetColor(ColorIds[i], LiquidPalette.Get(color));
             }
+            material.SetFloat(GhostId, Mathf.Min(recipe.Count, capacity));
             material.SetFloat(FillId, fill);
             material.SetFloat(CapacityId, capacity);
             material.SetFloat(HiddenId, hiddenShown);
@@ -609,6 +728,15 @@ namespace BottleSort.Gameplay
                 gem.a = lockShown * alpha;
                 gemRenderer.color = gem;
             }
+
+            if (frontRenderer != null && frontRenderer.gameObject.activeSelf)
+                frontRenderer.color = new Color(1f, 1f, 1f, alpha);
+            if (rescue != null && rescue.gameObject.activeSelf && shapeArt != null)
+            {
+                float layer = (shapeArt.liquidBottom - shapeArt.liquidTop) / Mathf.Max(1, capacity);
+                rescue.SetLevel(shapeArt.liquidBottom - fill * layer, shapeArt.mouth.y);
+                rescue.SetAlpha(alpha);
+            }
         }
 
         static void CopyColors(IReadOnlyList<int> source, List<int> target)
@@ -620,25 +748,23 @@ namespace BottleSort.Gameplay
                 target.Add(source[i]);
         }
 
-        static Mesh Quad
+        // Квад на всю площадь текстур формы: у бутылок она одна, у фигурок шире
+        static Mesh QuadFor(Rect area)
         {
-            get
-            {
-                if (quad != null)
-                    return quad;
-                var area = BottleGeometry.TextureArea;
-                var min = BottleGeometry.ToLocal(new Vector2(area.xMin, area.yMax));
-                var max = BottleGeometry.ToLocal(new Vector2(area.xMax, area.yMin));
-                quad = new Mesh { name = "Bottle quad", hideFlags = HideFlags.DontSave };
-                quad.vertices = new[]
-                {
-                    new Vector3(min.x, min.y), new Vector3(max.x, min.y), new Vector3(min.x, max.y), new Vector3(max.x, max.y)
-                };
-                quad.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
-                quad.triangles = new[] { 0, 2, 1, 2, 3, 1 };
-                quad.RecalculateBounds();
+            if (Quads.TryGetValue(area, out var quad) && quad != null)
                 return quad;
-            }
+            var min = BottleGeometry.ToLocal(new Vector2(area.xMin, area.yMax));
+            var max = BottleGeometry.ToLocal(new Vector2(area.xMax, area.yMin));
+            quad = new Mesh { name = "Bottle quad", hideFlags = HideFlags.DontSave };
+            quad.vertices = new[]
+            {
+                new Vector3(min.x, min.y), new Vector3(max.x, min.y), new Vector3(min.x, max.y), new Vector3(max.x, max.y)
+            };
+            quad.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
+            quad.triangles = new[] { 0, 2, 1, 2, 3, 1 };
+            quad.RecalculateBounds();
+            Quads[area] = quad;
+            return quad;
         }
     }
 }

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f467bc09933f425fa407015b7ab36795, type: 3}
+  m_Name: fish
+  m_EditorClassIdentifier: Game.Runtime::BottleSort.Gameplay.FigureArt
+  shape:
+    id: fish
+    back: {fileID: 2800000, guid: 8071e5eb31db68c48bd3008723f227d0, type: 3}
+    front: {fileID: 2800000, guid: 03de0185191d0ff468e5f319c56b796a, type: 3}
+    mask: {fileID: 2800000, guid: 9dabe8c21006f424eb99c12d87c4afe7, type: 3}
+    liquidTop: 84
+    liquidBottom: 226
+    mouth: {x: 50, y: 16}
+    outline:
+      serializedVersion: 2
+      x: -52
+      y: 2
+      width: 214.48874
+      height: 237.61436
+    textureArea:
+      serializedVersion: 2
+      x: -80
+      y: -30
+      width: 260
+      height: 300
+    boxWidth: 200
+    liquidSpan: {x: -32.86611, y: 132.86612}
+    isFigure: 1
