@@ -24,11 +24,16 @@ namespace BottleSort.Services
         void LoadBanner(BannerPlacement placement, Action<bool> done);
     }
 
-    // Unit id из Flutter-версии (FLUTTER_SPEC §5).
+    // Unit id из кабинета Yandex. Android — те же, что во Flutter-версии (FLUTTER_SPEC §5).
+    // У iOS-приложения свои блоки, и номера там идут в другом порядке: -1 у него награда, а не баннер.
     public static class AdUnits
     {
         public const string Banner = "R-M-19370824-1";
         public const string Interstitial = "R-M-19370824-2";
         public const string Rewarded = "R-M-19370824-3";
+
+        public const string IosBanner = "R-M-20110699-2";
+        public const string IosInterstitial = "R-M-20110699-3";
+        public const string IosRewarded = "R-M-20110699-1";
     }
 }
