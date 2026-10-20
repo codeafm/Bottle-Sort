@@ -9,11 +9,10 @@ namespace BottleSort.Integrations
     // Yandex Mobile Ads 8.6 (Assets/YandexMobileAds). Плагин без asmdef и живёт в Assembly-CSharp,
     // поэтому эта папка тоже вне Game.Runtime и подключается к Ads через DeviceServiceFactory.
     // Unity Ads показывается через адаптер медиации Yandex, отдельного кода для него нет.
-    // Как во Flutter (ad_cache.dart): объявление живёт 30 минут, после ошибки повтор через 30 с.
+    // Как во Flutter (ad_cache.dart): объявление живёт 30 минут (FullscreenAdSlot), после ошибки повтор через 30 с.
     public sealed class YandexAdsService : IAdsService
     {
         const float RetrySeconds = 30f;
-        const float CacheLifetime = 30f * 60f;
         const int BannerWidth = 320;
         const int BannerHeight = 50;
 
@@ -24,10 +23,8 @@ namespace BottleSort.Integrations
         RewardedAdLoader _rewardedLoader;
         Interstitial _interstitial;
         RewardedAd _rewarded;
-        float _interstitialLoadedAt;
-        float _rewardedLoadedAt;
-        bool _interstitialLoading;
-        bool _rewardedLoading;
+        readonly FullscreenAdSlot _interstitialSlot = new FullscreenAdSlot();
+        readonly FullscreenAdSlot _rewardedSlot = new FullscreenAdSlot();
         // Свой баннер у меню и у игры. Next — новый, который грузится скрытым, пока на экране старый.
         sealed class BannerSlot
         {
@@ -50,8 +47,8 @@ namespace BottleSort.Integrations
             _config = config;
         }
 
-        public bool IsInterstitialReady => _interstitial != null && Fresh(_interstitialLoadedAt);
-        public bool IsRewardedReady => _rewarded != null && Fresh(_rewardedLoadedAt);
+        public bool IsInterstitialReady => _interstitial != null && _interstitialSlot.IsFresh(Now);
+        public bool IsRewardedReady => _rewarded != null && _rewardedSlot.IsFresh(Now);
 
         public void Initialize()
         {
@@ -61,49 +58,60 @@ namespace BottleSort.Integrations
             LoadRewarded();
         }
 
-        static bool Fresh(float loadedAt) => Time.realtimeSinceStartup - loadedAt < CacheLifetime;
+        static double Now => (DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
 
-        // Колбэки загрузчиков плагин сам отдаёт в главном потоке.
-        void LoadInterstitial()
+        // Зовётся при каждой проверке и раз в 10 секунд из Ads: протухший ролик выбрасываем и грузим новый,
+        // свежий или уже грузящийся не трогаем. Колбэки загрузчиков плагин сам отдаёт в главном потоке.
+        public void LoadInterstitial()
         {
-            if (_interstitialLoading || IsInterstitialReady)
+            if (!_interstitialSlot.NeedsLoad(Now, out bool stale))
                 return;
-            _interstitialLoading = true;
+            if (stale || _interstitial != null)
+            {
+                Debug.Log("[Ads] Interstitial expired, loading a new one");
+                _interstitial?.Destroy();
+                _interstitial = null;
+            }
+            _interstitialSlot.OnLoadStarted();
             _interstitialLoader.LoadAd(new AdRequest(_config.InterstitialId),
                 ad =>
                 {
-                    _interstitialLoading = false;
                     _interstitial?.Destroy();
                     _interstitial = ad;
-                    _interstitialLoadedAt = Time.realtimeSinceStartup;
+                    _interstitialSlot.OnLoaded(Now);
                     Debug.Log("[Ads] Interstitial loaded");
                 },
                 error =>
                 {
                     Debug.Log($"[Ads] Interstitial failed to load: {error.Message}");
-                    _interstitialLoading = false;
+                    _interstitialSlot.OnFailed();
                     _thread.After(RetrySeconds, LoadInterstitial);
                 });
         }
 
         public void LoadRewarded()
         {
-            if (_rewardedLoading || IsRewardedReady)
+            if (!_rewardedSlot.NeedsLoad(Now, out bool stale))
                 return;
-            _rewardedLoading = true;
+            if (stale || _rewarded != null)
+            {
+                Debug.Log("[Ads] Rewarded expired, loading a new one");
+                _rewarded?.Destroy();
+                _rewarded = null;
+            }
+            _rewardedSlot.OnLoadStarted();
             _rewardedLoader.LoadAd(new AdRequest(_config.RewardedId),
                 ad =>
                 {
-                    _rewardedLoading = false;
                     _rewarded?.Destroy();
                     _rewarded = ad;
-                    _rewardedLoadedAt = Time.realtimeSinceStartup;
+                    _rewardedSlot.OnLoaded(Now);
                     Debug.Log("[Ads] Rewarded loaded");
                 },
                 error =>
                 {
                     Debug.Log($"[Ads] Rewarded failed to load: {error.Message}");
-                    _rewardedLoading = false;
+                    _rewardedSlot.OnFailed();
                     _thread.After(RetrySeconds, LoadRewarded);
                 });
         }
@@ -119,6 +127,7 @@ namespace BottleSort.Integrations
 
             var ad = _interstitial;
             _interstitial = null;
+            _interstitialSlot.OnTaken();
             bool finished = false;
             void Finish()
             {
@@ -146,6 +155,7 @@ namespace BottleSort.Integrations
 
             var ad = _rewarded;
             _rewarded = null;
+            _rewardedSlot.OnTaken();
             bool earned = false;
             bool finished = false;
             void Finish()

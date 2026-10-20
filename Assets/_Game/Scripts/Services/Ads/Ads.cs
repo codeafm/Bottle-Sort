@@ -46,12 +46,38 @@ namespace BottleSort.Services
             ScreenRouter.PopupsChanged += OnPopupsChanged;
             PlayerData.Changed -= RefreshBanner;
             PlayerData.Changed += RefreshBanner;
-            thread.Ticked -= TickBanner;
-            thread.Ticked += TickBanner;
+            thread.Ticked -= Tick;
+            thread.Ticked += Tick;
         }
 
-        // Время баннера идёт, только пока он на экране и приложение на переднем плане.
-        static void TickBanner(float deltaTime) => _banners?.Tick(deltaTime, !_busy && Application.isFocused);
+        // Как часто проверять, что полноэкранные ролики загружены и не протухли.
+        const float KeepFreshEvery = 10f;
+        static float _keepFreshIn;
+        static bool _wasFocused = true;
+
+        static void Tick(float deltaTime)
+        {
+            bool focused = Application.isFocused;
+            // Время баннера идёт, только пока он на экране и приложение на переднем плане.
+            _banners?.Tick(deltaTime, !_busy && focused);
+
+            // Вернулись из фона (там ролик мог протухнуть) — проверяем сразу, иначе раз в 10 секунд.
+            _keepFreshIn -= deltaTime;
+            if (focused && (!_wasFocused || _keepFreshIn <= 0f))
+            {
+                _keepFreshIn = KeepFreshEvery;
+                KeepFullscreenAdsLoaded();
+            }
+            _wasFocused = focused;
+        }
+
+        static void KeepFullscreenAdsLoaded()
+        {
+            if (_service == null || _busy)
+                return;
+            _service.LoadInterstitial();
+            _service.LoadRewarded();
+        }
 
         // В редакторе заглушка. На устройстве только Yandex: другие сети (Unity Ads) подключены
         // адаптерами медиации внутри Yandex и настраиваются в кабинете, коду о них знать не нужно.
@@ -85,8 +111,8 @@ namespace BottleSort.Services
             {
                 AudioListener.pause = false;
                 SetBusy(false);
-                if (watched)
-                    Policy.OnRewardedWatched();
+                // Ролик за награду не отменяет межстраничную, только сдвигает 30 секунд между ними.
+                Policy.OnRewardedWatched(Time.realtimeSinceStartupAsDouble);
                 done?.Invoke(watched);
             });
         }
@@ -94,7 +120,6 @@ namespace BottleSort.Services
         // Новый уровень, «Следующий» или «Заново»: игровому баннеру — новый запрос.
         public static void LevelStarted(int level)
         {
-            Policy.OnLevelStarted();
             var data = PlayerData.Current;
             if (_banners != null && BannerRules.AllowedOnLevel(level, data.highestUnlocked, data.noAds))
                 _banners.LevelStarted();
@@ -106,26 +131,39 @@ namespace BottleSort.Services
         public static void ShowInterstitialIfDue(int level, LevelType type, Action then)
         {
             double now = Time.realtimeSinceStartupAsDouble;
-            bool due = Policy.ShouldShowAfterWin(level, PlayerData.Current.noAds, now);
-            ShowInterstitial(due, () => Policy.OnShownAfterWin(now), then);
+            var decision = Policy.DecideAfterWin(level, PlayerData.Current.noAds, now);
+            ShowInterstitial("win", decision, () => Policy.OnShownAfterWin(now), then);
         }
 
         // Вызывать, когда после проигрыша игрок выбрал «Заново».
         public static void ShowInterstitialAfterLossIfDue(int level, Action then)
         {
             double now = Time.realtimeSinceStartupAsDouble;
-            bool due = Policy.ShouldShowAfterLoss(level, PlayerData.Current.noAds, now);
-            ShowInterstitial(due, () => Policy.OnShownAfterLoss(now), then);
+            var decision = Policy.DecideAfterLoss(level, PlayerData.Current.noAds, now);
+            ShowInterstitial("loss", decision, () => Policy.OnShownAfterLoss(now), then);
         }
 
-        static void ShowInterstitial(bool due, Action shown, Action then)
+        static void ShowInterstitial(string after, InterstitialDecision decision, Action shown, Action then)
         {
-            if (!due || _service == null || _busy || !_service.IsInterstitialReady)
+            string skip = decision == InterstitialDecision.NotDue ? "not due"
+                : decision == InterstitialDecision.Spacing ? "spacing"
+                : decision == InterstitialDecision.Tutorial ? "tutorial"
+                : decision == InterstitialDecision.NoAds ? "no ads"
+                : _service == null ? "no service"
+                : _busy ? "busy"
+                : !_service.IsInterstitialReady ? "not ready"
+                : null;
+            if (skip != null)
             {
+                Debug.Log($"[Ads] Interstitial after {after} skipped: {skip}");
+                // Должна была выйти, но ролика нет — грузим сразу, к следующей возможности будет готов.
+                if (skip == "not ready")
+                    _service.LoadInterstitial();
                 then?.Invoke();
                 return;
             }
 
+            Debug.Log($"[Ads] Interstitial after {after}: showing");
             SetBusy(true);
             shown();
             AudioListener.pause = true;

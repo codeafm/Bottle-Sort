@@ -1,9 +1,18 @@
 namespace BottleSort.Services
 {
+    public enum InterstitialDecision
+    {
+        Show,
+        NotDue,
+        Spacing,
+        Tutorial,
+        NoAds
+    }
+
     // Решение заказчика вместо LEVEL_DESIGN §7.5: межстраничная после каждой 2-й победы и после каждого
-    // 2-го проигрыша, победы и проигрыши считаются отдельно. Не на обучении 1–3 и не сразу после того,
-    // как игрок сам смотрел рекламу за награду на этом уровне. Между двумя показами не меньше 30 секунд,
-    // чтобы два быстрых проигрыша подряд и победа следом не дали три ролика за минуту.
+    // 2-го проигрыша, победы и проигрыши считаются отдельно, не на обучении 1–3. Между любыми двумя
+    // полноэкранными роликами не меньше 30 секунд. Ролик за награду (×2 на победе и т. п.) только сдвигает
+    // этот отсчёт: заказчик хочет межстраничную каждые 2 уровня, даже если игрок каждый раз жмёт ×2.
     public sealed class InterstitialPolicy
     {
         public const int WinsBetween = 2;
@@ -13,14 +22,16 @@ namespace BottleSort.Services
 
         int _wins;
         int _losses;
-        double _lastShownAt = double.NegativeInfinity;
-        bool _rewardedThisLevel;
+        double _lastFullscreenAt = double.NegativeInfinity;
 
         public int WinsSinceAd => _wins;
         public int LossesSinceAd => _losses;
 
-        public void OnLevelStarted() => _rewardedThisLevel = false;
-        public void OnRewardedWatched() => _rewardedThisLevel = true;
+        public void OnRewardedWatched(double now)
+        {
+            if (now > _lastFullscreenAt)
+                _lastFullscreenAt = now;
+        }
 
         public void OnWin(int level)
         {
@@ -34,26 +45,40 @@ namespace BottleSort.Services
                 _losses++;
         }
 
+        public InterstitialDecision DecideAfterWin(int level, bool noAds, double now) =>
+            Decide(_wins >= WinsBetween, level, noAds, now);
+
+        public InterstitialDecision DecideAfterLoss(int level, bool noAds, double now) =>
+            Decide(_losses >= LossesBetween, level, noAds, now);
+
         public bool ShouldShowAfterWin(int level, bool noAds, double now) =>
-            _wins >= WinsBetween && Allowed(level, noAds, now);
+            DecideAfterWin(level, noAds, now) == InterstitialDecision.Show;
 
         public bool ShouldShowAfterLoss(int level, bool noAds, double now) =>
-            _losses >= LossesBetween && Allowed(level, noAds, now);
+            DecideAfterLoss(level, noAds, now) == InterstitialDecision.Show;
 
         // Пропущенный показ не сбрасывает счётчик: реклама выйдет при следующей возможности.
         public void OnShownAfterWin(double now)
         {
             _wins = 0;
-            _lastShownAt = now;
+            _lastFullscreenAt = now;
         }
 
         public void OnShownAfterLoss(double now)
         {
             _losses = 0;
-            _lastShownAt = now;
+            _lastFullscreenAt = now;
         }
 
-        bool Allowed(int level, bool noAds, double now) =>
-            !noAds && level >= FirstLevel && !_rewardedThisLevel && now - _lastShownAt >= MinSecondsBetween;
+        InterstitialDecision Decide(bool due, int level, bool noAds, double now)
+        {
+            if (noAds)
+                return InterstitialDecision.NoAds;
+            if (level < FirstLevel)
+                return InterstitialDecision.Tutorial;
+            if (!due)
+                return InterstitialDecision.NotDue;
+            return now - _lastFullscreenAt >= MinSecondsBetween ? InterstitialDecision.Show : InterstitialDecision.Spacing;
+        }
     }
 }

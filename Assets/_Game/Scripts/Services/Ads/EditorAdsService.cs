@@ -28,6 +28,10 @@ namespace BottleSort.Services
 
         public void Initialize() => Debug.Log("[Ads] Stub ads service, no SDK");
 
+        public void LoadInterstitial()
+        {
+        }
+
         public void LoadRewarded()
         {
         }

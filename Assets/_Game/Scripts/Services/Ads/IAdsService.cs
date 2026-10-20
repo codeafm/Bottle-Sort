@@ -8,6 +8,8 @@ namespace BottleSort.Services
         bool IsInterstitialReady { get; }
 
         void Initialize();
+        // Загрузить, если ролика нет или он протух; свежий или грузящийся не трогать.
+        void LoadInterstitial();
         void LoadRewarded();
 
         // true — досмотрел и заслужил награду. Колбэк приходит в главном потоке.
