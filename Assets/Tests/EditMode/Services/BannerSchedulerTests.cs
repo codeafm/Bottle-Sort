@@ -155,18 +155,19 @@ namespace BottleSort.Tests
         [TestCase(ScreenId.Menu, BannerPlacement.Menu)]
         [TestCase(ScreenId.Levels, BannerPlacement.Menu)]
         [TestCase(ScreenId.Game, BannerPlacement.Game)]
-        [TestCase(ScreenId.Win, BannerPlacement.None)]
+        [TestCase(ScreenId.Shop, BannerPlacement.Menu)]
+        [TestCase(ScreenId.Win, BannerPlacement.Game)]
+        [TestCase(ScreenId.Splash, BannerPlacement.None)]
         public void ScreensMapToPlacements(ScreenId screen, BannerPlacement placement)
         {
             Assert.AreEqual(placement, BannerRules.PlacementOf(screen));
         }
 
         [Test]
-        public void NoGameBannerRequestsOnTutorialOrNoAds()
+        public void GameBannerRequestedOnEveryLevelUnlessNoAds()
         {
-            Assert.IsFalse(BannerRules.AllowedOnLevel(3, 10, false));
-            Assert.IsFalse(BannerRules.AllowedOnLevel(10, 10, true));
-            Assert.IsTrue(BannerRules.AllowedOnLevel(4, 4, false));
+            Assert.IsTrue(BannerRules.AllowedOnLevel(false));
+            Assert.IsFalse(BannerRules.AllowedOnLevel(true));
         }
     }
 }

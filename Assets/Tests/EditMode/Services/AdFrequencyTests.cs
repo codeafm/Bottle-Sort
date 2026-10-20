@@ -8,23 +8,20 @@ namespace BottleSort.Tests
 {
     public class AdFrequencyTests
     {
-        // Время в секундах; между событиями заведомо больше 30 с, если тест не про интервал.
-        const double Later = 1000;
-
         [Test]
         public void Interstitial_EverySecondWin()
         {
             var policy = new InterstitialPolicy();
             policy.OnWin(10);
-            Assert.IsFalse(policy.ShouldShowAfterWin(10, false, 0));
+            Assert.IsFalse(policy.ShouldShowAfterWin(10, false));
             policy.OnWin(11);
-            Assert.IsTrue(policy.ShouldShowAfterWin(11, false, 0));
-            policy.OnShownAfterWin(0);
+            Assert.IsTrue(policy.ShouldShowAfterWin(11, false));
+            policy.OnShownAfterWin();
 
             policy.OnWin(12);
-            Assert.IsFalse(policy.ShouldShowAfterWin(12, false, Later));
+            Assert.IsFalse(policy.ShouldShowAfterWin(12, false));
             policy.OnWin(13);
-            Assert.IsTrue(policy.ShouldShowAfterWin(13, false, Later));
+            Assert.IsTrue(policy.ShouldShowAfterWin(13, false));
         }
 
         [Test]
@@ -33,11 +30,11 @@ namespace BottleSort.Tests
             var policy = new InterstitialPolicy();
             policy.OnWin(10);
             policy.OnLoss(11);
-            Assert.IsFalse(policy.ShouldShowAfterLoss(11, false, 0), "одна победа и один проигрыш — ещё не два проигрыша");
-            Assert.IsFalse(policy.ShouldShowAfterWin(11, false, 0));
+            Assert.IsFalse(policy.ShouldShowAfterLoss(11, false), "одна победа и один проигрыш — ещё не два проигрыша");
+            Assert.IsFalse(policy.ShouldShowAfterWin(11, false));
             policy.OnLoss(11);
-            Assert.IsTrue(policy.ShouldShowAfterLoss(11, false, 0));
-            policy.OnShownAfterLoss(0);
+            Assert.IsTrue(policy.ShouldShowAfterLoss(11, false));
+            policy.OnShownAfterLoss();
 
             Assert.AreEqual(0, policy.LossesSinceAd);
             Assert.AreEqual(1, policy.WinsSinceAd, "показ после проигрышей не сбрасывает счёт побед");
@@ -48,66 +45,74 @@ namespace BottleSort.Tests
         {
             var policy = new InterstitialPolicy();
             for (int level = 1; level <= 3; level++)
+            {
                 policy.OnWin(level);
+                policy.OnLoss(level);
+            }
             Assert.AreEqual(0, policy.WinsSinceAd);
+            Assert.AreEqual(0, policy.LossesSinceAd);
             policy.OnWin(4);
             policy.OnWin(5);
-            Assert.IsFalse(policy.ShouldShowAfterWin(3, false, 0));
-            Assert.IsTrue(policy.ShouldShowAfterWin(5, false, 0));
+            Assert.IsFalse(policy.ShouldShowAfterWin(3, false));
+            Assert.IsTrue(policy.ShouldShowAfterWin(5, false));
         }
 
         [Test]
-        public void Interstitial_AtLeastThirtySecondsApart()
+        public void Interstitial_RightAfterLossAd_NoWaiting()
         {
+            // Два проигрыша — реклама, потом две быстрые победы — сразу снова реклама, без паузы между ними.
             var policy = new InterstitialPolicy();
             policy.OnLoss(20);
             policy.OnLoss(20);
-            Assert.IsTrue(policy.ShouldShowAfterLoss(20, false, 100));
-            policy.OnShownAfterLoss(100);
-
+            Assert.IsTrue(policy.ShouldShowAfterLoss(20, false));
+            policy.OnShownAfterLoss();
             policy.OnWin(20);
             policy.OnWin(21);
-            Assert.IsFalse(policy.ShouldShowAfterWin(21, false, 110));
-            Assert.AreEqual(2, policy.WinsSinceAd, "пропуск не съедает счёт — реклама выйдет при следующей возможности");
-            Assert.IsTrue(policy.ShouldShowAfterWin(22, false, 130));
+            Assert.IsTrue(policy.ShouldShowAfterWin(21, false));
         }
 
         [Test]
-        public void Interstitial_DoubleRewardOnEveryWin_DoesNotBlockIt()
+        public void Interstitial_NotReady_KeepsCountForNextChance()
         {
-            // Игрок на каждой победе жмёт ×2: ролик за награду, потом «Дальше».
             var policy = new InterstitialPolicy();
-            double now = 0;
+            policy.OnWin(20);
+            policy.OnWin(21);
+            Assert.IsTrue(policy.ShouldShowAfterWin(21, false));
+            // ролик не загрузился, OnShownAfterWin не вызывали
+            policy.OnWin(22);
+            Assert.AreEqual(3, policy.WinsSinceAd);
+            Assert.IsTrue(policy.ShouldShowAfterWin(22, false));
+            policy.OnShownAfterWin();
+            policy.OnWin(23);
+            Assert.IsFalse(policy.ShouldShowAfterWin(23, false));
+        }
+
+        [Test]
+        public void Interstitial_DoubleRewardOnEveryWin_DoesNotChangeIt()
+        {
+            // Игрок на каждой победе смотрит ролик ×2, потом жмёт «Дальше»: межстраничная всё равно каждые 2 уровня.
+            var policy = new InterstitialPolicy();
+            int shown = 0;
             for (int level = 10; level < 16; level++)
             {
                 policy.OnWin(level);
-                now += 40;
-                policy.OnRewardedWatched(now);
-                now += 35;
-                if (policy.ShouldShowAfterWin(level, false, now))
-                    policy.OnShownAfterWin(now);
+                if (policy.ShouldShowAfterWin(level, false))
+                {
+                    policy.OnShownAfterWin();
+                    shown++;
+                }
             }
-            Assert.AreEqual(0, policy.WinsSinceAd, "межстраничная выходила каждые 2 уровня");
-        }
-
-        [Test]
-        public void Interstitial_RewardedOnlyShiftsThirtySeconds()
-        {
-            var policy = new InterstitialPolicy();
-            policy.OnWin(30);
-            policy.OnWin(31);
-            policy.OnRewardedWatched(Later);
-            Assert.AreEqual(InterstitialDecision.Spacing, policy.DecideAfterWin(31, false, Later + 10));
-            Assert.AreEqual(InterstitialDecision.Show, policy.DecideAfterWin(31, false, Later + 30));
+            Assert.AreEqual(3, shown);
         }
 
         [Test]
         public void Interstitial_ReportsWhySkipped()
         {
             var policy = new InterstitialPolicy();
-            Assert.AreEqual(InterstitialDecision.Tutorial, policy.DecideAfterWin(2, false, Later));
-            Assert.AreEqual(InterstitialDecision.NoAds, policy.DecideAfterWin(20, true, Later));
-            Assert.AreEqual(InterstitialDecision.NotDue, policy.DecideAfterWin(20, false, Later));
+            Assert.AreEqual(InterstitialDecision.Tutorial, policy.DecideAfterWin(2, false));
+            Assert.AreEqual(InterstitialDecision.NoAds, policy.DecideAfterWin(20, true));
+            Assert.AreEqual(InterstitialDecision.NotDue, policy.DecideAfterWin(20, false));
+            Assert.AreEqual(InterstitialDecision.NotDue, policy.DecideAfterLoss(20, false));
         }
 
         [Test]
@@ -116,7 +121,10 @@ namespace BottleSort.Tests
             var policy = new InterstitialPolicy();
             policy.OnWin(40);
             policy.OnWin(41);
-            Assert.IsFalse(policy.ShouldShowAfterWin(41, true, Later));
+            policy.OnLoss(41);
+            policy.OnLoss(41);
+            Assert.IsFalse(policy.ShouldShowAfterWin(41, true));
+            Assert.IsFalse(policy.ShouldShowAfterLoss(41, true));
         }
 
         [Test]

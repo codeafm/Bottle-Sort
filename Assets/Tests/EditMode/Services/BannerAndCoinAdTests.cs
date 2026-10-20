@@ -7,55 +7,42 @@ namespace BottleSort.Tests
 {
     public class BannerAndCoinAdTests
     {
-        static BannerContext On(ScreenId screen, int level = 10) => new BannerContext
-        {
-            Screen = screen,
-            Level = level,
-            HighestUnlocked = 20
-        };
+        static BannerContext On(ScreenId screen) => new BannerContext { Screen = screen };
 
         [TestCase(ScreenId.Menu)]
         [TestCase(ScreenId.Levels)]
+        [TestCase(ScreenId.Shop)]
         [TestCase(ScreenId.Game)]
-        public void Banner_ShownInMenuMapAndGame(ScreenId screen)
+        [TestCase(ScreenId.Win)]
+        public void Banner_AlwaysShownOnScreens(ScreenId screen)
         {
             Assert.IsTrue(BannerRules.ShouldShow(On(screen)));
         }
 
-        [TestCase(ScreenId.Splash)]
-        [TestCase(ScreenId.Win)]
-        [TestCase(ScreenId.Shop)]
-        public void Banner_HiddenOnOtherScreens(ScreenId screen)
+        // Для попапов ScreenShown не приходит, но и если бы пришёл, баннер бы остался.
+        [TestCase(ScreenId.Settings)]
+        [TestCase(ScreenId.Gift)]
+        [TestCase(ScreenId.Reward)]
+        [TestCase(ScreenId.Calendar)]
+        [TestCase(ScreenId.Wheel)]
+        public void Banner_ShownWithPopups(ScreenId popup)
         {
-            Assert.IsFalse(BannerRules.ShouldShow(On(screen)));
+            Assert.IsTrue(BannerRules.ShouldShow(On(popup)));
         }
 
         [Test]
-        public void Banner_HiddenOnTutorialLevels()
+        public void Banner_HiddenOnSplash()
         {
-            for (int level = 1; level <= 3; level++)
-                Assert.IsFalse(BannerRules.ShouldShow(On(ScreenId.Game, level)), "level " + level);
-            Assert.IsTrue(BannerRules.ShouldShow(On(ScreenId.Game, 4)));
+            Assert.IsFalse(BannerRules.ShouldShow(On(ScreenId.Splash)));
         }
 
         [Test]
-        public void Banner_HiddenUntilTutorialPassed()
+        public void Banner_HiddenUnderFullscreenAdAndWithNoAds()
         {
-            var context = On(ScreenId.Menu);
-            context.HighestUnlocked = 3;
-            Assert.IsFalse(BannerRules.ShouldShow(context));
-        }
-
-        [Test]
-        public void Banner_HiddenUnderPopupsAdsAndNoAds()
-        {
-            var popup = On(ScreenId.Menu);
-            popup.PopupOpen = true;
             var fullscreen = On(ScreenId.Game);
             fullscreen.FullscreenAdShowing = true;
             var noAds = On(ScreenId.Levels);
             noAds.NoAds = true;
-            Assert.IsFalse(BannerRules.ShouldShow(popup));
             Assert.IsFalse(BannerRules.ShouldShow(fullscreen));
             Assert.IsFalse(BannerRules.ShouldShow(noAds));
         }

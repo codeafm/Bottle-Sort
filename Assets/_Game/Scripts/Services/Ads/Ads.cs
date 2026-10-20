@@ -13,8 +13,6 @@ namespace BottleSort.Services
         static readonly InterstitialPolicy Policy = new InterstitialPolicy();
         static BannerScheduler _banners;
         static ScreenId _screen = ScreenId.Splash;
-        static int _screenLevel;
-        static bool _popupOpen;
         static BannerPlacement _bannerShown;
         static bool _busy;
 
@@ -38,12 +36,11 @@ namespace BottleSort.Services
                     _banners.OnLoaded(placement, loaded);
                 }));
             RewardedAds.Handler = ShowRewarded;
-            RewardedAds.IsReady = () => _service != null && _service.IsRewardedReady;
+            // Пока идёт межстраничная, ролик за награду показать нельзя — кнопка скажет об этом, а не промолчит.
+            RewardedAds.IsReady = () => _service != null && !_busy && _service.IsRewardedReady;
             RewardedAds.Prepare = () => _service?.LoadRewarded();
             ScreenRouter.ScreenShown -= OnScreenShown;
             ScreenRouter.ScreenShown += OnScreenShown;
-            ScreenRouter.PopupsChanged -= OnPopupsChanged;
-            ScreenRouter.PopupsChanged += OnPopupsChanged;
             PlayerData.Changed -= RefreshBanner;
             PlayerData.Changed += RefreshBanner;
             thread.Ticked -= Tick;
@@ -111,8 +108,6 @@ namespace BottleSort.Services
             {
                 AudioListener.pause = false;
                 SetBusy(false);
-                // Ролик за награду не отменяет межстраничную, только сдвигает 30 секунд между ними.
-                Policy.OnRewardedWatched(Time.realtimeSinceStartupAsDouble);
                 done?.Invoke(watched);
             });
         }
@@ -120,8 +115,7 @@ namespace BottleSort.Services
         // Новый уровень, «Следующий» или «Заново»: игровому баннеру — новый запрос.
         public static void LevelStarted(int level)
         {
-            var data = PlayerData.Current;
-            if (_banners != null && BannerRules.AllowedOnLevel(level, data.highestUnlocked, data.noAds))
+            if (_banners != null && BannerRules.AllowedOnLevel(PlayerData.Current.noAds))
                 _banners.LevelStarted();
         }
         public static void LevelCompleted(int level) => Policy.OnWin(level);
@@ -130,23 +124,20 @@ namespace BottleSort.Services
         // Вызывать на «Дальше» после победы. then вызывается всегда: после рекламы или сразу.
         public static void ShowInterstitialIfDue(int level, LevelType type, Action then)
         {
-            double now = Time.realtimeSinceStartupAsDouble;
-            var decision = Policy.DecideAfterWin(level, PlayerData.Current.noAds, now);
-            ShowInterstitial("win", decision, () => Policy.OnShownAfterWin(now), then);
+            var decision = Policy.DecideAfterWin(level, PlayerData.Current.noAds);
+            ShowInterstitial("win", decision, Policy.OnShownAfterWin, then);
         }
 
         // Вызывать, когда после проигрыша игрок выбрал «Заново».
         public static void ShowInterstitialAfterLossIfDue(int level, Action then)
         {
-            double now = Time.realtimeSinceStartupAsDouble;
-            var decision = Policy.DecideAfterLoss(level, PlayerData.Current.noAds, now);
-            ShowInterstitial("loss", decision, () => Policy.OnShownAfterLoss(now), then);
+            var decision = Policy.DecideAfterLoss(level, PlayerData.Current.noAds);
+            ShowInterstitial("loss", decision, Policy.OnShownAfterLoss, then);
         }
 
         static void ShowInterstitial(string after, InterstitialDecision decision, Action shown, Action then)
         {
             string skip = decision == InterstitialDecision.NotDue ? "not due"
-                : decision == InterstitialDecision.Spacing ? "spacing"
                 : decision == InterstitialDecision.Tutorial ? "tutorial"
                 : decision == InterstitialDecision.NoAds ? "no ads"
                 : _service == null ? "no service"
@@ -185,15 +176,6 @@ namespace BottleSort.Services
         static void OnScreenShown(UiScreen screen, bool animated)
         {
             _screen = screen.Id;
-            _screenLevel = screen is GameScreen game ? game.Level : 0;
-            // Новая сцена начинает без попапов, старый роутер уже уничтожен.
-            _popupOpen = screen.Router != null && screen.Router.HasPopup;
-            RefreshBanner();
-        }
-
-        static void OnPopupsChanged(ScreenRouter router)
-        {
-            _popupOpen = router.HasPopup;
             RefreshBanner();
         }
 
@@ -201,18 +183,14 @@ namespace BottleSort.Services
         {
             if (_service == null)
                 return;
-            var data = PlayerData.Current;
             bool wanted = BannerRules.ShouldShow(new BannerContext
             {
                 Screen = _screen,
-                Level = _screenLevel,
-                PopupOpen = _popupOpen,
                 FullscreenAdShowing = _busy,
-                HighestUnlocked = data.highestUnlocked,
-                NoAds = data.noAds
+                NoAds = PlayerData.Current.noAds
             });
             var placement = wanted ? BannerRules.PlacementOf(_screen) : BannerPlacement.None;
-            // Меняем только при настоящем переходе: Меню ↔ Карта — один и тот же баннер меню.
+            // Меняем только при настоящем переходе: Меню ↔ Карта ↔ Магазин — один и тот же баннер меню.
             if (placement == _bannerShown)
                 return;
             _bannerShown = placement;

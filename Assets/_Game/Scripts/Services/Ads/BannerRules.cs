@@ -5,46 +5,33 @@ namespace BottleSort.Services
     public struct BannerContext
     {
         public ScreenId Screen;
-        // Уровень на игровом экране; для остальных экранов не важен.
-        public int Level;
-        public bool PopupOpen;
         public bool FullscreenAdShowing;
-        public int HighestUnlocked;
         public bool NoAds;
     }
 
-    // Баннер Yandex — в меню, на карте уровней и в игре, как во Flutter. Место под него внизу (320×50 над
-    // нижним краем safe area) ui оставил в Main.dc.html и Game.dc.html. Не показываем на обучении,
-    // заставке, победе, поверх попапов и пока идёт полноэкранная реклама.
+    // Решение заказчика: баннер виден всегда — в меню, на карте, в магазине, в игре на любом уровне
+    // (и на обучении), на победе и поверх попапов. Прячем только на заставке, пока идёт полноэкранная
+    // реклама и после покупки «Без рекламы». Место под него внизу (320×50 над safe area) держит ui.
     public static class BannerRules
     {
-        public const int FromLevel = 4;
-
-        public static BannerPlacement PlacementOf(ScreenId screen) =>
-            screen == ScreenId.Game ? BannerPlacement.Game
-            : screen == ScreenId.Menu || screen == ScreenId.Levels ? BannerPlacement.Menu
-            : BannerPlacement.None;
-
-        // Есть ли смысл грузить игровой баннер для этого уровня.
-        public static bool AllowedOnLevel(int level, int highestUnlocked, bool noAds) =>
-            !noAds && level >= FromLevel && highestUnlocked >= FromLevel;
-
-        public static bool ShouldShow(BannerContext context)
+        // Попапы своего экрана не меняют: под ними остаётся баннер той сцены, где они открыты.
+        public static BannerPlacement PlacementOf(ScreenId screen)
         {
-            if (context.NoAds || context.FullscreenAdShowing || context.PopupOpen)
-                return false;
-            if (context.HighestUnlocked < FromLevel)
-                return false;
-            switch (context.Screen)
+            switch (screen)
             {
-                case ScreenId.Menu:
-                case ScreenId.Levels:
-                    return true;
+                case ScreenId.Splash:
+                    return BannerPlacement.None;
                 case ScreenId.Game:
-                    return context.Level >= FromLevel;
+                case ScreenId.Win:
+                    return BannerPlacement.Game;
                 default:
-                    return false;
+                    return BannerPlacement.Menu;
             }
         }
+
+        public static bool AllowedOnLevel(bool noAds) => !noAds;
+
+        public static bool ShouldShow(BannerContext context) =>
+            !context.NoAds && !context.FullscreenAdShowing && PlacementOf(context.Screen) != BannerPlacement.None;
     }
 }
