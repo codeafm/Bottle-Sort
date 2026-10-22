@@ -105,7 +105,7 @@ namespace BottleSort.Editor
         static void SetupPlayerSettings()
         {
             PlayerSettings.companyName = "BottleSort";
-            PlayerSettings.productName = "BottleSort";
+            PlayerSettings.productName = "Bottle Sort";
 
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, BundleId);
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, BundleId);
