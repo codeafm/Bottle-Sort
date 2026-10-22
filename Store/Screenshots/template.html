@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Bottle Sort — скриншот для магазина</title>
+<style>
+  @font-face { font-family: 'Nunito'; font-weight: 900; src: url('../../Assets/_Game/Fonts/Nunito-Black.ttf'); }
+  @font-face { font-family: 'Nunito'; font-weight: 800; src: url('../../Assets/_Game/Fonts/Nunito-ExtraBold.ttf'); }
+
+  :root { --w: 1290px; --h: 2796px; --u: calc(var(--w) / 1290); --a: #5cc8ff; --b: #7a5cff; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: var(--w); height: var(--h); overflow: hidden; background: #0a0f2a; }
+
+  .slide {
+    position: relative; width: var(--w); height: var(--h); overflow: hidden;
+    background:
+      radial-gradient(120% 60% at 50% 105%, color-mix(in srgb, var(--a) 55%, transparent), transparent 60%),
+      radial-gradient(90% 55% at 100% 0%, color-mix(in srgb, var(--b) 60%, transparent), transparent 62%),
+      radial-gradient(80% 50% at 0% 30%, color-mix(in srgb, var(--a) 28%, transparent), transparent 65%),
+      linear-gradient(180deg, #0b1236 0%, #0a0f2a 55%, #070b20 100%);
+    font-family: 'Nunito', sans-serif; color: #fff;
+  }
+
+  /* лучи света из-за телефона */
+  .rays {
+    position: absolute; left: 50%; top: 58%; width: calc(2600 * var(--u)); height: calc(2600 * var(--u));
+    transform: translate(-50%, -50%);
+    background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.07) 0deg 6deg, transparent 6deg 18deg);
+    mask-image: radial-gradient(circle, #000 0%, transparent 62%);
+    animation: none;
+  }
+
+  /* искорки */
+  .spark { position: absolute; border-radius: 50%; background: #fff; box-shadow: 0 0 calc(18 * var(--u)) calc(6 * var(--u)) rgba(255,255,255,0.55); }
+
+  /* капли жидкости с бликом */
+  /* капля: квадрат с одним острым углом, повёрнутый кончиком вверх */
+  .drop {
+    position: absolute; border-radius: 0 50% 50% 50%;
+    background:
+      radial-gradient(circle at 62% 66%, rgba(255,255,255,0.9) 0 7%, transparent 8%),
+      radial-gradient(circle at 70% 72%, color-mix(in srgb, var(--c) 55%, #fff) 0 22%, transparent 48%),
+      var(--c);
+    box-shadow: inset calc(-12 * var(--u)) calc(-12 * var(--u)) calc(24 * var(--u)) rgba(0,0,0,0.25), 0 0 calc(40 * var(--u)) color-mix(in srgb, var(--c) 55%, transparent);
+  }
+
+  .head { position: absolute; left: 0; right: 0; top: calc(150 * var(--u)); text-align: center; z-index: 5; padding: 0 calc(70 * var(--u)); }
+  .badge {
+    display: inline-block; margin-bottom: calc(34 * var(--u)); padding: calc(14 * var(--u)) calc(38 * var(--u));
+    border-radius: 999px; font-weight: 900; font-size: calc(42 * var(--u)); letter-spacing: 0.06em; text-transform: uppercase;
+    color: #1a1033; background: linear-gradient(180deg, #ffe680, #ffb938);
+    box-shadow: 0 calc(10 * var(--u)) calc(30 * var(--u)) rgba(255, 185, 56, 0.45), inset 0 calc(-5 * var(--u)) 0 rgba(0,0,0,0.12);
+  }
+  h1 {
+    font-weight: 900; font-size: calc(148 * var(--u)); line-height: 1.02; letter-spacing: -0.01em;
+    background: linear-gradient(180deg, #ffffff 30%, color-mix(in srgb, var(--a) 45%, #ffffff) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 calc(8 * var(--u)) calc(0 * var(--u)) rgba(10, 8, 40, 0.55)) drop-shadow(0 0 calc(40 * var(--u)) color-mix(in srgb, var(--a) 60%, transparent));
+  }
+  .sub {
+    margin-top: calc(26 * var(--u)); font-weight: 800; font-size: calc(64 * var(--u)); line-height: 1.15;
+    color: rgba(255,255,255,0.86); text-shadow: 0 calc(4 * var(--u)) calc(14 * var(--u)) rgba(0,0,0,0.45);
+  }
+
+  /* телефон */
+  .phone {
+    position: absolute; left: 50%; top: calc(760 * var(--u)); width: calc(1000 * var(--u)); z-index: 4;
+    transform: translateX(-50%) rotate(var(--tilt, 0deg));
+    border-radius: calc(128 * var(--u)); padding: calc(26 * var(--u));
+    background: linear-gradient(145deg, #3a4370, #141a36 40%, #0b0f24);
+    box-shadow:
+      0 0 0 calc(4 * var(--u)) rgba(255,255,255,0.08),
+      0 calc(60 * var(--u)) calc(140 * var(--u)) rgba(0,0,0,0.65),
+      0 0 calc(180 * var(--u)) color-mix(in srgb, var(--a) 45%, transparent);
+  }
+  .screen { position: relative; border-radius: calc(104 * var(--u)); overflow: hidden; background: #000; aspect-ratio: 1290 / 2796; }
+  .screen img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: var(--focus, 50% 50%); }
+  .island {
+    position: absolute; top: calc(30 * var(--u)); left: 50%; transform: translateX(-50%);
+    width: calc(250 * var(--u)); height: calc(72 * var(--u)); border-radius: 999px; background: #05060c; z-index: 2;
+  }
+  /* блик стекла */
+  .screen::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, rgba(255,255,255,0.10) 0%, transparent 28%, transparent 70%, rgba(255,255,255,0.05) 100%);
+  }
+</style>
+</head>
+<body>
+<div class="slide" id="slide">
+  <div class="rays"></div>
+  <div id="fx"></div>
+  <div class="head">
+    <div class="badge" id="badge"></div>
+    <h1 id="title"></h1>
+    <div class="sub" id="sub"></div>
+  </div>
+  <div class="phone" id="phone">
+    <div class="screen"><div class="island"></div><img id="shot" alt=""></div>
+  </div>
+</div>
+<script>
+// Серия скриншотов. shot — экран из source/, a/b — цвета подсветки, tilt — наклон телефона.
+const SLIDES = [
+  { shot: 2, badge: '2000 уровней', title: 'Сортируй<br>цвета', sub: 'расслабься и отдохни', a: '#3fb6ff', b: '#7a5cff', tilt: -3, drops: ['#ff5c7a', '#3fd6a4', '#ffcc33', '#5cc8ff'] },
+  { shot: 3, badge: 'новое', title: 'Спаси<br>котика!', sub: 'особые уровни-спасения', a: '#2fd6c8', b: '#3a7bff', tilt: 3, drops: ['#ff9a3d', '#5cc8ff', '#ff5c7a', '#3fd6a4'] },
+  { shot: 4, badge: 'особые уровни', title: 'Бутылки<br>любых форм', sub: 'колбы, чайники и банки', a: '#a35cff', b: '#ff5ca8', tilt: -3, drops: ['#ffcc33', '#a35cff', '#3fd6a4', '#ff5c7a'] },
+  { shot: 8, badge: '8 слоёв', title: 'Большая<br>колба', sub: 'вмещает целых 8 слоёв', a: '#ffb02e', b: '#ff6a3d', tilt: 3, drops: ['#ff5c7a', '#3fd6a4', '#5cc8ff', '#ffcc33'] },
+  { shot: 5, badge: '40 глав', title: '2000<br>уровней', sub: 'от лёгких до хитрых', a: '#3fd6a4', b: '#3a7bff', tilt: -3, drops: ['#ffcc33', '#ff5c7a', '#5cc8ff', '#a35cff'] },
+  { shot: 7, badge: '3 звезды', title: 'Звёзды<br>и награды', sub: 'за каждый пройденный уровень', a: '#ffcc33', b: '#ff8a3d', tilt: 3, drops: ['#ff5c7a', '#3fd6a4', '#5cc8ff', '#ffcc33'] },
+  { shot: 6, badge: 'каждый день', title: 'Колесо<br>удачи', sub: 'бонусы и подарки', a: '#ff5ca8', b: '#7a5cff', tilt: -3, drops: ['#ffcc33', '#3fd6a4', '#5cc8ff', '#ff5c7a'] },
+  { shot: 1, badge: 'бесплатно', title: 'Играй<br>прямо сейчас', sub: 'просто нажми «Играть»', a: '#5cc8ff', b: '#3fd6a4', tilt: 0, drops: ['#ff5c7a', '#ffcc33', '#a35cff', '#3fd6a4'] },
+]
+
+const q = new URLSearchParams(location.search)
+const s = SLIDES[(Number(q.get('slide')) || 1) - 1]
+const W = Number(q.get('w')) || 1290
+const H = Number(q.get('h')) || 2796
+const root = document.documentElement.style
+root.setProperty('--w', W + 'px')
+root.setProperty('--h', H + 'px')
+root.setProperty('--a', s.a)
+root.setProperty('--b', s.b)
+document.getElementById('phone').style.setProperty('--tilt', s.tilt + 'deg')
+document.getElementById('badge').textContent = s.badge
+document.getElementById('title').innerHTML = s.title
+document.getElementById('sub').textContent = s.sub
+document.getElementById('shot').src = 'source/appstore_' + s.shot + '.png'
+
+// Короткий кадр (RuStore 9:16): телефон меньше и ниже уходит за край — заголовок остаётся крупным.
+const u = W / 1290
+if (H / W < 2) {
+  const phone = document.getElementById('phone')
+  phone.style.width = 860 * u + 'px'
+  phone.style.top = 700 * u + 'px'
+  document.querySelector('.head').style.top = 110 * u + 'px'
+}
+
+// Капли и искорки: одинаковые для одного слайда (без случайности между запусками).
+let seed = (Number(q.get('slide')) || 1) * 9301
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+const fx = document.getElementById('fx')
+const spots = [[0.07, 0.34, 92], [0.92, 0.29, 74], [0.05, 0.6, 64], [0.94, 0.56, 100], [0.12, 0.88, 54], [0.88, 0.86, 66]]
+spots.forEach(([x, y, size], i) => {
+  const d = document.createElement('div')
+  d.className = 'drop'
+  const px = size * u
+  d.style.cssText = `left:${x * W - px / 2}px;top:${y * H}px;width:${px}px;height:${px}px;--c:${s.drops[i % s.drops.length]};transform:rotate(${45 + (rnd() - 0.5) * 40}deg);opacity:${0.88 + rnd() * 0.12}`
+  fx.appendChild(d)
+})
+for (let i = 0; i < 26; i++) {
+  const d = document.createElement('div')
+  d.className = 'spark'
+  const r = (2 + rnd() * 5) * u
+  d.style.cssText = `left:${rnd() * W}px;top:${rnd() * H}px;width:${r}px;height:${r}px;opacity:${0.35 + rnd() * 0.6}`
+  fx.appendChild(d)
+}
+document.fonts.ready.then(() => document.body.setAttribute('data-ready', '1'))
+</script>
+</body>
+</html>
