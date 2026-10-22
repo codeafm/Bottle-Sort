@@ -64,3 +64,6 @@ Assets/Firebase/Plugins/x86_64/FirebaseCppApp-*.so*
 
 # Временные файлы Unity
 .utmp/
+
+# Ключ подписи Android и пароли к нему — только на этом компьютере, не в git
+/Bottle_Sort_key/
