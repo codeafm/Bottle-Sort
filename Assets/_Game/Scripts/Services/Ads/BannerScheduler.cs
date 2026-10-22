@@ -9,14 +9,12 @@ namespace BottleSort.Services
         Game
     }
 
-    // Когда просить у Yandex новый баннер. Загруженный баннер SDK сам обновляет раз в 60 секунд,
-    // а РСЯ не разрешает обновлять чаще раза в 30 секунд, поэтому свой запрос уходит только при первом
-    // показе плейсмента и после отказа («рекламы нет» или ошибка). Повтор — через 60 секунд, пока баннер
-    // на экране и игра на переднем плане: тот же ритм, что у самого SDK. Запрос без рекламы CPM не портит
-    // (CPMV считается по видимым показам), а без повтора место под баннер так и стоит пустым.
+    // Когда просить у Yandex новый баннер. Фиксированный 320×50 SDK сам не обновляет (на телефоне 22.10 одна
+    // реклама висела 7 минут), поэтому меняем её сами: раз в 60 секунд, пока баннер на экране и игра на переднем
+    // плане. После отказа («рекламы нет» или ошибка) — тоже через 60 секунд. РСЯ разрешает не чаще раза в 30 с.
     public sealed class BannerScheduler
     {
-        public const float RetryAfter = 60f;
+        public const float RefreshEvery = 60f;
         // После сворачивания первый кадр приходит с огромным deltaTime — его не считаем.
         const float MaxStep = 0.5f;
 
@@ -25,8 +23,7 @@ namespace BottleSort.Services
             public bool Requested;
             public bool Loading;
             public bool Loaded;
-            public bool Failed;
-            public float WaitedForRetry;
+            public float ShownSinceRequest;
         }
 
         readonly Action<BannerPlacement> _load;
@@ -57,23 +54,23 @@ namespace BottleSort.Services
         public void Tick(float deltaTime, bool active)
         {
             var slot = SlotOf(Shown);
-            if (slot == null || slot.Loading || !slot.Failed || !active || deltaTime <= 0f)
+            if (slot == null || slot.Loading || !active || deltaTime <= 0f)
                 return;
-            slot.WaitedForRetry += Math.Min(deltaTime, MaxStep);
-            if (slot.WaitedForRetry >= RetryAfter)
+            slot.ShownSinceRequest += Math.Min(deltaTime, MaxStep);
+            if (slot.ShownSinceRequest >= RefreshEvery)
                 Request(Shown, slot);
         }
 
+        // Не загрузилось — на экране остаётся прежняя реклама, следующая попытка через минуту показа.
         public void OnLoaded(BannerPlacement placement, bool loaded)
         {
             var slot = SlotOf(placement);
             if (slot == null)
                 return;
             slot.Loading = false;
-            slot.WaitedForRetry = 0f;
+            slot.ShownSinceRequest = 0f;
             if (loaded)
                 slot.Loaded = true;
-            slot.Failed = !loaded;
         }
 
         void Request(BannerPlacement placement, Slot slot)
@@ -81,7 +78,7 @@ namespace BottleSort.Services
             if (slot.Loading)
                 return;
             slot.Loading = true;
-            slot.WaitedForRetry = 0f;
+            slot.ShownSinceRequest = 0f;
             _load(placement);
         }
 

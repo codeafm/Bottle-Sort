@@ -36,14 +36,35 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void LoadedBanner_IsNeverReloadedByUs()
+        public void LoadedBanner_RefreshesEveryMinuteOnScreen()
         {
-            // Рекламу в загруженном баннере раз в 60 секунд меняет сам SDK — наш запрос был бы лишним.
+            // Фиксированный баннер SDK сам не обновляет — новую рекламу раз в минуту просим мы.
             _banners.Show(BannerPlacement.Menu);
             _banners.OnLoaded(BannerPlacement.Menu, true);
-            Tick(3600f);
-            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu));
+            Tick(59f);
+            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu), "раньше минуты — нет: РСЯ разрешает не чаще раза в 30 с");
+            Tick(1.5f);
+            Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu));
+            _banners.OnLoaded(BannerPlacement.Menu, true);
+            Tick(60.5f);
+            Assert.AreEqual(3, LoadsOf(BannerPlacement.Menu));
             Assert.IsTrue(_banners.IsLoaded(BannerPlacement.Menu));
+        }
+
+        [Test]
+        public void Refresh_PausedDuringFullscreenAdAndInBackground()
+        {
+            _banners.Show(BannerPlacement.Menu);
+            _banners.OnLoaded(BannerPlacement.Menu, true);
+            Tick(30f);
+            _banners.Show(BannerPlacement.None);
+            Tick(600f);
+            _banners.Show(BannerPlacement.Menu);
+            Tick(600f, active: false);
+            Tick(29f);
+            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu), "считается только минута, когда баннер реально на экране");
+            Tick(1.5f);
+            Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu));
         }
 
         [Test]
@@ -81,7 +102,7 @@ namespace BottleSort.Tests
         [Test]
         public void NoAds_RetryEveryMinuteWhileVisible()
         {
-            // Отказ «рекламы нет» — обычное дело, пауза не растёт: SDK сам обновляет баннер так же раз в минуту.
+            // Отказ «рекламы нет» — обычное дело, пауза не растёт: тот же ритм, что у обновления, раз в минуту.
             _banners.Show(BannerPlacement.Menu);
             for (int i = 1; i <= 5; i++)
             {
@@ -94,14 +115,17 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void SuccessResetsThePause()
+        public void MinuteCountsFromLastAnswer()
         {
             _banners.Show(BannerPlacement.Menu);
             _banners.OnLoaded(BannerPlacement.Menu, false);
             Tick(61f);
+            Tick(20f);
             _banners.OnLoaded(BannerPlacement.Menu, true);
-            Tick(3600f);
-            Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu), "после удачной загрузки своих повторов нет, обновляет SDK");
+            Tick(59f);
+            Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu), "пока грузилось, минута не шла — считаем от ответа SDK");
+            Tick(1.5f);
+            Assert.AreEqual(3, LoadsOf(BannerPlacement.Menu));
         }
 
         [Test]
