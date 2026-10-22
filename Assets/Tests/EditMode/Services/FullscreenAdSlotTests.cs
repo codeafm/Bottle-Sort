@@ -51,7 +51,7 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void AfterShowOrFailure_LoadsAgain()
+        public void AfterShow_LoadsAgainRightAway()
         {
             var slot = new FullscreenAdSlot();
             slot.OnLoadStarted();
@@ -59,10 +59,52 @@ namespace BottleSort.Tests
             slot.OnTaken();
             Assert.IsTrue(slot.NeedsLoad(Minute, out bool stale));
             Assert.IsFalse(stale);
+        }
 
+        [Test]
+        public void AfterFailure_WaitsThirtySeconds()
+        {
+            // Ads проверяет слот раз в 10 секунд; без паузы пустые запросы шли бы шесть раз в минуту.
+            var slot = new FullscreenAdSlot();
             slot.OnLoadStarted();
-            slot.OnFailed();
-            Assert.IsTrue(slot.NeedsLoad(Minute, out _));
+            slot.OnFailed(100);
+            Assert.IsFalse(slot.NeedsLoad(110, out _));
+            Assert.IsFalse(slot.NeedsLoad(129, out _));
+            Assert.IsTrue(slot.NeedsLoad(130, out _));
+        }
+
+        [Test]
+        public void RepeatedFailures_DoubleThePauseUpToFiveMinutes()
+        {
+            Assert.AreEqual(30, FullscreenAdSlot.RetryDelay(1));
+            Assert.AreEqual(60, FullscreenAdSlot.RetryDelay(2));
+            Assert.AreEqual(120, FullscreenAdSlot.RetryDelay(3));
+            Assert.AreEqual(300, FullscreenAdSlot.RetryDelay(10));
+
+            var slot = new FullscreenAdSlot();
+            slot.OnLoadStarted();
+            slot.OnFailed(0);
+            slot.OnLoadStarted();
+            slot.OnFailed(30);
+            Assert.IsFalse(slot.NeedsLoad(89, out _));
+            Assert.IsTrue(slot.NeedsLoad(90, out _));
+        }
+
+        [Test]
+        public void SuccessResetsThePause()
+        {
+            var slot = new FullscreenAdSlot();
+            slot.OnLoadStarted();
+            slot.OnFailed(0);
+            slot.OnLoadStarted();
+            slot.OnFailed(30);
+            slot.OnLoadStarted();
+            slot.OnLoaded(100);
+            slot.OnTaken();
+            Assert.IsTrue(slot.NeedsLoad(101, out _), "после показа новый ролик грузится сразу");
+            slot.OnLoadStarted();
+            slot.OnFailed(101);
+            Assert.IsTrue(slot.NeedsLoad(131, out _), "счёт ошибок начался заново: снова 30 с");
         }
     }
 }

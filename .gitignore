@@ -61,3 +61,6 @@ desktop.ini
 Assets/StreamingAssets/google-services-desktop.json*
 Assets/Firebase/Plugins/x86_64/FirebaseCppApp-*.bundle*
 Assets/Firebase/Plugins/x86_64/FirebaseCppApp-*.so*
+
+# Временные файлы Unity
+.utmp/

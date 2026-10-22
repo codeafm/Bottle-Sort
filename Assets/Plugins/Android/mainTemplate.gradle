@@ -7,14 +7,18 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 // Android Resolver Dependencies Start
     implementation 'androidx.lifecycle:lifecycle-process:2.4.1' // Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:12
+    implementation 'androidx.media3:media3-exoplayer:1.8.0' // Assets/YandexMobileAds/Editor/MobileadsMyTargetMediationDependencies.xml:8
+    implementation 'androidx.media3:media3-exoplayer-hls:1.8.0' // Assets/YandexMobileAds/Editor/MobileadsMyTargetMediationDependencies.xml:10
     implementation 'com.google.android.gms:play-services-base:18.11.0' // Assets/Firebase/Editor/AppDependencies.xml:16
     implementation 'com.google.firebase:firebase-analytics:24.0.0' // Assets/Firebase/Editor/MessagingDependencies.xml:14
+    implementation 'com.google.firebase:firebase-analytics-unity:14.0.0' // Assets/Firebase/Editor/AnalyticsDependencies.xml:17
     implementation 'com.google.firebase:firebase-app-unity:14.0.0' // Assets/Firebase/Editor/AppDependencies.xml:21
     implementation 'com.google.firebase:firebase-common:23.0.0' // Assets/Firebase/Editor/AppDependencies.xml:12
     implementation 'com.google.firebase:firebase-iid:21.1.0' // Assets/Firebase/Editor/MessagingDependencies.xml:16
     implementation 'com.google.firebase:firebase-messaging:26.0.0' // Assets/Firebase/Editor/MessagingDependencies.xml:12
     implementation 'com.google.firebase:firebase-messaging-unity:14.0.0' // Assets/Firebase/Editor/MessagingDependencies.xml:23
     implementation 'com.google.flatbuffers:flatbuffers-java:1.12.0' // Assets/Firebase/Editor/MessagingDependencies.xml:18
+    implementation 'com.yandex.ads.mediation:mobileads-mytarget:5.51.2.2' // Assets/YandexMobileAds/Editor/MobileadsMyTargetMediationDependencies.xml:4
     implementation 'com.yandex.ads.mediation:mobileads-unityads:4.20.0.1' // Assets/YandexMobileAds/Editor/MobileadsUnityAdsMediationDependencies.xml:7
     implementation 'com.yandex.android:mobileads:8.6.0' // Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:7
     implementation 'io.appmetrica.analytics:analytics:8.0.0' // Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:17
@@ -25,7 +29,6 @@ dependencies {
 android {
   packaging {
       exclude ('/lib/armeabi/*' + '*')
-      exclude ('/lib/armeabi-v7a/*' + '*')
       exclude ('/lib/mips/*' + '*')
       exclude ('/lib/mips64/*' + '*')
       exclude ('/lib/x86/*' + '*')

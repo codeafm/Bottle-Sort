@@ -1,6 +1,5 @@
 using System;
 using BottleSort.Services;
-using Firebase;
 using Firebase.Extensions;
 using Firebase.Messaging;
 using UnityEngine;
@@ -19,12 +18,11 @@ namespace BottleSort.Integrations
 
         public void Start(Action<bool> ready)
         {
-            FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
+            FirebaseReady.Then((ok, problem) =>
             {
-                bool ok = task.IsCompleted && !task.IsFaulted && task.Result == DependencyStatus.Available;
                 if (!ok)
                 {
-                    Debug.LogWarning($"[Push] Firebase is not available: {(task.IsFaulted ? task.Exception?.Message : task.Result.ToString())}");
+                    Debug.LogWarning("[Push] Firebase is not available: " + problem);
                     ready?.Invoke(false);
                     return;
                 }

@@ -9,10 +9,10 @@ namespace BottleSort.Integrations
     // Yandex Mobile Ads 8.6 (Assets/YandexMobileAds). Плагин без asmdef и живёт в Assembly-CSharp,
     // поэтому эта папка тоже вне Game.Runtime и подключается к Ads через DeviceServiceFactory.
     // Unity Ads показывается через адаптер медиации Yandex, отдельного кода для него нет.
-    // Как во Flutter (ad_cache.dart): объявление живёт 30 минут (FullscreenAdSlot), после ошибки повтор через 30 с.
+    // Как во Flutter (ad_cache.dart): объявление живёт 30 минут. Когда грузить и когда повторять после
+    // ошибки, решает FullscreenAdSlot, а звать Load* раз в 10 секунд — Ads; своих таймеров здесь нет.
     public sealed class YandexAdsService : IAdsService
     {
-        const float RetrySeconds = 30f;
         const int BannerWidth = 320;
         const int BannerHeight = 50;
 
@@ -50,12 +50,11 @@ namespace BottleSort.Integrations
         public bool IsInterstitialReady => _interstitial != null && _interstitialSlot.IsFresh(Now);
         public bool IsRewardedReady => _rewarded != null && _rewardedSlot.IsFresh(Now);
 
+        // Первые загрузки запускает Ads: межстраничную — только если её вообще могут показать.
         public void Initialize()
         {
             _interstitialLoader = new InterstitialAdLoader();
             _rewardedLoader = new RewardedAdLoader();
-            LoadInterstitial();
-            LoadRewarded();
         }
 
         static double Now => (DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
@@ -83,9 +82,8 @@ namespace BottleSort.Integrations
                 },
                 error =>
                 {
+                    _interstitialSlot.OnFailed(Now);
                     Debug.Log($"[Ads] Interstitial failed to load: {error.Message}");
-                    _interstitialSlot.OnFailed();
-                    _thread.After(RetrySeconds, LoadInterstitial);
                 });
         }
 
@@ -110,9 +108,8 @@ namespace BottleSort.Integrations
                 },
                 error =>
                 {
+                    _rewardedSlot.OnFailed(Now);
                     Debug.Log($"[Ads] Rewarded failed to load: {error.Message}");
-                    _rewardedSlot.OnFailed();
-                    _thread.After(RetrySeconds, LoadRewarded);
                 });
         }
 
@@ -140,6 +137,7 @@ namespace BottleSort.Integrations
             }
             ad.OnAdDismissed += (sender, args) => _thread.Post(Finish);
             ad.OnAdFailedToShow += (sender, args) => _thread.Post(Finish);
+            ad.OnAdImpression += (sender, data) => _thread.Post(() => Ads.ReportImpression("interstitial", data?.rawData));
             ad.Show();
         }
 
@@ -171,6 +169,7 @@ namespace BottleSort.Integrations
             // OnRewarded может прийти чуть позже OnAdDismissed, поэтому итог подводим через кадр.
             ad.OnAdDismissed += (sender, args) => _thread.Post(() => _thread.After(0.1f, Finish));
             ad.OnAdFailedToShow += (sender, args) => _thread.Post(Finish);
+            ad.OnAdImpression += (sender, data) => _thread.Post(() => Ads.ReportImpression("rewarded", data?.rawData));
             ad.Show();
         }
 
@@ -186,8 +185,10 @@ namespace BottleSort.Integrations
             ApplyBannerVisibility();
         }
 
-        // Новый баннер грузится скрытым и встаёт на место старого только после загрузки:
-        // нет пустого места между баннерами, а при ошибке остаётся старый.
+        // Баннер плейсмента создаётся один раз, дальше SDK сам меняет в нём рекламу раз в 60 секунд.
+        // Новый объект нужен только после ошибки (BannerScheduler): он грузится скрытым и встаёт
+        // на место старого после загрузки, так что пустого места нет. Повторные OnAdLoaded того же
+        // баннера при автообновлении сюда уже не доходят — проверка slot.Next != next их отсекает.
         public void LoadBanner(BannerPlacement placement, Action<bool> done)
         {
             var slot = SlotOf(placement);
@@ -236,12 +237,13 @@ namespace BottleSort.Integrations
 
         Banner CreateBanner(BannerPlacement placement, Action loaded, Action failed)
         {
-            // Не выше 50 при ширине 320, как место под баннер в макете меню и игры. Yandex прижимает его
-            // к низу safe area, а кнопки ui начинаются на 71 pt выше неё, так что баннер их не закрывает.
-            // Fixed не годится: плагин 8.6.0 зовёт на Android BannerAdSize.fixedSize, а в SDK 8.6.0 метод
-            // уже называется fixed, и баннер падает с NoSuchMethodError. Inline в SDK есть под тем же именем.
-            var banner = new Banner(BannerAdSize.Inline(BannerWidth, BannerHeight), AdPosition.BottomCenter);
+            // Классический 320×50: под него больше всего рекламы. У Last Tower фиксированный баннер даёт
+            // fill rate 94 %, у адаптивного Inline во Flutter-версии Bottle Sort было 35 %. Ровно занимает
+            // место под баннер в макете: Yandex прижимает его к низу safe area, кнопки ui на 71 pt выше.
+            // Плагин 8.6.0 звал на Android fixedSize вместо fixed — исправлено в BannerAdSizeUtils.
+            var banner = new Banner(BannerAdSize.Fixed(BannerWidth, BannerHeight), AdPosition.BottomCenter);
             banner.Hide();
+            banner.OnImpression += (sender, data) => _thread.Post(() => Ads.ReportImpression("banner", data?.rawData));
             banner.OnAdLoaded += (sender, args) => _thread.Post(loaded);
             banner.OnAdFailedToLoad += (sender, args) => _thread.Post(() =>
             {

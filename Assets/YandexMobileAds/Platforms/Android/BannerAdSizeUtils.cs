@@ -15,7 +15,8 @@ namespace YandexMobileAds.Platforms.Android
     internal class BannerAdSizeUtils
     {
         public const string AdSizeClassName = "com.yandex.mobile.ads.banner.BannerAdSize";
-        public const string FixedSizeMethodName = "fixedSize";
+        // В SDK 8.6.0 метод называется fixed, а плагин звал fixedSize и падал с NoSuchMethodError (как в Last Tower).
+        public const string FixedSizeMethodName = "fixed";
         public const string InlineSizeMethodName = "inline";
         public const string StickySizeMethodName = "sticky";
 

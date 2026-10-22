@@ -132,7 +132,7 @@ namespace BottleSort.UI
             var icon = popup.CoinIcon.Find("Icon");
             if (!AdLoadingHint.Check(toast))
                 return;
-            RewardedAds.Show(watched =>
+            RewardedAds.Show("Монеты за рекламу", watched =>
             {
                 var data = PlayerData.Current;
                 if (!watched)
@@ -189,7 +189,7 @@ namespace BottleSort.UI
         {
             if (!AdLoadingHint.Check(toast))
                 return;
-            RewardedAds.Show(watched =>
+            RewardedAds.Show("Подарок ×2", watched =>
             {
                 if (watched)
                     ClaimGift(2);

@@ -76,7 +76,6 @@ namespace BottleSort.UI
         {
             ShowResult();
 
-            Ads.LevelCompleted(_result.Level);
             PlayStarSounds();
             ScheduleChests();
 
@@ -171,7 +170,7 @@ namespace BottleSort.UI
             if (!AdLoadingHint.Check(doubleButton))
                 return;
             doubleButton.interactable = false;
-            RewardedAds.Show(watched =>
+            RewardedAds.Show("Награда за победу ×2", watched =>
             {
                 if (!watched)
                 {
@@ -180,6 +179,7 @@ namespace BottleSort.UI
                 }
                 int multiplier = EconomyRules.RewardedWinMultiplier(LevelPlan.TypeOf(_result.Level));
                 PlayerData.Current.AddCoins(_result.Reward * (multiplier - 1));
+                Analytics.CoinsEarned(_result.Reward * (multiplier - 1), "Награда за победу ×2");
                 reward.text = "+" + Loc.Number(_result.Reward * multiplier);
                 UiFeedback.Play(UiSound.Coin);
                 doubleButton.gameObject.SetActive(false);

@@ -53,7 +53,7 @@ namespace BottleSort.Services
             data.coinAdCount = data.coinAdDate == today ? data.coinAdCount + 1 : 1;
             data.coinAdDate = today;
             data.coinAdLastUnix = new DateTimeOffset(now.ToUniversalTime()).ToUnixTimeSeconds();
-            Economy.Grant(data, new RewardBundle(Coins));
+            Economy.Grant(data, new RewardBundle(Coins), "Монеты за рекламу");
             return true;
         }
 

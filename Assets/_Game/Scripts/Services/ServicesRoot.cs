@@ -27,6 +27,7 @@ namespace BottleSort.Services
             Thread = gameObject.AddComponent<MainThread>();
             Audio = gameObject.AddComponent<AudioService>();
             gameObject.AddComponent<GameFeedback>().Bind(Audio);
+            Analytics.Initialize(Thread);
             Ads.Initialize(Thread);
             NotificationService.Initialize();
             PushService.Initialize(Thread);

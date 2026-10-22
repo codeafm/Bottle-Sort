@@ -19,7 +19,7 @@ dependencyResolutionManagement {
 // Android Resolver Repos Start
         def unityProjectPath = $/file:///**DIR_UNITYPROJECT**/$.replace("\\", "/")
         maven {
-            url (unityProjectPath + "/Assets/GeneratedLocalRepo/Firebase/m2repository") // Assets/Firebase/Editor/AppDependencies.xml:21, Assets/Firebase/Editor/MessagingDependencies.xml:23
+            url (unityProjectPath + "/Assets/GeneratedLocalRepo/Firebase/m2repository") // Assets/Firebase/Editor/AnalyticsDependencies.xml:17, Assets/Firebase/Editor/AppDependencies.xml:21, Assets/Firebase/Editor/MessagingDependencies.xml:23
         }
         maven {
             url "https://maven.google.com/" // Assets/YandexMobileAds/Editor/MobileadsUnityAdsMediationDependencies.xml:7, Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:7, Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:12, Assets/YandexMobileAds/Editor/YandexMobileadsDependencies.xml:17

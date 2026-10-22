@@ -74,12 +74,13 @@ namespace BottleSort.UI
     // Награда за рекламу. Handler подменяет Services.Ads при запуске; по умолчанию сразу «просмотрено».
     public static class RewardedAds
     {
-        public static Action<Action<bool>> Handler = done => done(true);
+        public static Action<string, Action<bool>> Handler = (placement, done) => done(true);
         // Загружен ли ролик прямо сейчас; если нет — Prepare запускает загрузку заново.
         public static Func<bool> IsReady = () => true;
         public static Action Prepare = () => { };
 
-        public static void Show(Action<bool> done) => Handler(done);
+        // placement — что игрок получит за ролик, по-русски: под этим именем кнопка видна в аналитике.
+        public static void Show(string placement, Action<bool> done) => Handler(placement, done);
 
         // Для кнопок, которые не должны молча ждать: ролик готов — true, иначе догружаем и false.
         public static bool EnsureReady()

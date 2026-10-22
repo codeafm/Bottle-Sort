@@ -170,7 +170,7 @@ namespace BottleSort.UI
             if (!AdLoadingHint.Check(adButton))
                 return;
             adButton.interactable = false;
-            RewardedAds.Show(watched =>
+            RewardedAds.Show("Колесо: попытка за рекламу", watched =>
             {
                 adButton.interactable = true;
                 if (watched)

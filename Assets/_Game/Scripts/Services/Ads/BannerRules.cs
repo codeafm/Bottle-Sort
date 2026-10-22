@@ -29,7 +29,10 @@ namespace BottleSort.Services
             }
         }
 
-        public static bool AllowedOnLevel(bool noAds) => !noAds;
+        // Если у игры нет своего блока в кабинете, меню и игра показывают один и тот же баннер:
+        // один объект и один поток запросов вместо двух, второй не обновляется где-то в фоне.
+        public static BannerPlacement SharedWhenSameUnit(BannerPlacement placement, bool sameUnit) =>
+            sameUnit && placement == BannerPlacement.Game ? BannerPlacement.Menu : placement;
 
         public static bool ShouldShow(BannerContext context) =>
             !context.NoAds && !context.FullscreenAdShowing && PlacementOf(context.Screen) != BannerPlacement.None;

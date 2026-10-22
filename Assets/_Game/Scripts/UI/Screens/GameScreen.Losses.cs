@@ -18,27 +18,30 @@ namespace BottleSort.UI
 
         bool _lossCounted;
         int _deadEndCheck;
+        // Какая по счёту попытка этого уровня: 1 — первый заход, дальше «Заново».
+        int _attempt;
 
-        // Новый уровень или «Заново»: сброс проигрыша и новый запрос игрового баннера.
-        void OnAttemptStarted()
+        // Новый уровень или «Заново»: сброс проигрыша. Баннер тут не перезапрашиваем — его обновляет SDK.
+        void OnAttemptStarted(bool newLevel)
         {
             _lossCounted = false;
             _deadEndCheck++;
+            _attempt = newLevel ? 1 : _attempt + 1;
             Tweens.Kill(this, "loss");
-            Ads.LevelStarted(_level);
+            Analytics.LevelStarted(_level, LevelPlan.TypeOf(_level), _attempt);
         }
 
-        void CountLoss()
+        void CountLoss(string reason)
         {
             if (_lossCounted || _session.IsTutorial)
                 return;
             _lossCounted = true;
-            Ads.LevelLost(_level);
+            Analytics.LevelLost(_level, reason, _session.MovesMade);
         }
 
         void OnOutOfMoves()
         {
-            CountLoss();
+            CountLoss("Кончились ходы");
             Tweens.Delay(this, "loss", LossCardDelay, ShowOutOfMoves);
         }
 
@@ -73,7 +76,7 @@ namespace BottleSort.UI
                 return;
             }
             var session = _session;
-            RewardedAds.Show(watched =>
+            RewardedAds.Show("+5 ходов после проигрыша", watched =>
             {
                 if (session != _session || !IsOpen)
                     return;
@@ -112,7 +115,7 @@ namespace BottleSort.UI
             if (!deadEnd || check != _deadEndCheck || session != _session || !IsOpen || _finished
                 || session.MovesMade != moves || session.State.BottleCount != bottles)
                 return;
-            CountLoss();
+            CountLoss("Тупик");
             Tweens.Delay(this, "loss", LossCardDelay, () => ShowDeadEnd(moves));
         }
 
@@ -148,7 +151,7 @@ namespace BottleSort.UI
                 return;
             }
             var session = _session;
-            RewardedAds.Show(watched =>
+            RewardedAds.Show("+бутылка в тупике", watched =>
             {
                 if (session != _session || !IsOpen)
                     return;

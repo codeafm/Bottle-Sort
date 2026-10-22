@@ -9,15 +9,14 @@ namespace BottleSort.Services
         Game
     }
 
-    // Когда грузить новый баннер. У меню (с картой уровней) и у игры свой баннер со своими запросами.
-    // Меню грузит баннер при первом показе, игра — на старте каждого уровня, включая «Следующий» и «Заново»
-    // (так не важно, что раньше: экран или уровень). Оба обновляются раз в 30 секунд, пока их видно.
-    // Пока баннер грузится, второй запрос в тот же слот не уходит: запрос по уровню ждёт,
-    // а запрос по таймеру просто не начинается. Старый баннер висит, пока новый не загрузился.
+    // Когда просить у Yandex новый баннер. Загруженный баннер SDK сам обновляет раз в 60 секунд,
+    // а РСЯ не разрешает обновлять чаще раза в 30 секунд, поэтому свой запрос уходит только при первом
+    // показе плейсмента и после отказа («рекламы нет» или ошибка). Повтор — через 60 секунд, пока баннер
+    // на экране и игра на переднем плане: тот же ритм, что у самого SDK. Запрос без рекламы CPM не портит
+    // (CPMV считается по видимым показам), а без повтора место под баннер так и стоит пустым.
     public sealed class BannerScheduler
     {
-        public const float Interval = 30f;
-        public const float RetryAfter = 10f;
+        public const float RetryAfter = 60f;
         // После сворачивания первый кадр приходит с огромным deltaTime — его не считаем.
         const float MaxStep = 0.5f;
 
@@ -25,8 +24,9 @@ namespace BottleSort.Services
         {
             public bool Requested;
             public bool Loading;
-            public bool Pending;
-            public float VisibleTime;
+            public bool Loaded;
+            public bool Failed;
+            public float WaitedForRetry;
         }
 
         readonly Action<BannerPlacement> _load;
@@ -41,32 +41,26 @@ namespace BottleSort.Services
         public BannerPlacement Shown { get; private set; }
 
         public bool IsLoading(BannerPlacement placement) => SlotOf(placement)?.Loading ?? false;
-        public float VisibleTime(BannerPlacement placement) => SlotOf(placement)?.VisibleTime ?? 0f;
+        public bool IsLoaded(BannerPlacement placement) => SlotOf(placement)?.Loaded ?? false;
 
         public void Show(BannerPlacement placement)
         {
             Shown = placement;
-            if (placement != BannerPlacement.Menu || _menu.Requested)
+            var slot = SlotOf(placement);
+            if (slot == null || slot.Requested)
                 return;
-            _menu.Requested = true;
-            Request(BannerPlacement.Menu, _menu);
-        }
-
-        public void LevelStarted()
-        {
-            _game.Requested = true;
-            _game.VisibleTime = 0f;
-            Request(BannerPlacement.Game, _game);
+            slot.Requested = true;
+            Request(placement, slot);
         }
 
         // active — приложение на переднем плане и нет полноэкранной рекламы.
         public void Tick(float deltaTime, bool active)
         {
             var slot = SlotOf(Shown);
-            if (slot == null || !slot.Requested || !active || slot.Loading || deltaTime <= 0f)
+            if (slot == null || slot.Loading || !slot.Failed || !active || deltaTime <= 0f)
                 return;
-            slot.VisibleTime += Math.Min(deltaTime, MaxStep);
-            if (slot.VisibleTime >= Interval)
+            slot.WaitedForRetry += Math.Min(deltaTime, MaxStep);
+            if (slot.WaitedForRetry >= RetryAfter)
                 Request(Shown, slot);
         }
 
@@ -76,22 +70,18 @@ namespace BottleSort.Services
             if (slot == null)
                 return;
             slot.Loading = false;
-            slot.VisibleTime = loaded ? 0f : Interval - RetryAfter;
-            if (!slot.Pending)
-                return;
-            slot.Pending = false;
-            Request(placement, slot);
+            slot.WaitedForRetry = 0f;
+            if (loaded)
+                slot.Loaded = true;
+            slot.Failed = !loaded;
         }
 
         void Request(BannerPlacement placement, Slot slot)
         {
             if (slot.Loading)
-            {
-                slot.Pending = true;
                 return;
-            }
             slot.Loading = true;
-            slot.VisibleTime = 0f;
+            slot.WaitedForRetry = 0f;
             _load(placement);
         }
 

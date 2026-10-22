@@ -26,7 +26,7 @@ namespace BottleSort.Tests
         int LoadsOf(BannerPlacement placement) => _loads.FindAll(p => p == placement).Count;
 
         [Test]
-        public void Menu_LoadsOnceWhenFirstShown()
+        public void LoadsOnceWhenFirstShown()
         {
             _banners.Show(BannerPlacement.Menu);
             _banners.OnLoaded(BannerPlacement.Menu, true);
@@ -36,108 +36,86 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void Game_SeparateRequestOnEveryLevel()
+        public void LoadedBanner_IsNeverReloadedByUs()
         {
+            // Рекламу в загруженном баннере раз в 60 секунд меняет сам SDK — наш запрос был бы лишним.
             _banners.Show(BannerPlacement.Menu);
             _banners.OnLoaded(BannerPlacement.Menu, true);
-
-            _banners.Show(BannerPlacement.Game);
-            Assert.AreEqual(0, LoadsOf(BannerPlacement.Game), "игровой баннер ждёт старта уровня");
-            _banners.LevelStarted();
-            _banners.OnLoaded(BannerPlacement.Game, true);
-            _banners.LevelStarted();
-            _banners.OnLoaded(BannerPlacement.Game, true);
-            _banners.LevelStarted();
-
-            Assert.AreEqual(3, LoadsOf(BannerPlacement.Game));
-            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu), "меню своим запросом не перегружается");
+            Tick(3600f);
+            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu));
+            Assert.IsTrue(_banners.IsLoaded(BannerPlacement.Menu));
         }
 
         [Test]
-        public void LevelStartedBeforeScreenShown_StillOneRequest()
+        public void GameBanner_LoadsOnFirstShow_NotPerLevel()
         {
-            _banners.LevelStarted();
+            _banners.Show(BannerPlacement.Game);
+            _banners.OnLoaded(BannerPlacement.Game, true);
+            _banners.Show(BannerPlacement.Menu);
             _banners.Show(BannerPlacement.Game);
             Assert.AreEqual(1, LoadsOf(BannerPlacement.Game));
         }
 
         [Test]
-        public void LevelRequestWaitsForLoadInFlight()
+        public void NoSecondRequestWhileLoading()
         {
-            _banners.Show(BannerPlacement.Game);
-            _banners.LevelStarted();
-            _banners.LevelStarted();
-            _banners.LevelStarted();
-            Assert.AreEqual(1, LoadsOf(BannerPlacement.Game), "пока грузится, второй запрос не уходит");
-            Assert.IsTrue(_banners.IsLoading(BannerPlacement.Game));
-
-            _banners.OnLoaded(BannerPlacement.Game, true);
-            Assert.AreEqual(2, LoadsOf(BannerPlacement.Game), "отложенный запрос уровня уходит после загрузки");
-            _banners.OnLoaded(BannerPlacement.Game, true);
-            Assert.AreEqual(2, LoadsOf(BannerPlacement.Game));
+            _banners.Show(BannerPlacement.Menu);
+            _banners.Show(BannerPlacement.None);
+            _banners.Show(BannerPlacement.Menu);
+            Tick(120f);
+            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu));
+            Assert.IsTrue(_banners.IsLoading(BannerPlacement.Menu));
         }
 
         [Test]
-        public void RefreshesEveryThirtyVisibleSeconds()
+        public void FailedLoad_RetriesAfterAMinuteOfVisibleTime()
         {
             _banners.Show(BannerPlacement.Menu);
-            _banners.OnLoaded(BannerPlacement.Menu, true);
-            Tick(29f);
-            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu));
+            _banners.OnLoaded(BannerPlacement.Menu, false);
+            Tick(59f);
+            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu), "раньше минуты — не больше одного запроса в 30 с, как требует РСЯ");
             Tick(1.5f);
             Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu));
         }
 
         [Test]
-        public void TimerPausesWhileHiddenOrInBackground()
+        public void NoAds_RetryEveryMinuteWhileVisible()
+        {
+            // Отказ «рекламы нет» — обычное дело, пауза не растёт: SDK сам обновляет баннер так же раз в минуту.
+            _banners.Show(BannerPlacement.Menu);
+            for (int i = 1; i <= 5; i++)
+            {
+                _banners.OnLoaded(BannerPlacement.Menu, false);
+                Tick(59f);
+                Assert.AreEqual(i, LoadsOf(BannerPlacement.Menu));
+                Tick(1.5f);
+                Assert.AreEqual(i + 1, LoadsOf(BannerPlacement.Menu));
+            }
+        }
+
+        [Test]
+        public void SuccessResetsThePause()
         {
             _banners.Show(BannerPlacement.Menu);
+            _banners.OnLoaded(BannerPlacement.Menu, false);
+            Tick(61f);
             _banners.OnLoaded(BannerPlacement.Menu, true);
-            Tick(20f);
+            Tick(3600f);
+            Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu), "после удачной загрузки своих повторов нет, обновляет SDK");
+        }
+
+        [Test]
+        public void RetryWaitsOnlyWhileVisibleAndInForeground()
+        {
+            _banners.Show(BannerPlacement.Menu);
+            _banners.OnLoaded(BannerPlacement.Menu, false);
+            Tick(30f);
             _banners.Show(BannerPlacement.None);
             Tick(600f);
             _banners.Show(BannerPlacement.Menu);
             Tick(600f, active: false);
-            Assert.AreEqual(20f, _banners.VisibleTime(BannerPlacement.Menu), 0.05f);
-            Tick(9f);
             Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu));
-            Tick(1.5f);
-            Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu));
-        }
-
-        [Test]
-        public void EachPlacementHasItsOwnTimer()
-        {
-            _banners.Show(BannerPlacement.Menu);
-            _banners.OnLoaded(BannerPlacement.Menu, true);
-            Tick(20f);
-            _banners.Show(BannerPlacement.Game);
-            _banners.LevelStarted();
-            _banners.OnLoaded(BannerPlacement.Game, true);
-            Tick(25f);
-            Assert.AreEqual(1, LoadsOf(BannerPlacement.Game));
-            Assert.AreEqual(20f, _banners.VisibleTime(BannerPlacement.Menu), 0.05f);
-        }
-
-        [Test]
-        public void NewLevelResetsTimer()
-        {
-            _banners.Show(BannerPlacement.Game);
-            _banners.LevelStarted();
-            _banners.OnLoaded(BannerPlacement.Game, true);
-            Tick(25f);
-            _banners.LevelStarted();
-            _banners.OnLoaded(BannerPlacement.Game, true);
-            Tick(25f);
-            Assert.AreEqual(2, LoadsOf(BannerPlacement.Game), "таймер начался заново с новым уровнем");
-        }
-
-        [Test]
-        public void FailedLoad_RetriesInTenSeconds()
-        {
-            _banners.Show(BannerPlacement.Menu);
-            _banners.OnLoaded(BannerPlacement.Menu, false);
-            Tick(9f);
+            Tick(29f);
             Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu));
             Tick(1.5f);
             Assert.AreEqual(2, LoadsOf(BannerPlacement.Menu));
@@ -147,9 +125,9 @@ namespace BottleSort.Tests
         public void HugeFrameAfterResumeDoesNotCount()
         {
             _banners.Show(BannerPlacement.Menu);
-            _banners.OnLoaded(BannerPlacement.Menu, true);
+            _banners.OnLoaded(BannerPlacement.Menu, false);
             _banners.Tick(3600f, true);
-            Assert.Less(_banners.VisibleTime(BannerPlacement.Menu), 1f);
+            Assert.AreEqual(1, LoadsOf(BannerPlacement.Menu));
         }
 
         [TestCase(ScreenId.Menu, BannerPlacement.Menu)]
@@ -164,10 +142,22 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void GameBannerRequestedOnEveryLevelUnlessNoAds()
+        public void SameUnit_MenuAndGameShareOneBanner()
         {
-            Assert.IsTrue(BannerRules.AllowedOnLevel(false));
-            Assert.IsFalse(BannerRules.AllowedOnLevel(true));
+            Assert.AreEqual(BannerPlacement.Menu, BannerRules.SharedWhenSameUnit(BannerPlacement.Game, true));
+            Assert.AreEqual(BannerPlacement.Menu, BannerRules.SharedWhenSameUnit(BannerPlacement.Menu, true));
+            Assert.AreEqual(BannerPlacement.Game, BannerRules.SharedWhenSameUnit(BannerPlacement.Game, false));
+            Assert.AreEqual(BannerPlacement.None, BannerRules.SharedWhenSameUnit(BannerPlacement.None, true));
+        }
+
+        [Test]
+        public void DefaultConfig_GameBannerUsesMenuUnit()
+        {
+            // В кабинете один баннерный блок, поэтому по умолчанию меню и игра делят один баннер.
+            var config = UnityEngine.ScriptableObject.CreateInstance<AdsConfig>();
+            Assert.AreEqual(config.BannerIdFor(BannerPlacement.Menu, false), config.BannerIdFor(BannerPlacement.Game, false));
+            Assert.AreEqual(config.BannerIdFor(BannerPlacement.Menu, true), config.BannerIdFor(BannerPlacement.Game, true));
+            UnityEngine.Object.DestroyImmediate(config);
         }
     }
 }

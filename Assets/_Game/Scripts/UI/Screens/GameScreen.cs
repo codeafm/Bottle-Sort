@@ -158,7 +158,7 @@ namespace BottleSort.UI
                 tutorial.Begin(this, _level, _guide);
             else
                 tutorial.Stop();
-            OnAttemptStarted();
+            OnAttemptStarted(newLevel: true);
         }
 
         string DefaultInfo()
@@ -549,7 +549,7 @@ namespace BottleSort.UI
             SkipPours();
             Deselect();
             if (_guide != null) _guide.Restart(); else _session.Restart();
-            OnAttemptStarted();
+            OnAttemptStarted(newLevel: false);
             GameEvents.RaiseRestartUsed();
             field.Build(_session.State);
             hud.SetInfo(DefaultInfo());
@@ -625,7 +625,10 @@ namespace BottleSort.UI
         {
             if (!AdLoadingHint.Check(toast))
                 return;
-            RewardedAds.Show(watched =>
+            string placement = booster == Booster.Undo ? "Отмена хода за рекламу"
+                : booster == Booster.Hint ? "Подсказка за рекламу"
+                : "+Бутылка за рекламу";
+            RewardedAds.Show(placement, watched =>
             {
                 if (!watched)
                     return;
@@ -654,6 +657,7 @@ namespace BottleSort.UI
             data.RecordWin(_level, stars);
             data.AddCoins(reward);
             GameEvents.RaiseLevelWon(_level, stars);
+            Analytics.LevelWon(_level, stars, _session.MovesMade, reward, _session.IsTutorial);
 
             var result = new WinResult
             {

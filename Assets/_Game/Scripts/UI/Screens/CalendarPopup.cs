@@ -99,7 +99,7 @@ namespace BottleSort.UI
             if (!AdLoadingHint.Check(claimButton))
                 return;
             claimButton.interactable = false;
-            RewardedAds.Show(watched =>
+            RewardedAds.Show("Календарь ×2", watched =>
             {
                 if (watched)
                     Claim(2);

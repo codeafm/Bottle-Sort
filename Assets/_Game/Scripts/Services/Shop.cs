@@ -136,6 +136,7 @@ namespace BottleSort.Services
                 return PurchaseResult.NotEnoughCoins;
 
             data.coins -= item.Price;
+            Analytics.CoinsSpent(item.Price, (item.Category == ShopCategory.Bottle ? "Бутылка: " : "Фон: ") + item.Id);
             data.owned.Add(item.Id);
             ApplySelection(data, item);
             data.Save();

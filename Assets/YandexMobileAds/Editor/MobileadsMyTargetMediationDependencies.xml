@@ -1,0 +1,19 @@
+<dependencies>
+   <androidPackages>
+      <androidPackage spec="com.yandex.ads.mediation:mobileads-mytarget:5.51.2.2">
+      </androidPackage>
+      <!-- Адаптер Yandex исключает плеер из myTarget, без него VK отключает у себя видеорекламу.
+           Версия та, что указана в mytarget-sdk 5.51.2. -->
+      <androidPackage spec="androidx.media3:media3-exoplayer:1.8.0">
+      </androidPackage>
+      <androidPackage spec="androidx.media3:media3-exoplayer-hls:1.8.0">
+      </androidPackage>
+   </androidPackages>
+   <iosPods>
+      <iosPod name="MyTargetYandexMobileAdsAdapters" version="5.45.0.0">
+         <sources>
+            <source>https://github.com/CocoaPods/Specs</source>
+         </sources>
+      </iosPod>
+   </iosPods>
+</dependencies>

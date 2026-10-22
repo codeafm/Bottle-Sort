@@ -31,7 +31,8 @@ namespace BottleSort.Services
     {
         public static event Action<RewardBundle> Granted;
 
-        public static void Grant(PlayerData data, RewardBundle reward)
+        // source — откуда награда, по-русски: так она подписана в аналитике.
+        public static void Grant(PlayerData data, RewardBundle reward, string source = null)
         {
             if (reward.IsEmpty)
                 return;
@@ -41,6 +42,7 @@ namespace BottleSort.Services
             data.extraBottleCount += reward.Bottles;
             data.wheelSpins += reward.Spins;
             data.Save();
+            Analytics.Rewarded(reward, source);
             Granted?.Invoke(reward);
         }
 
@@ -74,7 +76,8 @@ namespace BottleSort.Services
             if (data.coins < offer.Price)
                 return false;
             data.coins -= offer.Price;
-            Grant(data, RewardBundle.Booster(kind, offer.Count));
+            Analytics.CoinsSpent(offer.Price, "Бустер: " + BoosterName(kind));
+            Grant(data, RewardBundle.Booster(kind, offer.Count), "Покупка бустера");
             return true;
         }
 
@@ -84,7 +87,7 @@ namespace BottleSort.Services
             if (data.tutorialGiftTaken)
                 return false;
             data.tutorialGiftTaken = true;
-            Grant(data, EconomyRules.TutorialGift);
+            Grant(data, EconomyRules.TutorialGift, "Подарок за обучение");
             return true;
         }
 
@@ -116,9 +119,12 @@ namespace BottleSort.Services
             foreach (var chest in chests)
                 total += chest.Reward;
             if (chests.Count > 0)
-                Grant(data, total);
+                Grant(data, total, "Сундук");
             return chests;
         }
+
+        public static string BoosterName(BoosterKind kind) =>
+            kind == BoosterKind.Undo ? "Отмена хода" : kind == BoosterKind.Hint ? "Подсказка" : "+Бутылка";
 
         // «Случайный бустер», но одинаковый для одного и того же сундука: переустановка ничего не перекрутит.
         static BoosterKind StarChestBooster(int chestNumber) =>

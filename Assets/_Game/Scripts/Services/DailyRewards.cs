@@ -19,7 +19,7 @@ namespace BottleSort.Services
             if (!GiftAvailable(data, today))
                 return false;
             data.giftDate = DayKey(today);
-            Economy.Grant(data, reward);
+            Economy.Grant(data, reward, multiplier > 1 ? "Ежедневный подарок ×2" : "Ежедневный подарок");
             return true;
         }
 
@@ -36,7 +36,7 @@ namespace BottleSort.Services
                 return false;
             data.calendarDate = DayKey(today);
             data.calendarDay = day >= EconomyRules.CalendarDays ? 1 : day + 1;
-            Economy.Grant(data, new RewardBundle(coins));
+            Economy.Grant(data, new RewardBundle(coins), multiplier > 1 ? "Календарь ×2" : "Календарь");
             return true;
         }
 
@@ -66,7 +66,7 @@ namespace BottleSort.Services
                 return -1;
             data.wheelSpins--;
             int sector = random.Next(EconomyRules.WheelPrizes.Length);
-            Economy.Grant(data, EconomyRules.WheelPrizes[sector]);
+            Economy.Grant(data, EconomyRules.WheelPrizes[sector], "Колесо удачи");
             return sector;
         }
 
@@ -78,7 +78,7 @@ namespace BottleSort.Services
 
         public static void AddSpin(PlayerData data)
         {
-            Economy.Grant(data, new RewardBundle(0, spins: 1));
+            Economy.Grant(data, new RewardBundle(0, spins: 1), "Колесо: попытка за рекламу");
         }
     }
 }
