@@ -7,104 +7,200 @@ namespace BottleSort.Tests
     {
         const double Minute = 60;
 
+        static FullscreenAdSlot LoadedInterstitial(double at)
+        {
+            var slot = FullscreenAdSlot.Interstitial();
+            slot.OnLoadStarted(at);
+            slot.OnLoaded(at);
+            return slot;
+        }
+
+        static void Fail(FullscreenAdSlot slot, double at)
+        {
+            slot.OnLoadStarted(at);
+            slot.OnFailed(at);
+        }
+
         [Test]
         public void Empty_NeedsLoad()
         {
-            var slot = new FullscreenAdSlot();
-            Assert.IsTrue(slot.NeedsLoad(0, out bool stale));
-            Assert.IsFalse(stale);
+            Assert.IsTrue(FullscreenAdSlot.Interstitial().NeedsLoad(0));
+            Assert.IsTrue(FullscreenAdSlot.Rewarded().NeedsLoad(0));
         }
 
         [Test]
         public void Loading_NoSecondRequest()
         {
-            var slot = new FullscreenAdSlot();
-            slot.OnLoadStarted();
-            Assert.IsFalse(slot.NeedsLoad(0, out _));
+            var slot = FullscreenAdSlot.Interstitial();
+            slot.OnLoadStarted(0);
+            Assert.IsFalse(slot.NeedsLoad(30));
+            Assert.IsFalse(slot.NeedsLoad(30, playerWaiting: true), "даже если игрок ждёт — две загрузки сразу не идут");
         }
 
         [Test]
-        public void FreshForThirtyMinutes()
+        public void HungLoad_CountsAsErrorAfterAMinute()
         {
-            var slot = new FullscreenAdSlot();
-            slot.OnLoadStarted();
-            slot.OnLoaded(0);
-            Assert.IsTrue(slot.IsFresh(29 * Minute));
-            Assert.IsFalse(slot.NeedsLoad(29 * Minute, out _));
+            // Ни ответа, ни ошибки: без таймаута слот ждал бы до перезапуска игры и межстраничной больше не было бы.
+            var slot = FullscreenAdSlot.Interstitial();
+            slot.OnLoadStarted(100);
+            Assert.IsFalse(slot.LoadTimedOut(159));
+            Assert.IsTrue(slot.LoadTimedOut(160));
+            slot.OnFailed(160);
+            Assert.IsTrue(slot.NeedsLoad(165));
         }
 
         [Test]
-        public void Expired_IsThrownAwayAndReloaded()
+        public void Interstitial_FreshAd_NoRequestsFor25Minutes()
         {
-            // Игра открыта больше 30 минут (или висела в фоне): ролик протух, его надо загрузить заново,
-            // а не считать «не готов» до бесконечности.
-            var slot = new FullscreenAdSlot();
-            slot.OnLoadStarted();
-            slot.OnLoaded(0);
-            Assert.IsFalse(slot.IsFresh(31 * Minute));
-            Assert.IsTrue(slot.NeedsLoad(31 * Minute, out bool stale));
-            Assert.IsTrue(stale);
-
-            slot.OnLoadStarted();
-            slot.OnLoaded(31 * Minute);
-            Assert.IsTrue(slot.IsFresh(32 * Minute));
+            var slot = LoadedInterstitial(0);
+            Assert.IsFalse(slot.NeedsLoad(24 * Minute));
+            Assert.IsTrue(slot.IsFresh(24 * Minute));
         }
 
         [Test]
-        public void AfterShow_LoadsAgainRightAway()
+        public void Interstitial_ReplacementLoadsWhileOldOneStillWorks()
         {
-            var slot = new FullscreenAdSlot();
-            slot.OnLoadStarted();
-            slot.OnLoaded(0);
+            var slot = LoadedInterstitial(0);
+            Assert.IsTrue(slot.NeedsLoad(25 * Minute), "за 5 минут до конца срока грузим замену");
+            slot.OnLoadStarted(25 * Minute);
+            Assert.IsTrue(slot.IsFresh(26 * Minute), "пока замена грузится, старую можно показать");
+
+            slot.OnLoaded(26 * Minute);
+            Assert.IsTrue(slot.IsFresh(50 * Minute));
+            Assert.IsFalse(slot.NeedsLoad(50 * Minute));
+        }
+
+        [Test]
+        public void Interstitial_ReplacementFailed_OldOneStaysAndRetriesSoon()
+        {
+            var slot = LoadedInterstitial(0);
+            Fail(slot, 25 * Minute);
+            Assert.IsTrue(slot.IsFresh(25 * Minute + 1));
+            Assert.IsFalse(slot.NeedsLoad(25 * Minute + 4));
+            Assert.IsTrue(slot.NeedsLoad(25 * Minute + 5));
+        }
+
+        [Test]
+        public void Interstitial_ExpiresAfter30Minutes()
+        {
+            var slot = LoadedInterstitial(0);
+            Assert.IsFalse(slot.IsFresh(30 * Minute));
             slot.OnTaken();
-            Assert.IsTrue(slot.NeedsLoad(Minute, out bool stale));
-            Assert.IsFalse(stale);
+            Assert.IsTrue(slot.NeedsLoad(30 * Minute));
         }
 
         [Test]
-        public void AfterFailure_WaitsThirtySeconds()
+        public void Interstitial_AfterShow_LoadsAgainRightAway()
         {
-            // Ads проверяет слот раз в 10 секунд; без паузы пустые запросы шли бы шесть раз в минуту.
-            var slot = new FullscreenAdSlot();
-            slot.OnLoadStarted();
-            slot.OnFailed(100);
-            Assert.IsFalse(slot.NeedsLoad(110, out _));
-            Assert.IsFalse(slot.NeedsLoad(129, out _));
-            Assert.IsTrue(slot.NeedsLoad(130, out _));
+            var slot = LoadedInterstitial(0);
+            slot.OnTaken();
+            Assert.IsTrue(slot.NeedsLoad(Minute));
         }
 
         [Test]
-        public void RepeatedFailures_DoubleThePauseUpToFiveMinutes()
+        public void Interstitial_AfterShow_LoadsAtOnceEvenIfReplacementJustFailed()
         {
-            Assert.AreEqual(30, FullscreenAdSlot.RetryDelay(1));
-            Assert.AreEqual(60, FullscreenAdSlot.RetryDelay(2));
-            Assert.AreEqual(120, FullscreenAdSlot.RetryDelay(3));
-            Assert.AreEqual(300, FullscreenAdSlot.RetryDelay(10));
+            var slot = LoadedInterstitial(0);
+            Fail(slot, 25 * Minute);
+            Fail(slot, 25 * Minute + 5);
+            slot.OnTaken();
+            Assert.IsTrue(slot.NeedsLoad(25 * Minute + 6));
+        }
 
-            var slot = new FullscreenAdSlot();
-            slot.OnLoadStarted();
-            slot.OnFailed(0);
-            slot.OnLoadStarted();
-            slot.OnFailed(30);
-            Assert.IsFalse(slot.NeedsLoad(89, out _));
-            Assert.IsTrue(slot.NeedsLoad(90, out _));
+        [Test]
+        public void Interstitial_RetriesIn5_15_30_ThenEveryMinute()
+        {
+            var slot = FullscreenAdSlot.Interstitial();
+            Assert.AreEqual(5, slot.RetryDelay(1));
+            Assert.AreEqual(15, slot.RetryDelay(2));
+            Assert.AreEqual(30, slot.RetryDelay(3));
+            Assert.AreEqual(60, slot.RetryDelay(4));
+            Assert.AreEqual(60, slot.RetryDelay(20), "дальше раз в минуту, пока игра открыта");
+
+            Fail(slot, 100);
+            Assert.IsFalse(slot.NeedsLoad(104));
+            Assert.IsTrue(slot.NeedsLoad(105));
+            Fail(slot, 105);
+            Assert.IsFalse(slot.NeedsLoad(119));
+            Assert.IsTrue(slot.NeedsLoad(120));
+        }
+
+        [Test]
+        public void Interstitial_TwoEmptyAnswersAfterShow_StillReadyForNextLevel()
+        {
+            // Реклама показана в 0 с, следующая положена через минуту. Яндекс дважды отвечает «нет рекламы»
+            // (загрузка ~3 с), третий раз отдаёт ролик. Раньше пауза была 30 с, потом минута, и к концу
+            // следующего уровня ролика не было — это и есть «Не загрузилась» в аналитике.
+            var slot = FullscreenAdSlot.Interstitial();
+            double t = 0;
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                while (!slot.NeedsLoad(t))
+                    t++;
+                slot.OnLoadStarted(t);
+                t += 3;
+                if (attempt < 2)
+                    slot.OnFailed(t);
+                else
+                    slot.OnLoaded(t);
+            }
+            Assert.IsTrue(slot.IsFresh(InterstitialPolicy.MinSecondsBetween), $"ролик пришёл в {t} с");
         }
 
         [Test]
         public void SuccessResetsThePause()
         {
-            var slot = new FullscreenAdSlot();
-            slot.OnLoadStarted();
-            slot.OnFailed(0);
-            slot.OnLoadStarted();
-            slot.OnFailed(30);
-            slot.OnLoadStarted();
-            slot.OnLoaded(100);
+            var slot = FullscreenAdSlot.Interstitial();
+            Fail(slot, 0);
+            Fail(slot, 5);
+            Fail(slot, 20);
+            slot.OnLoadStarted(50);
+            slot.OnLoaded(52);
             slot.OnTaken();
-            Assert.IsTrue(slot.NeedsLoad(101, out _), "после показа новый ролик грузится сразу");
-            slot.OnLoadStarted();
-            slot.OnFailed(101);
-            Assert.IsTrue(slot.NeedsLoad(131, out _), "счёт ошибок начался заново: снова 30 с");
+            Fail(slot, 60);
+            Assert.IsTrue(slot.NeedsLoad(65), "счёт ошибок начался заново: снова 5 с");
+        }
+
+        [Test]
+        public void Rewarded_LivesUntilShown_NoReplacementBeforeItExpires()
+        {
+            var slot = FullscreenAdSlot.Rewarded();
+            slot.OnLoadStarted(0);
+            slot.OnLoaded(0);
+            Assert.IsFalse(slot.NeedsLoad(29 * Minute), "ролик за награду заранее не меняем — лишняя загрузка");
+            Assert.IsFalse(slot.IsFresh(30 * Minute));
+            slot.OnTaken();
+            Assert.IsTrue(slot.NeedsLoad(30 * Minute));
+        }
+
+        [Test]
+        public void Rewarded_AfterThreeErrors_WaitsForThePlayer()
+        {
+            var slot = FullscreenAdSlot.Rewarded();
+            Fail(slot, 0);
+            Assert.IsFalse(slot.NeedsLoad(29));
+            Assert.IsTrue(slot.NeedsLoad(30));
+            Fail(slot, 30);
+            Assert.IsTrue(slot.NeedsLoad(90));
+            Fail(slot, 90);
+            Assert.IsTrue(slot.NeedsLoad(210));
+            Fail(slot, 210);
+            Assert.IsFalse(slot.NeedsLoad(210 + 60 * Minute), "у игрока нет рекламы — сами больше не просим");
+
+            Assert.IsTrue(slot.NeedsLoad(300, playerWaiting: true), "нажал кнопку — грузим сразу");
+        }
+
+        [Test]
+        public void Rewarded_PlayerTaps_LoadsAtOnce_ButNotOnEveryTap()
+        {
+            var slot = FullscreenAdSlot.Rewarded();
+            Fail(slot, 0);
+            Assert.IsFalse(slot.NeedsLoad(5));
+            Assert.IsFalse(slot.NeedsLoad(5, playerWaiting: true), "с прошлой загрузки меньше 10 с");
+            Assert.IsTrue(slot.NeedsLoad(10, playerWaiting: true));
+            slot.OnLoadStarted(10);
+            slot.OnLoaded(12);
+            Assert.IsFalse(slot.NeedsLoad(13, playerWaiting: true), "ролик уже есть");
         }
     }
 }

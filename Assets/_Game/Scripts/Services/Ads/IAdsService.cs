@@ -10,7 +10,8 @@ namespace BottleSort.Services
         void Initialize();
         // Загрузить, если ролика нет или он протух; свежий или грузящийся не трогать.
         void LoadInterstitial();
-        void LoadRewarded();
+        // playerWaiting — игрок нажал кнопку «за рекламу», а ролика нет: грузить, не дожидаясь паузы после ошибок.
+        void LoadRewarded(bool playerWaiting);
 
         // true — досмотрел и заслужил награду. Колбэк приходит в главном потоке.
         void ShowRewarded(Action<bool> done);

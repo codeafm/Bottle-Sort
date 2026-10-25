@@ -32,7 +32,7 @@ namespace BottleSort.Services
         {
         }
 
-        public void LoadRewarded()
+        public void LoadRewarded(bool playerWaiting)
         {
         }
 

@@ -50,7 +50,7 @@ namespace BottleSort.Services
             RewardedAds.Handler = ShowRewarded;
             // Пока идёт межстраничная, ролик за награду показать нельзя — кнопка скажет об этом, а не промолчит.
             RewardedAds.IsReady = () => _service != null && !_busy && _service.IsRewardedReady;
-            RewardedAds.Prepare = () => Started?.LoadRewarded();
+            RewardedAds.Prepare = () => Started?.LoadRewarded(true);
             ScreenRouter.ScreenShown -= OnScreenShown;
             ScreenRouter.ScreenShown += OnScreenShown;
             PlayerData.Changed -= RefreshBanner;
@@ -66,11 +66,10 @@ namespace BottleSort.Services
             });
         }
 
-        // Как часто проверять, что полноэкранные ролики загружены и не протухли.
-        // Повтор после ошибки решает FullscreenAdSlot: чаще его паузы запрос всё равно не уйдёт.
-        const float KeepFreshEvery = 10f;
-        static float _keepFreshIn;
-        static bool _wasFocused = true;
+        // Проверка дешёвая: сама загрузка уходит, только когда её разрешит FullscreenAdSlot. Раз в секунду —
+        // чтобы повтор через 5 с после ошибки ушёл через 5 с, а не на следующей проверке.
+        const float KeepLoadedEvery = 1f;
+        static float _keepLoadedIn;
 
         static void Tick(float deltaTime)
         {
@@ -78,14 +77,12 @@ namespace BottleSort.Services
             // Повтор баннера после ошибки ждёт, только пока баннер на экране и приложение на переднем плане.
             _banners?.Tick(deltaTime, !_busy && focused);
 
-            // Вернулись из фона (там ролик мог протухнуть) — проверяем сразу, иначе раз в 10 секунд.
-            _keepFreshIn -= deltaTime;
-            if (focused && (!_wasFocused || _keepFreshIn <= 0f))
+            _keepLoadedIn -= deltaTime;
+            if (focused && _keepLoadedIn <= 0f)
             {
-                _keepFreshIn = KeepFreshEvery;
+                _keepLoadedIn = KeepLoadedEvery;
                 KeepFullscreenAdsLoaded();
             }
-            _wasFocused = focused;
         }
 
         static void KeepFullscreenAdsLoaded()
@@ -95,7 +92,7 @@ namespace BottleSort.Services
                 return;
             if (InterstitialPolicy.MayEverShow(PlayerData.Current.highestUnlocked, PlayerData.Current.noAds))
                 service.LoadInterstitial();
-            service.LoadRewarded();
+            service.LoadRewarded(false);
         }
 
         // В редакторе заглушка. На устройстве только Yandex: другие сети подключены адаптерами
@@ -118,7 +115,7 @@ namespace BottleSort.Services
             if (service == null || _busy || !service.IsRewardedReady)
             {
                 if (service != null && !_busy)
-                    service.LoadRewarded();
+                    service.LoadRewarded(true);
                 Analytics.RewardedAd(placement, "Не загрузилась");
                 done?.Invoke(false);
                 return;
