@@ -251,6 +251,8 @@ namespace BottleSort.Services
             var data = PlayerData.Current;
             SetUserProperty("max_level", data.highestUnlocked.ToString());
             SetUserProperty("no_ads", data.noAds ? "да" : "нет");
+            SetUserProperty("coins_from_game", data.coinsFromGame.ToString());
+            SetUserProperty("coins_from_ads", data.coinsFromAds.ToString());
             SetUserProperty("game_language", Loc.Current == Language.Ru ? "русский" : Loc.Current.ToString());
         }
 

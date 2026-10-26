@@ -19,7 +19,8 @@ namespace BottleSort.Services
             if (!GiftAvailable(data, today))
                 return false;
             data.giftDate = DayKey(today);
-            Economy.Grant(data, reward, multiplier > 1 ? "Ежедневный подарок ×2" : "Ежедневный подарок");
+            Economy.Grant(data, reward, multiplier > 1 ? "Ежедневный подарок ×2" : "Ежедневный подарок",
+                reward.Coins - EconomyRules.DailyGift.Coins);
             return true;
         }
 
@@ -36,7 +37,8 @@ namespace BottleSort.Services
                 return false;
             data.calendarDate = DayKey(today);
             data.calendarDay = day >= EconomyRules.CalendarDays ? 1 : day + 1;
-            Economy.Grant(data, new RewardBundle(coins), multiplier > 1 ? "Календарь ×2" : "Календарь");
+            Economy.Grant(data, new RewardBundle(coins), multiplier > 1 ? "Календарь ×2" : "Календарь",
+                coins - EconomyRules.CalendarCoins(day));
             return true;
         }
 

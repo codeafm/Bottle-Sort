@@ -178,7 +178,7 @@ namespace BottleSort.UI
                     return;
                 }
                 int multiplier = EconomyRules.RewardedWinMultiplier(LevelPlan.TypeOf(_result.Level));
-                PlayerData.Current.AddCoins(_result.Reward * (multiplier - 1));
+                PlayerData.Current.AddCoins(_result.Reward * (multiplier - 1), fromAd: true);
                 Analytics.CoinsEarned(_result.Reward * (multiplier - 1), "Награда за победу ×2");
                 reward.text = "+" + Loc.Number(_result.Reward * multiplier);
                 UiFeedback.Play(UiSound.Coin);

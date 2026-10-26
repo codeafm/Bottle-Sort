@@ -32,11 +32,13 @@ namespace BottleSort.Services
         public static event Action<RewardBundle> Granted;
 
         // source — откуда награда, по-русски: так она подписана в аналитике.
-        public static void Grant(PlayerData data, RewardBundle reward, string source = null)
+        // adCoins — часть монет награды, полученная за рекламу (+100 в меню, добавка от ×2).
+        public static void Grant(PlayerData data, RewardBundle reward, string source = null, int adCoins = 0)
         {
             if (reward.IsEmpty)
                 return;
             data.coins = Math.Max(0, data.coins + reward.Coins);
+            data.CountEarned(reward.Coins, adCoins);
             data.undoCount += reward.Undo;
             data.hintCount += reward.Hints;
             data.extraBottleCount += reward.Bottles;

@@ -41,6 +41,11 @@ namespace BottleSort.UI
         public int coinAdCount;
         public long coinAdLastUnix;
 
+        // Сколько монет игрок получил всего: за игру (уровни, подарки, колесо, сундуки) и за рекламу
+        // (+100 в меню и добавка от ×2/×3). Нужно, чтобы видеть, откуда у игрока монеты.
+        public int coinsFromGame;
+        public int coinsFromAds;
+
         public int starChestsOpened;
         public List<int> chapterChests = new List<int>();
         public bool noAds;
@@ -80,10 +85,21 @@ namespace BottleSort.UI
             Save();
         }
 
-        public void AddCoins(int amount)
+        public void AddCoins(int amount, bool fromAd = false)
         {
             coins = Mathf.Max(0, coins + amount);
+            CountEarned(amount, fromAd ? amount : 0);
             Save();
+        }
+
+        // adPart — сколько из amount пришло благодаря рекламе, остальное считается заработанным в игре.
+        public void CountEarned(int amount, int adPart)
+        {
+            if (amount <= 0)
+                return;
+            int fromAds = Mathf.Clamp(adPart, 0, amount);
+            coinsFromAds += fromAds;
+            coinsFromGame += amount - fromAds;
         }
 
         public bool TrySpend(int amount)
