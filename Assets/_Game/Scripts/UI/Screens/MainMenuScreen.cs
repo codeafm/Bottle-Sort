@@ -102,17 +102,10 @@ namespace BottleSort.UI
 
         void OfferCoinsForAd()
         {
-            switch (CoinAdOffer.StateOf(PlayerData.Current, DateTime.Now, out var wait))
+            if (CoinAdOffer.StateOf(PlayerData.Current) == CoinAdState.Tutorial)
             {
-                case CoinAdState.Tutorial:
-                    toast.ShowKey("toast_coins_ad_tutorial", 1.8f);
-                    return;
-                case CoinAdState.DailyLimit:
-                    toast.ShowKey("toast_coins_ad_limit", 1.8f);
-                    return;
-                case CoinAdState.Cooldown:
-                    toast.Show(Loc.Format("toast_coins_ad_wait", $"{(int)wait.TotalMinutes}:{wait.Seconds:00}"), 1.8f);
-                    return;
+                toast.ShowKey("toast_coins_ad_tutorial", 1.8f);
+                return;
             }
 
             // Ролик ещё не пришёл (или после прошлого показа грузится следующий) — говорим об этом сразу.
