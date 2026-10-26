@@ -115,6 +115,9 @@ namespace BottleSort.UI
             var popup = Router.Get<RewardPopup>();
             popup.Setup("coins_ad_title", "coins_ad_text", new RewardBundle(CoinAdOffer.Coins), "coins_ad_watch",
                 () => WatchAdForCoins(popup));
+            // Сколько монет игрок уже получил из игры и за рекламу — видно на его скриншоте.
+            var data = PlayerData.Current;
+            popup.SetSubtitleArgs(Loc.Number(data.coinsFromGame), Loc.Number(data.coinsFromAds));
             popup.AllowDismiss();
             Router.ShowPopup(ScreenId.Reward);
         }

@@ -201,7 +201,7 @@ wheel_prize_hint	Подсказка	Hint
 wheel_prize_bottle	Пустая бутылка	Empty bottle
 wheel_prize_spin	Ещё попытка	One more spin
 coins_ad_title	Бесплатные монеты	Free coins
-coins_ad_text	Посмотри рекламу и получи +100 монет	Watch an ad and get +100 coins
+coins_ad_text	Посмотри рекламу и получи +100 монет\n<size=80%>Всего получено: из игры {0}, за рекламу {1}</size>	Watch an ad and get +100 coins\n<size=80%>Earned so far: {0} in the game, {1} from ads</size>
 coins_ad_watch	Смотреть	Watch
 toast_coins_ad_tutorial	Монеты за рекламу откроются после обучения	Coins for ads unlock after the tutorial
 toast_coins_ad_failed	Реклама не загрузилась или не досмотрена — монеты не начислены. Попробуй позже	The ad didn't load or wasn't finished, no coins this time. Try again later

@@ -105,6 +105,9 @@ namespace BottleSort.UI
             }
         }
 
+        // Числа в подзаголовок, если в его строке есть {0}, {1}…
+        public void SetSubtitleArgs(params object[] args) => subtitle.SetArgs(args);
+
         // Две кнопки: зелёная «за рекламу» (adKey, onWatchAd) и под ней обычная (secondaryKey, onSecondary).
         // Карточка закрывается после любой из них, колбэк вызывается уже после закрытия.
         public void SetupChoice(string titleKey, string subtitleKey, RewardBundle reward, string adKey, Action onWatchAd,
