@@ -54,12 +54,10 @@ namespace BottleSort.Tests
         {
             var data = Player();
             var now = new DateTime(2026, 10, 17, 12, 0, 0);
-            Assert.AreEqual(CoinAdState.Available, CoinAdOffer.StateOf(data));
-            Assert.IsTrue(CoinAdOffer.TryGrant(data, now));
+            CoinAdOffer.Grant(data, now);
             Assert.AreEqual(150, data.coins);
             // Сразу следующий ролик — снова монеты, без ожидания.
-            Assert.AreEqual(CoinAdState.Available, CoinAdOffer.StateOf(data));
-            Assert.IsTrue(CoinAdOffer.TryGrant(data, now.AddSeconds(5)));
+            CoinAdOffer.Grant(data, now.AddSeconds(5));
             Assert.AreEqual(250, data.coins);
         }
 
@@ -69,20 +67,18 @@ namespace BottleSort.Tests
             var data = Player();
             var now = new DateTime(2026, 10, 17, 9, 0, 0);
             for (int i = 0; i < 20; i++)
-                Assert.IsTrue(CoinAdOffer.TryGrant(data, now.AddMinutes(i)), "watch " + i);
+                CoinAdOffer.Grant(data, now.AddMinutes(i));
             Assert.AreEqual(50 + 20 * 100, data.coins);
             Assert.AreEqual(20, data.coinAdCount);
         }
 
         [Test]
-        public void CoinAd_NotDuringTutorial()
+        public void CoinAd_AlsoDuringTutorial()
         {
             var data = Player();
-            data.highestUnlocked = 3;
-            var now = new DateTime(2026, 10, 17, 12, 0, 0);
-            Assert.AreEqual(CoinAdState.Tutorial, CoinAdOffer.StateOf(data));
-            Assert.IsFalse(CoinAdOffer.TryGrant(data, now));
-            Assert.AreEqual(50, data.coins);
+            data.highestUnlocked = 1;
+            CoinAdOffer.Grant(data, new DateTime(2026, 10, 17, 12, 0, 0));
+            Assert.AreEqual(150, data.coins);
         }
     }
 }

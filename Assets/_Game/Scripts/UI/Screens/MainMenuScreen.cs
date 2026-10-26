@@ -102,12 +102,6 @@ namespace BottleSort.UI
 
         void OfferCoinsForAd()
         {
-            if (CoinAdOffer.StateOf(PlayerData.Current) == CoinAdState.Tutorial)
-            {
-                toast.ShowKey("toast_coins_ad_tutorial", 1.8f);
-                return;
-            }
-
             // Ролик ещё не пришёл (или после прошлого показа грузится следующий) — говорим об этом сразу.
             if (!AdLoadingHint.Check(toast))
                 return;
@@ -137,8 +131,7 @@ namespace BottleSort.UI
                     return;
                 }
                 int before = data.coins;
-                if (!CoinAdOffer.TryGrant(data, DateTime.Now))
-                    return;
+                CoinAdOffer.Grant(data, DateTime.Now);
                 FlyCoinsIn(from, icon != null ? icon.GetComponent<Image>() : null, before, data.coins);
             });
         }

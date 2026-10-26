@@ -34,8 +34,8 @@ namespace BottleSort.Tests
         public void CoinAd_CountsAsAds()
         {
             var data = Player();
-            CoinAdOffer.TryGrant(data, new DateTime(2026, 10, 26, 12, 0, 0));
-            CoinAdOffer.TryGrant(data, new DateTime(2026, 10, 26, 12, 0, 5));
+            CoinAdOffer.Grant(data, new DateTime(2026, 10, 26, 12, 0, 0));
+            CoinAdOffer.Grant(data, new DateTime(2026, 10, 26, 12, 0, 5));
             Assert.AreEqual(200, data.coinsFromAds);
             Assert.AreEqual(0, data.coinsFromGame);
         }
