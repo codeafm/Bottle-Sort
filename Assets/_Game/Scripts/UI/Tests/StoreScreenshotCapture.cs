@@ -24,7 +24,7 @@ namespace BottleSort.UI.Tests
     {
         const string OutputDir = "Store/Screenshots/source_v2";
         // Уровни в два ряда: в три ряда поле над волной выходит мелким.
-        const int PourLevel = 237;
+        const int PourLevel = 257;
         const int FlaskLevel = 45;
         const int RescueLevel = 208;
         const int ShapesLevel = 280;
@@ -48,6 +48,9 @@ namespace BottleSort.UI.Tests
             new Size { Dir = "rustore", Width = 1080, Height = 1920, Top = 36, Bottom = 230 },
             new Size { Dir = "appstore_6.7", Width = 1290, Height = 2796, Top = 110, Bottom = 330 }
         };
+
+        static readonly int[] BrightColors =
+            { Palette.Red, Palette.Yellow, Palette.Green, Palette.Cyan, Palette.Orange, Palette.Pink, Palette.Lime };
 
         // Те же темы, что в игре, только светлее: на слайде у каждого кадра свой яркий цвет.
         static readonly (Theme theme, string center, string middle, string edge, string halo, string spark)[] BrightThemes =
@@ -126,18 +129,18 @@ namespace BottleSort.UI.Tests
             }
         }
 
-        // 1. Обычный уровень в разгаре: бутылка льёт в такой же цвет.
+        // 1. Обычный уровень в начале партии: бутылка льёт яркий цвет.
         IEnumerator PourSlide()
         {
             yield return OpenLevel(PourLevel, Theme.Violet);
             var solution = Solution(PourLevel);
-            // Начало партии, пока бутылки ещё пёстрые: лучше всего налив двух слоёв на такой же цвет.
-            int index = Pick(solution, 3, 8, (state, move) =>
-                !state[move.To].IsEmpty && state.PourAmount(move) >= 2 && state[move.To].Count + state.PourAmount(move) < state.Unit);
-            if (index < 0)
-                index = Pick(solution, 3, 8, (state, move) => !state[move.To].IsEmpty);
-            if (index < 0)
-                index = 3;
+            // Начало партии, пока бутылки ещё пёстрые. Яркий цвет из открытой бутылки льётся в пустую в нижнем ряду:
+            // струя видна на всю высоту, а рука под целью не закрывает соседей.
+            float lowerRow = Slot(0).yMax;
+            int index = Pick(solution, 2, 10, (state, move) =>
+                state[move.To].IsEmpty && state[move.From].HiddenCount == 0 && state.PourAmount(move) >= 2 &&
+                Array.IndexOf(BrightColors, state[move.From].TopColor) >= 0 && Slot(move.To).yMin > lowerRow);
+            Assert.GreaterOrEqual(index, 0, "no bright pour into an empty bottle on level " + PourLevel);
             yield return PlayTo(solution, index);
             yield return CapturePour(solution[index], "01", 0.45f);
         }
@@ -170,7 +173,7 @@ namespace BottleSort.UI.Tests
             }
         }
 
-        // 3. Спасение: налив в фигурку, внутри зверёк с табличкой HELP!
+        // 3. Спасение: зверёк с табличкой HELP! виден целиком, поэтому без струи — бутылка для фигурки уже выбрана и светится.
         IEnumerator RescueSlide(string name, int level)
         {
             yield return OpenLevel(level, Theme.Teal);
@@ -186,7 +189,12 @@ namespace BottleSort.UI.Tests
             if (index < 0)
                 index = solution.FindIndex(move => move.To == figure);
             yield return PlayTo(solution, index);
-            yield return CapturePour(solution[index], name, 0.5f, ("figure", Slot(figure)));
+            yield return Idle();
+            Time.timeScale = 1f;
+            var pick = solution[index];
+            Tap(pick.From);
+            yield return Frames(0.45f);
+            Shot(name, ("source", Slot(pick.From)), ("figure", Slot(figure)));
         }
 
         // 4. Бутылки разных форм и скрытые слои. Бутылка выбрана и светится, шаблон дорисует стрелку к цели.

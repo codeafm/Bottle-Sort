@@ -59,11 +59,11 @@
 // decor — что дорисовать по рамкам из marks.json: hand (рука нажимает), shine (сияние и блёстки), arrow (стрелка).
 const SLIDES = [
   { shot: '01', title: 'Сортируй цвета<br>по бутылкам', wave: ['#b07bff', '#6a2bdb'], ink: '#33107a', glow: '#c9a2ff',
-    decor: [{ kind: 'shine', at: 'body', size: 1.1 }, { kind: 'hand', at: 'target', x: 0.8, y: 0.9, tilt: -24 }] },
+    decor: [{ kind: 'shine', at: 'body', size: 1.1 }, { kind: 'hand', at: 'target', x: 0.5, y: 0.93, tilt: -10, size: 180 }] },
   { shot: '02', title: 'Большая колба<br>на 8 слоёв', wave: ['#4f9bff', '#1d55d6'], ink: '#0d2a7a', glow: '#8cc0ff',
     decor: [{ kind: 'rays', at: 'target', size: 1.9 }, { kind: 'shine', at: 'target', size: 1.25 }] },
   { shot: '03', title: 'Спаси<br>друзей!', wave: ['#2cd6e6', '#0a8aa3'], ink: '#05495a', glow: '#9af2ff',
-    decor: [{ kind: 'rays', at: 'figure', size: 1.6 }, { kind: 'shine', at: 'figure', size: 1.05 }] },
+    decor: [{ kind: 'rays', at: 'figure', size: 1.6 }, { kind: 'shine', at: 'figure', size: 1.05, opacity: 0.45 }] },
   { shot: '04', title: 'Бутылки<br>любых форм', wave: ['#ff60aa', '#cf176a'], ink: '#640833', glow: '#ffb3d6',
     decor: [{ kind: 'shine', at: 'source', size: 1.35 }, { kind: 'arrow', from: 'source', to: 'target' }, { kind: 'hand', at: 'target', x: 0.5, y: 0.62, tilt: -14 }] },
   { shot: '05', title: 'Звёзды<br>и награды', wave: ['#ffb43c', '#e5650b'], ink: '#6e2c03', glow: '#ffe0a0', decor: [] },
@@ -158,7 +158,7 @@ const decorations = {
     const size = Math.max(b.w, b.h) * (d.size || 1.2)
     const el = document.createElement('div')
     el.className = 'shine'
-    el.style.cssText = `left:${b.cx}px;top:${b.cy}px;width:${size}px;height:${size}px;--glow:${s.glow}`
+    el.style.cssText = `left:${b.cx}px;top:${b.cy}px;width:${size}px;height:${size}px;--glow:${s.glow};opacity:${d.opacity ?? 1}`
     under.appendChild(el)
     const points = [[-0.64, -0.12, 1], [0.64, -0.22, 0.75], [0.68, 0.3, 0.55], [-0.6, 0.4, 0.6]]
     for (const [px, py, k] of points)
