@@ -44,6 +44,8 @@ namespace BottleSort.Gameplay
         static readonly int AlphaId = Shader.PropertyToID("_Alpha");
         static readonly int AreaId = Shader.PropertyToID("_Area");
         static readonly int ToneXId = Shader.PropertyToID("_ToneX");
+        static readonly int ToneNeckId = Shader.PropertyToID("_ToneNeck");
+        static readonly int[] EdgesIds = { Shader.PropertyToID("_Edges0"), Shader.PropertyToID("_Edges1"), Shader.PropertyToID("_Edges2") };
         static readonly int GhostId = Shader.PropertyToID("_Ghost");
         static readonly int FrontAlphaId = Shader.PropertyToID("_FrontAlpha");
         static readonly int[] ColorIds =
@@ -59,6 +61,9 @@ namespace BottleSort.Gameplay
         [SerializeField] VfxArt art;
         [SerializeField] string shape = BottleShapeIds.Classic;
         [SerializeField] int capacity = 4;
+        readonly float[] layerEdges = new float[MaxLayers + 1];
+        BottleShapeArt edgesShape;
+        int edgesCapacity;
         [SerializeField] List<int> colors = new List<int>();
         [SerializeField] int hidden;
         [SerializeField] int frozen;
@@ -166,7 +171,12 @@ namespace BottleSort.Gameplay
             get
             {
                 EnsureBuilt();
-                return (shapeArt.liquidBottom - shapeArt.liquidTop) / Mathf.Max(1, capacity) * BottleGeometry.UnitSize * Mathf.Abs(transform.lossyScale.y);
+                // Самый тонкий слой: у круглой колбы слои в шаре ниже, чем в горле
+                RebuildEdges();
+                float thinnest = float.MaxValue;
+                for (int k = 0; k < capacity; k++)
+                    thinnest = Mathf.Min(thinnest, layerEdges[k + 1] - layerEdges[k]);
+                return thinnest * BottleGeometry.UnitSize * Mathf.Abs(transform.lossyScale.y);
             }
         }
 
@@ -186,8 +196,7 @@ namespace BottleSort.Gameplay
             get
             {
                 EnsureBuilt();
-                float layer = (shapeArt.liquidBottom - shapeArt.liquidTop) / Mathf.Max(1, capacity);
-                return body.TransformPoint(new Vector2(0f, BottleGeometry.ToLocalY(shapeArt.liquidBottom - fill * layer)));
+                return body.TransformPoint(new Vector2(0f, BottleGeometry.ToLocalY(shapeArt.liquidBottom - LevelHeight(fill))));
             }
         }
 
@@ -638,6 +647,7 @@ namespace BottleSort.Gameplay
             material.SetVector(AreaId, new Vector4(area.x, area.y, area.width, area.height));
             var span = shapeArt.liquidSpan.y > shapeArt.liquidSpan.x ? shapeArt.liquidSpan : new Vector2(16f, 84f);
             material.SetVector(ToneXId, new Vector4(span.x, span.y, 0f, 0f));
+            material.SetVector(ToneNeckId, shapeArt.neckTone);
             material.SetFloat(FrontAlphaId, shapeArt.isFigure ? 0f : 1f);
 
             // Замок и лёд — по центру жидкости, а не на фиксированной высоте (BOTTLE_MODELS §1.5)
@@ -702,6 +712,10 @@ namespace BottleSort.Gameplay
             material.SetFloat(GhostId, Mathf.Min(recipe.Count, capacity));
             material.SetFloat(FillId, fill);
             material.SetFloat(CapacityId, capacity);
+            RebuildEdges();
+            for (int i = 0; i < EdgesIds.Length; i++)
+                material.SetVector(EdgesIds[i], new Vector4(layerEdges[i * 4 + 1], layerEdges[i * 4 + 2],
+                    layerEdges[Mathf.Min(i * 4 + 3, MaxLayers)], layerEdges[Mathf.Min(i * 4 + 4, MaxLayers)]));
             material.SetFloat(HiddenId, hiddenShown);
             material.SetColor(GlowId, glowShown);
             material.SetFloat(IceId, iceShown);
@@ -733,10 +747,27 @@ namespace BottleSort.Gameplay
                 frontRenderer.color = new Color(1f, 1f, 1f, alpha);
             if (rescue != null && rescue.gameObject.activeSelf && shapeArt != null)
             {
-                float layer = (shapeArt.liquidBottom - shapeArt.liquidTop) / Mathf.Max(1, capacity);
-                rescue.SetLevel(shapeArt.liquidBottom - fill * layer, shapeArt.mouth.y);
+                rescue.SetLevel(shapeArt.liquidBottom - LevelHeight(fill), shapeArt.mouth.y);
                 rescue.SetAlpha(alpha);
             }
+        }
+
+        void RebuildEdges()
+        {
+            if (shapeArt == null || (edgesShape == shapeArt && edgesCapacity == capacity))
+                return;
+            edgesShape = shapeArt;
+            edgesCapacity = capacity;
+            BottleShapeArt.ComputeEdges(shapeArt.layerWidths, shapeArt.layerWidthPower,
+                shapeArt.liquidBottom - shapeArt.liquidTop, capacity, layerEdges);
+        }
+
+        float LevelHeight(float fillLayers)
+        {
+            RebuildEdges();
+            int k = Mathf.Clamp(Mathf.FloorToInt(fillLayers), 0, MaxLayers);
+            float next = layerEdges[Mathf.Min(k + 1, MaxLayers)];
+            return Mathf.Lerp(layerEdges[k], next, fillLayers - k);
         }
 
         static void CopyColors(IReadOnlyList<int> source, List<int> target)

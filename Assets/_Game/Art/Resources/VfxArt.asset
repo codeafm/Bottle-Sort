@@ -35,28 +35,9 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
-  - id: cylinder
-    back: {fileID: 2800000, guid: 8941f589470c4f343bd130a40845bf97, type: 3}
-    front: {fileID: 2800000, guid: a2f986c033e39a34d9f238f1d94db499, type: 3}
-    mask: {fileID: 2800000, guid: 869b460a7924c304dada1826e8bff98e, type: 3}
-    liquidTop: 36
-    liquidBottom: 212
-    mouth: {x: 50, y: 6}
-    outline:
-      serializedVersion: 2
-      x: 6
-      y: 6
-      width: 88
-      height: 226
-    textureArea:
-      serializedVersion: 2
-      x: -30
-      y: -30
-      width: 160
-      height: 300
-    boxWidth: 100
-    liquidSpan: {x: 16, y: 84}
-    isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
   - id: wine
     back: {fileID: 2800000, guid: ca71ce6d0aee9be4a91bb81d2b6630e0, type: 3}
     front: {fileID: 2800000, guid: 293ed09e764e4b849a8c51ad96bc1a01, type: 3}
@@ -79,6 +60,9 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
   - id: jug
     back: {fileID: 2800000, guid: 5b266db275afcf746882a2260302b1b5, type: 3}
     front: {fileID: 2800000, guid: d800a14280326034491688e15cb49079, type: 3}
@@ -101,6 +85,9 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
   - id: teapot
     back: {fileID: 2800000, guid: ea36faad546405a409123693d425c742, type: 3}
     front: {fileID: 2800000, guid: 0c3de26093319d1468a4d68323448dd0, type: 3}
@@ -123,6 +110,9 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
   - id: glass
     back: {fileID: 2800000, guid: d986e8858b9148548b1922a136f73039, type: 3}
     front: {fileID: 2800000, guid: 4f5cb32b3cc8eb847b64925d684c2445, type: 3}
@@ -145,6 +135,9 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
   - id: flask
     back: {fileID: 2800000, guid: 67d3c20c6965fd549a6798025682d55d, type: 3}
     front: {fileID: 2800000, guid: a2c336fe79288584e8f5875f753c400d, type: 3}
@@ -167,6 +160,9 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
   - id: potion
     back: {fileID: 2800000, guid: 1a7fa6e990eebfe40bb3e59c7339ba9b, type: 3}
     front: {fileID: 2800000, guid: 82f68a8707f046b4db53fe05e729a18c, type: 3}
@@ -189,6 +185,9 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
   - id: jar
     back: {fileID: 2800000, guid: 65a4c8f446ff3734ba12eaa3692f454c, type: 3}
     front: {fileID: 2800000, guid: 7f26fe55e65507d4fbbf12f15214ddae, type: 3}
@@ -211,6 +210,217 @@ MonoBehaviour:
     boxWidth: 100
     liquidSpan: {x: 16, y: 84}
     isFigure: 0
+    layerWidths: []
+    layerWidthPower: 0
+    neckTone: {x: 0, y: 0, z: 0, w: 0}
+  - id: roundflask
+    back: {fileID: 2800000, guid: 73ff5baeda1f6914b9d77ea9e3d580bc, type: 3}
+    front: {fileID: 2800000, guid: 0090c6dd0eecf634cba079e268687d46, type: 3}
+    mask: {fileID: 2800000, guid: 5dc7c451f81a39a4a93af29926cd9fd8, type: 3}
+    liquidTop: 44
+    liquidBottom: 226
+    mouth: {x: 50, y: 7}
+    outline:
+      serializedVersion: 2
+      x: 2.0007553
+      y: 7
+      width: 95.99849
+      height: 222.99164
+    textureArea:
+      serializedVersion: 2
+      x: -30
+      y: -30
+      width: 160
+      height: 300
+    boxWidth: 100
+    liquidSpan: {x: 10, y: 90}
+    isFigure: 0
+    layerWidths:
+    - 8.840272
+    - 22.630875
+    - 28.770632
+    - 33.706303
+    - 37.914497
+    - 41.614647
+    - 45.970062
+    - 48.899246
+    - 51.593998
+    - 54.090805
+    - 56.413994
+    - 59.2786
+    - 61.272854
+    - 63.148613
+    - 64.91598
+    - 66.5836
+    - 68.663445
+    - 70.12516
+    - 71.50817
+    - 72.816925
+    - 74.054794
+    - 75.60037
+    - 76.68709
+    - 77.71245
+    - 78.67909
+    - 79.59145
+    - 80.722435
+    - 81.51168
+    - 82.24882
+    - 82.937775
+    - 83.57968
+    - 84.362335
+    - 84.89525
+    - 85.385475
+    - 85.83063
+    - 86.23342
+    - 86.70408
+    - 87.008965
+    - 87.27127
+    - 87.49413
+    - 87.674614
+    - 87.85366
+    - 87.94214
+    - 87.988434
+    - 87.99694
+    - 87.96331
+    - 87.85768
+    - 87.732735
+    - 87.56531
+    - 87.3595
+    - 87.11069
+    - 86.71628
+    - 86.372536
+    - 85.98524
+    - 85.55582
+    - 85.083046
+    - 84.383545
+    - 83.80501
+    - 83.182274
+    - 82.51046
+    - 81.79092
+    - 80.753494
+    - 79.91645
+    - 79.0251
+    - 78.077774
+    - 77.07479
+    - 75.6429
+    - 74.49669
+    - 73.28496
+    - 72.00352
+    - 70.64877
+    - 68.72108
+    - 67.17865
+    - 65.54623
+    - 63.816853
+    - 61.982635
+    - 59.35726
+    - 57.238243
+    - 54.973373
+    - 52.543312
+    - 49.926075
+    - 46.08715
+    - 42.887882
+    - 39.340378
+    - 35.340527
+    - 30.710955
+    - 26.351824
+    - 24.608858
+    - 23.13918
+    - 21.916101
+    - 20.912512
+    - 19.870539
+    - 19.279198
+    - 18.826174
+    - 18.491629
+    - 18.256464
+    - 18.071503
+    - 18.011105
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    - 18.000006
+    layerWidthPower: 0.5
+    neckTone: {x: 41, y: 59, z: 128, w: 148}
   glyphs: {fileID: 2800000, guid: d40f790b9096d974f9ab73ddbe5b604d, type: 3}
   bottleShader: {fileID: 4800000, guid: 79e5c1ea094b2bd4590740c4b0bb08f9, type: 3}
   streamShader: {fileID: 4800000, guid: df3dd9990deeffc40a4806a7643e3467, type: 3}
@@ -231,3 +441,49 @@ MonoBehaviour:
   catHappySprite: {fileID: 21300000, guid: be31b68f5a3a4244da3f8e5b3e2332e2, type: 3}
   catPawSprite: {fileID: 21300000, guid: 5483e57ec9cba1c40a9b4a3e76040509, type: 3}
   helpSignSprite: {fileID: 21300000, guid: 725a8ddd5a7ca1043a2beea79dc998f4, type: 3}
+  heroes:
+  - id: puppy
+    sprite: {fileID: 21300000, guid: e940024d35b61874cba46f206e767294, type: 3}
+    happySprite: {fileID: 21300000, guid: d3ba66259ab18904da78bc8ec7dbd062, type: 3}
+    pawSprite: {fileID: 21300000, guid: 80b2e697292c0fb4cb17ad8eb5bd1563, type: 3}
+    signSprite: {fileID: 21300000, guid: 604fd7be84a29934b8b91450210f26c7, type: 3}
+  - id: chick
+    sprite: {fileID: 21300000, guid: c8bab68ffb9b6074da87a92bcb5920c4, type: 3}
+    happySprite: {fileID: 21300000, guid: 26aec0b792485c840936c5fbb58512b0, type: 3}
+    pawSprite: {fileID: 21300000, guid: 8609f178f47fbeb4bb065383d0839a06, type: 3}
+    signSprite: {fileID: 21300000, guid: 503b64107d444c24a9be67a7da0ce294, type: 3}
+  - id: bunny
+    sprite: {fileID: 21300000, guid: 75727e3c5a026f14e8b6e3f39924b3b7, type: 3}
+    happySprite: {fileID: 21300000, guid: ad0d5d2ebd67c8a48b965484134f1b7a, type: 3}
+    pawSprite: {fileID: 21300000, guid: 53145fa8641050f4ca932d8ea864eb15, type: 3}
+    signSprite: {fileID: 21300000, guid: 40026907c4da0de458749b7cc32afb99, type: 3}
+  - id: penguin
+    sprite: {fileID: 21300000, guid: cc8335a4025af7e44bc90cb6bb762dd9, type: 3}
+    happySprite: {fileID: 21300000, guid: a96f0c0d8781f6a42ba6cb356226a9d7, type: 3}
+    pawSprite: {fileID: 21300000, guid: 5adac486a1df4c84682c48be336eea41, type: 3}
+    signSprite: {fileID: 21300000, guid: b99547b36f0e2d74cbfda8238942137f, type: 3}
+  - id: panda
+    sprite: {fileID: 21300000, guid: ed152f05b9f93b645bdf17cd9d7a3f84, type: 3}
+    happySprite: {fileID: 21300000, guid: 99918b1dff27c354a9800e69bfadde40, type: 3}
+    pawSprite: {fileID: 21300000, guid: 4a6f47e4f39c74d42aba3eb2182e12f1, type: 3}
+    signSprite: {fileID: 21300000, guid: 8975a9943aba38e4ea407b24ae061ebc, type: 3}
+  - id: fox
+    sprite: {fileID: 21300000, guid: 199f7d4130b4b744f8dda684e6ec96d0, type: 3}
+    happySprite: {fileID: 21300000, guid: 9deba9a5aab5c394b88bc132b3b60ce6, type: 3}
+    pawSprite: {fileID: 21300000, guid: a2e6378e99d669a4a872cfe7b7ba1e83, type: 3}
+    signSprite: {fileID: 21300000, guid: ee73ec545f20bab409b9be1235ba1297, type: 3}
+  - id: duckling
+    sprite: {fileID: 21300000, guid: 5efefb7aef5d82543baeae9cbfadd8c8, type: 3}
+    happySprite: {fileID: 21300000, guid: 66d94ca19a0c7944cab016ca42ead12b, type: 3}
+    pawSprite: {fileID: 21300000, guid: 8894294a016f5c64dbf928aae85c65e8, type: 3}
+    signSprite: {fileID: 21300000, guid: 210fac901f0b8f2479886877693c09e4, type: 3}
+  - id: hedgehog
+    sprite: {fileID: 21300000, guid: d7860f39995ad464ab0b8556bbd23af0, type: 3}
+    happySprite: {fileID: 21300000, guid: 59d0cbdc4bf9f5b4281cacb906e195fb, type: 3}
+    pawSprite: {fileID: 21300000, guid: 8d40119a46365bd489f16e3cdc231929, type: 3}
+    signSprite: {fileID: 21300000, guid: e0361ff7112b2514cab386a8e8e5d621, type: 3}
+  - id: owlet
+    sprite: {fileID: 21300000, guid: dd1a4da3bd7836945bd8b3e9fb083c1f, type: 3}
+    happySprite: {fileID: 21300000, guid: 5723333dcdc749b47ab91f45806c420a, type: 3}
+    pawSprite: {fileID: 21300000, guid: 6558d42af1174c3489a14014b826bb51, type: 3}
+    signSprite: {fileID: 21300000, guid: 6e450683a21a0554c8277c40a3ed3e03, type: 3}

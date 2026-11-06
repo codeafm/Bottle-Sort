@@ -35,3 +35,6 @@ MonoBehaviour:
     boxWidth: 200
     liquidSpan: {x: -24.012835, y: 124.01283}
     isFigure: 1
+    layerWidths: []
+    layerWidthPower: 0.5
+    neckTone: {x: 0, y: 0, z: 0, w: 0}

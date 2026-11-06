@@ -34,7 +34,7 @@ namespace BottleSort.Core
         public const int CurrentGenVersion = 2;
 
         public const string ClassicShape = Bottle.DefaultShape;
-        public const string FlaskShape = "cylinder";
+        public const string FlaskShape = "roundflask";
         public const string HourglassShape = "hourglass";
         // Колба и фигурка спасения стоят второй, как колба в макете; раскладку в центр делает ui.
         public const int BigFlaskIndex = 1;

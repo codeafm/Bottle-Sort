@@ -35,6 +35,9 @@ namespace BottleSort.Gameplay
         public Sprite catPawSprite;
         public Sprite helpSignSprite;
 
+        // Остальные герои спасений (котик — поля выше). Картинки того же размера, крепятся в тех же точках.
+        public RescueHeroArt[] heroes;
+
         static VfxArt loaded;
 
         public static VfxArt Default
@@ -47,8 +50,20 @@ namespace BottleSort.Gameplay
             }
         }
 
+        // Неизвестный id — котик, чтобы новый герой в таблице уровней не ломал спасение до появления картинки
+        public RescueHeroArt GetHero(string id)
+        {
+            if (heroes != null)
+                foreach (var hero in heroes)
+                    if (hero != null && hero.id == id)
+                        return hero;
+            return new RescueHeroArt { id = "cat", sprite = catSprite, happySprite = catHappySprite, pawSprite = catPawSprite, signSprite = helpSignSprite };
+        }
+
         public BottleShapeArt GetShape(string id)
         {
+            if (id == BottleShapeIds.Cylinder)
+                id = BottleShapeIds.RoundFlask;
             BottleShapeArt fallback = null;
             foreach (var shape in shapes)
             {

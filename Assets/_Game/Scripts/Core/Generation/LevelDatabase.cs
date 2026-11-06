@@ -217,7 +217,8 @@ namespace BottleSort.Core
                         case 'o': canPourOut = false; break;
                         case 'h': hidden = Int(value); break;
                         case 'x': flips = Int(value); break;
-                        case 's': shape = value; break;
+                        // В базе большая колба записана ещё старым id мерной колбы
+                        case 's': shape = value == "cylinder" ? LevelGenerator.FlaskShape : value; break;
                         case 'r':
                             recipe = new byte[value.Length];
                             for (int c = 0; c < value.Length; c++)

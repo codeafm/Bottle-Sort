@@ -14,7 +14,7 @@ namespace BottleSort.Editor.Vfx
     // шейдер сам режет её маской inner и рисует слои, поэтому вся бутылка — один квад и один draw call.
     //
     // Из batchmode: -executeMethod BottleSort.Editor.Vfx.BottleArtGenerator.Run
-    public static class BottleArtGenerator
+    public static partial class BottleArtGenerator
     {
         const string ArtDir = "Assets/_Game/Art";
         const string BottlesDir = ArtDir + "/Bottles";
@@ -35,7 +35,24 @@ namespace BottleSort.Editor.Vfx
             public string Id, Outer, Inner, Cap, CapType, Extra = "", Deco = "", Ticks = "", Hl1 = "", Hl2 = "", Hl3 = "";
             public float Top, Bottom;
             public Vector2 Mouth;
+            public Vector2 ToneSpan = new Vector2(16f, 84f);
+            // Для колбы с шаром: слои делятся по ширине (см. BottleShapeArt.ComputeEdges), блик в горле идёт по горлу
+            public float WidthPower = -1f;
+            public Vector4 NeckTone;
         }
+
+        // Большая колба на 8 слоёв, круглодонная, как на фото Docs/Art/reference/flask_round_bottom.jpg
+        // (заказчик выбрал вариант с тонким длинным горлом). Заменила мерную колбу из макета.
+        static readonly ShapeDef RoundFlask = new ShapeDef
+        {
+            Id = BottleShapeIds.RoundFlask,
+            Outer = "M37 16 V126 C37 131 36 135 31.5 137.7 A48 48 0 1 0 68.5 137.7 C64 135 63 131 63 126 V16 Z",
+            Inner = "M41 20 V128 C41 133 40 136.8 36 140.3 A44 44 0 1 0 64 140.3 C60 136.8 59 133 59 128 V20 Z",
+            Cap = "M32 11 Q32 7 36 7 H64 Q68 7 68 11 Q68 15 64 16 Q63 16.5 63 19 H37 Q37 16.5 36 16 Q32 15 32 11 Z", CapType = "glass",
+            Top = 44, Bottom = 226, Mouth = new Vector2(50, 7),
+            Hl1 = "M13 176 Q15 150 31 141", Hl2 = "M87 196 Q84 210 75 218", Hl3 = "M44 26 V124",
+            ToneSpan = new Vector2(10, 90), WidthPower = 0.5f, NeckTone = new Vector4(41, 59, 128, 148)
+        };
 
         // Контуры один в один из SH в макете
         static readonly ShapeDef[] Shapes =
@@ -47,15 +64,6 @@ namespace BottleSort.Editor.Vfx
                 Inner = "M34 28 V36 Q34 49 24 55 Q20 58 20 66 V206 Q20 226 40 226 H60 Q80 226 80 206 V66 Q80 58 76 55 Q66 49 66 36 V28 Z",
                 Cap = "M26 12 H74 Q79 12 79 17 V23 Q79 28 74 28 H26 Q21 28 21 23 V17 Q21 12 26 12 Z", CapType = "glass",
                 Top = 66, Bottom = 226, Hl1 = "M25 72 V204", Hl2 = "M76 76 V114", Hl3 = "M37 30 V42", Mouth = new Vector2(50, 12)
-            },
-            new ShapeDef
-            {
-                Id = BottleShapeIds.Cylinder,
-                Outer = "M24 14 L18 6 H82 V14 Q78 16 78 20 V214 H92 Q94 214 94 216 V230 Q94 232 92 232 H8 Q6 232 6 230 V216 Q6 214 8 214 H22 V20 Q22 16 24 14 Z",
-                Inner = "M26 16 H74 V212 H26 Z",
-                Cap = "M8 216 H92 V230 H8 Z", CapType = "thick",
-                Ticks = "M26 36 H36 M26 58 H32 M26 80 H36 M26 102 H32 M26 124 H36 M26 146 H32 M26 168 H36 M26 190 H32",
-                Top = 36, Bottom = 212, Hl1 = "M30 30 V206", Hl2 = "M70 40 V110", Mouth = new Vector2(50, 6)
             },
             new ShapeDef
             {
@@ -153,9 +161,10 @@ namespace BottleSort.Editor.Vfx
             foreach (var dir in new[] { BottlesDir, EffectsDir, MaterialsDir, ResourcesDir, FiguresDir, FigureAssetsDir })
                 Directory.CreateDirectory(dir);
 
-            var shapeFiles = new List<(ShapeDef def, Rect outline)>();
+            var shapeFiles = new List<(ShapeDef def, Rect outline, float[] widths)>();
             foreach (var def in Shapes)
-                shapeFiles.Add((def, DrawBottle(def)));
+                shapeFiles.Add(DrawBottle(def));
+            shapeFiles.Add(DrawBottle(RoundFlask));
             var figures = DrawFigures();
             DrawCatSprites();
 
@@ -170,7 +179,7 @@ namespace BottleSort.Editor.Vfx
             DrawConfetti(EffectsDir + "/confetti.png");
             AssetDatabase.Refresh();
 
-            foreach (var (def, _) in shapeFiles)
+            foreach (var (def, _, _) in shapeFiles)
             {
                 ImportBottleTexture($"{BottlesDir}/{def.Id}_back.png", true);
                 ImportBottleTexture($"{BottlesDir}/{def.Id}_front.png", true);
@@ -207,7 +216,7 @@ namespace BottleSort.Editor.Vfx
             AssignCatSprites(art);
 
             var shapes = new List<BottleShapeArt>();
-            foreach (var (def, outline) in shapeFiles)
+            foreach (var (def, outline, widths) in shapeFiles)
             {
                 shapes.Add(new BottleShapeArt
                 {
@@ -218,7 +227,11 @@ namespace BottleSort.Editor.Vfx
                     liquidTop = def.Top,
                     liquidBottom = def.Bottom,
                     mouth = def.Mouth,
-                    outline = outline
+                    outline = outline,
+                    liquidSpan = def.ToneSpan,
+                    layerWidths = widths,
+                    layerWidthPower = Mathf.Max(def.WidthPower, 0f),
+                    neckTone = def.NeckTone
                 });
             }
             art.shapes = shapes.ToArray();
@@ -262,7 +275,7 @@ namespace BottleSort.Editor.Vfx
             return art;
         }
 
-        static Rect DrawBottle(ShapeDef def)
+        static (ShapeDef, Rect, float[]) DrawBottle(ShapeDef def)
         {
             var area = BottleGeometry.TextureArea;
             int width = Mathf.RoundToInt(area.width * BottleScale), height = Mathf.RoundToInt(area.height * BottleScale);
@@ -288,6 +301,10 @@ namespace BottleSort.Editor.Vfx
             back.Paint(body, BoxGradient(outer, GlassFill));
             back.SavePng($"{BottlesDir}/{def.Id}_back.png");
 
+            var liquidRaster = NewRaster();
+            var liquid = liquidRaster.Fill(inner);
+            var widths = def.WidthPower >= 0f ? LiquidWidths(liquidRaster, liquid, def.Top, def.Bottom) : null;
+
             var front = NewRaster();
             front.Paint(front.Stroke(inner, 1.4f), Color.white, 0.35f);
             front.Paint(front.Stroke(outer, 2.6f), Raster.Hex("#DCEBFA"), 0.8f);
@@ -302,7 +319,6 @@ namespace BottleSort.Editor.Vfx
             front.SavePng($"{BottlesDir}/{def.Id}_front.png");
 
             var mask = NewRaster();
-            var liquid = mask.Fill(inner);
             var silhouette = Raster.Union(body, mask.Fill(cap), mask.Stroke(extra, 9f), mask.Fill(deco));
             var near = mask.Blur(silhouette, 4.3f);
             var far = mask.Blur(silhouette, 10f);
@@ -320,7 +336,23 @@ namespace BottleSort.Editor.Vfx
                 var e = extra.Bounds;
                 outline = Encapsulate(outline, Rect.MinMaxRect(e.xMin - 4.5f, e.yMin - 4.5f, e.xMax + 4.5f, e.yMax + 4.5f), false);
             }
-            return outline;
+            return (def, outline, widths);
+        }
+
+        // Ширина жидкости через каждую единицу высоты от дна, по готовой маске inner
+        static float[] LiquidWidths(Raster raster, float[] liquid, float top, float bottom)
+        {
+            int count = Mathf.FloorToInt(bottom - top) + 1;
+            var widths = new float[count];
+            for (int i = 0; i < count; i++)
+            {
+                int row = Mathf.Clamp(Mathf.RoundToInt((bottom - i - 0.5f - raster.Origin.y) * raster.Scale), 0, raster.Height - 1);
+                float sum = 0f;
+                for (int x = 0; x < raster.Width; x++)
+                    sum += liquid[row * raster.Width + x];
+                widths[i] = sum / raster.Scale;
+            }
+            return widths;
         }
 
         // Ручка, носик или хобот: стеклянная трубка без жидкости
@@ -471,6 +503,7 @@ namespace BottleSort.Editor.Vfx
 
         static void DrawCatSprites()
         {
+            DrawHeroSprites();
             DrawRing(EffectsDir + "/ring_back.png", false);
             DrawRing(EffectsDir + "/ring_front.png", true);
             DrawCat(EffectsDir + "/cat.png", false);
@@ -488,6 +521,7 @@ namespace BottleSort.Editor.Vfx
             ImportSprite(EffectsDir + "/cat_happy.png", ppu, PivotIn(CatArea, CatPivot));
             ImportSprite(EffectsDir + "/cat_paw.png", ppu, PivotIn(PawArea, CatPivot));
             ImportSprite(EffectsDir + "/help_sign.png", ppu, PivotIn(SignArea, SignPivot));
+            ImportHeroSprites(ppu);
         }
 
         static void AssignCatSprites(VfxArt art)
@@ -498,6 +532,7 @@ namespace BottleSort.Editor.Vfx
             art.catHappySprite = LoadSprite("cat_happy");
             art.catPawSprite = LoadSprite("cat_paw");
             art.helpSignSprite = LoadSprite("help_sign");
+            AssignHeroSprites(art);
         }
 
         static Vector2 PivotIn(Rect area, Vector2 point) =>

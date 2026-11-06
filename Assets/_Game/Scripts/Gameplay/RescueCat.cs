@@ -2,12 +2,15 @@ using UnityEngine;
 
 namespace BottleSort.Gameplay
 {
-    // Котик в фигурке спасения (BOTTLE_MODELS §5.1). Сидит в спасательном круге на поверхности жидкости и машет
-    // табличкой HELP!, а когда рецепт собран — выпрыгивает из горлышка с конфетти. Круг остаётся плавать.
+    // Герой в фигурке спасения (BOTTLE_MODELS §5.1): котик, щенок, цыплёнок и другие. Сидит в спасательном круге
+    // на поверхности жидкости и машет табличкой HELP!, а когда рецепт собран — выпрыгивает из горлышка с конфетти.
+    // Круг остаётся плавать. Кого спасаем на уровне, задаёт игра через CurrentHero (RescueCast.CharacterOf).
     // Живёт внутри тела бутылки, поэтому трясётся и поднимается вместе с ним; позицию и прозрачность задаёт BottleView.
     public sealed class RescueCat : MonoBehaviour
     {
         public const float JumpSeconds = 1.2f;
+
+        public static string CurrentHero { get; set; } = "cat";
 
         const float SignWaveDegrees = 9f;
         const float SignWaveSeconds = 1.7f;
@@ -22,6 +25,7 @@ namespace BottleSort.Gameplay
         };
 
         VfxArt art;
+        RescueHeroArt hero;
         Transform ring, kitten, sign;
         SpriteRenderer ringBack, ringFront, cat, paw, help, flash;
         ParticleSystem confetti;
@@ -56,11 +60,12 @@ namespace BottleSort.Gameplay
             ringBack = NewSprite("Ring Back", ring, art.ringBackSprite, hide);
             ringFront = NewSprite("Ring Front", ring, art.ringFrontSprite, hide);
             kitten = NewNode("Kitten", transform, hide);
-            cat = NewSprite("Cat", kitten, art.catSprite, hide);
-            paw = NewSprite("Paw", kitten, art.catPawSprite, hide);
+            hero = art.GetHero(CurrentHero);
+            cat = NewSprite("Cat", kitten, hero.sprite, hide);
+            paw = NewSprite("Paw", kitten, hero.pawSprite, hide);
             sign = NewNode("Sign", kitten, hide);
             sign.localPosition = SignPaw * BottleGeometry.UnitSize;
-            help = NewSprite("Help", sign, art.helpSignSprite, hide);
+            help = NewSprite("Help", sign, hero.signSprite, hide);
             flash = NewSprite("Flash", transform, art.flashSprite, hide);
             flash.sharedMaterial = art.additiveMaterial;
             flash.enabled = false;
@@ -178,6 +183,12 @@ namespace BottleSort.Gameplay
         {
             if (ring == null)
                 return;
+            if (hero.id != CurrentHero)
+            {
+                hero = art.GetHero(CurrentHero);
+                paw.sprite = hero.pawSprite;
+                help.sprite = hero.signSprite;
+            }
             var surface = new Vector3(0f, BottleGeometry.ToLocalY(surfaceY), 0f);
             ring.localPosition = surface;
             SetColor(ringBack, 1f);
@@ -192,7 +203,7 @@ namespace BottleSort.Gameplay
 
             if (!IsJumping)
             {
-                cat.sprite = art.catSprite;
+                cat.sprite = hero.sprite;
                 kitten.localPosition = surface;
                 kitten.localRotation = Quaternion.identity;
                 kitten.localScale = Vector3.one;
@@ -211,7 +222,7 @@ namespace BottleSort.Gameplay
         void PoseJump(Vector3 surface)
         {
             float t = jumpTime;
-            cat.sprite = art.catHappySprite;
+            cat.sprite = hero.happySprite;
             float apex = BottleGeometry.ToLocalY(mouthY - 50f);
 
             Vector3 scale = Vector3.one;

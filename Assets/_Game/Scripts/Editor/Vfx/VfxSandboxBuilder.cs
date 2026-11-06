@@ -55,7 +55,7 @@ namespace BottleSort.Editor.Vfx
             {
                 new Spec { Shape = BottleShapeIds.Potion, Colors = "BRBG" },
                 new Spec { Shape = BottleShapeIds.Jar, Colors = "YOC" },
-                new Spec { Shape = BottleShapeIds.Cylinder, Colors = "RBYGPCOK", Capacity = 8 },
+                new Spec { Shape = BottleShapeIds.RoundFlask, Colors = "RBYGPCOK", Capacity = 8 },
                 new Spec { Colors = "NDRR", Hidden = 2 },
                 new Spec { Colors = "", Tint = Palette.Cyan },
             },

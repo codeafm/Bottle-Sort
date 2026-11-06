@@ -31,8 +31,12 @@ Shader "BottleSort/Bottle"
         _Alpha ("Alpha", Range(0, 1)) = 1
         _Area ("Texture area in units (x, y, w, h)", Vector) = (-30, -30, 160, 300)
         _ToneX ("Liquid shading from x to x", Vector) = (16, 84, 0, 0)
+        _ToneNeck ("Neck shading x0, x1 above y = z, blends to _ToneX by y = w", Vector) = (0, 0, 0, 0)
         _Ghost ("Recipe layers shown pale", Float) = 0
         _FrontAlpha ("Front glass in this pass", Range(0, 1)) = 1
+        _Edges0 ("Layer tops 1-4, from liquid bottom", Vector) = (40, 80, 120, 160)
+        _Edges1 ("Layer tops 5-8", Vector) = (160, 160, 160, 160)
+        _Edges2 ("Layer tops 9-10", Vector) = (160, 160, 160, 160)
     }
 
     SubShader
@@ -59,8 +63,9 @@ Shader "BottleSort/Bottle"
                 float _Fill, _Capacity, _Hidden, _LiquidTop, _LiquidBottom;
                 half4 _GlowColor, _Tint;
                 float _Ice, _IceTurns, _Alpha;
-                float4 _Area, _ToneX;
+                float4 _Area, _ToneX, _ToneNeck;
                 float _Ghost, _FrontAlpha;
+                float4 _Edges0, _Edges1, _Edges2;
             CBUFFER_END
 
             struct Attributes
@@ -101,9 +106,12 @@ Shader "BottleSort/Bottle"
             }
 
             // Горизонтальный градиент слоя из макета: тёмный край слева, мягкий блик, плоская середина, край справа темнее
-            half3 Tone(half3 c, float x)
+            half3 Tone(half3 c, float x, float y)
             {
-                float t = saturate((x - _ToneX.x) / (_ToneX.y - _ToneX.x));
+                float2 span = _ToneX.xy;
+                if (_ToneNeck.w > _ToneNeck.z)
+                    span = lerp(_ToneNeck.xy, _ToneX.xy, saturate((y - _ToneNeck.z) / (_ToneNeck.w - _ToneNeck.z)));
+                float t = saturate((x - span.x) / (span.y - span.x));
                 half3 highlight = lerp(c, 1.0, 0.28);
                 if (t < 0.12) return lerp(c * 0.79, c, t / 0.12);
                 if (t < 0.26) return lerp(c, highlight, (t - 0.12) / 0.14);
@@ -128,11 +136,47 @@ Shader "BottleSort/Bottle"
                 return SAMPLE_TEXTURE2D_LOD(_GlyphTex, sampler_GlyphTex, uv, 0).a;
             }
 
-            half3 LayerShaded(float k, float d, float x, float lh, float level)
+            // Слои не обязательно равной высоты: у круглой колбы в шаре они ниже, в горле выше.
+            // Высоты верхних краёв слоёв считает BottleView, k-й слой лежит между EdgeAt(k) и EdgeAt(k + 1).
+            float EdgeAt(float k)
             {
-                half3 c = Tone(LayerColor(k), x);
+                float e = 0.0;
+                e = k >= 1 ? _Edges0.x : e;
+                e = k >= 2 ? _Edges0.y : e;
+                e = k >= 3 ? _Edges0.z : e;
+                e = k >= 4 ? _Edges0.w : e;
+                e = k >= 5 ? _Edges1.x : e;
+                e = k >= 6 ? _Edges1.y : e;
+                e = k >= 7 ? _Edges1.z : e;
+                e = k >= 8 ? _Edges1.w : e;
+                e = k >= 9 ? _Edges2.x : e;
+                e = k >= 10 ? _Edges2.y : e;
+                return e;
+            }
+
+            float LayerOf(float d)
+            {
+                float k = step(_Edges0.x, d) * step(1.5, _Capacity) + step(_Edges0.y, d) * step(2.5, _Capacity)
+                        + step(_Edges0.z, d) * step(3.5, _Capacity) + step(_Edges0.w, d) * step(4.5, _Capacity)
+                        + step(_Edges1.x, d) * step(5.5, _Capacity) + step(_Edges1.y, d) * step(6.5, _Capacity)
+                        + step(_Edges1.z, d) * step(7.5, _Capacity) + step(_Edges1.w, d) * step(8.5, _Capacity)
+                        + step(_Edges2.x, d) * step(9.5, _Capacity);
+                return k;
+            }
+
+            float LevelHeight(float fill)
+            {
+                float k = floor(fill);
+                return lerp(EdgeAt(k), EdgeAt(k + 1.0), fill - k);
+            }
+
+            half3 LayerShaded(float k, float d, float x, float level)
+            {
+                half3 c = Tone(LayerColor(k), x, _LiquidBottom - d);
+                float bottom = EdgeAt(k);
+                float lh = max(EdgeAt(k + 1.0) - bottom, 0.5);
                 // Тонкий свет у верхней кромки слоя и едва заметная тень у нижней — слои читаются, но вода не темнеет ко дну
-                float layerTop = min((k + 1.0) * lh, level);
+                float layerTop = min(bottom + lh, level);
                 float t = saturate((layerTop - d) / lh);
                 float light = t < 0.14 ? lerp(0.12, 0.02, t / 0.14) : lerp(0.02, 0.0, saturate((t - 0.14) / 0.66));
                 c = lerp(c, 1.0, light);
@@ -142,8 +186,8 @@ Shader "BottleSort/Bottle"
                 if (hidden > 0.0)
                 {
                     half3 veil = HiddenTone(x);
-                    float2 center = float2(50.0, _LiquidBottom - (k + 0.5) * lh);
-                    float cell = 0.78 * lh;
+                    float2 center = float2(50.0, _LiquidBottom - bottom - 0.5 * lh);
+                    float cell = 0.78 * min(lh, 32.0);
                     veil = lerp(veil, 1.0, 0.85 * GlyphAlpha(10.0, (float2(x, _LiquidBottom - d) - center) / cell + 0.5));
                     c = lerp(c, veil, hidden);
                 }
@@ -161,19 +205,18 @@ Shader "BottleSort/Bottle"
                 half tintA = _Tint.a * mask.b;
                 col = half4(_Tint.rgb * tintA, tintA) + col * (1.0 - tintA);
 
-                float lh = (_LiquidBottom - _LiquidTop) / max(_Capacity, 1.0);
-                float level = _Fill * lh;
+                float level = LevelHeight(_Fill);
                 float d = _LiquidBottom - u.y;
                 float fw = max(fwidth(d), 1e-4);
                 float toneWidth = (_ToneX.y - _ToneX.x) / 68.0;
 
                 // Рецепт фигурки: будущие слои бледным цветом и тонкой линией по верху каждого
-                float ghostTop = _Ghost * lh;
+                float ghostTop = LevelHeight(_Ghost);
                 if (mask.r > 0.002 && d > level - 1.0 && d < ghostTop + 1.0)
                 {
-                    float k = clamp(floor(d / lh), 0.0, 9.0);
+                    float k = LayerOf(d);
                     float inside = saturate((d - level) / fw + 0.5) * saturate((ghostTop - d) / fw + 0.5);
-                    float edge = (k + 1.0) * lh - d;
+                    float edge = EdgeAt(k + 1.0) - d;
                     float lineA = saturate((0.7 - abs(edge - 0.35)) / fw + 0.5) * 0.2;
                     half ghostA = mask.r * inside * (0.25 + lineA);
                     col = half4(LayerColor(k) * ghostA, ghostA) + col * (1.0 - ghostA);
@@ -181,16 +224,16 @@ Shader "BottleSort/Bottle"
 
                 if (mask.r > 0.002 && level > 0.01 && d > -1.0 && d < level + 1.0)
                 {
-                    float k = clamp(floor(d / lh), 0.0, 9.0);
-                    half3 liquid = LayerShaded(k, d, u.x, lh, level);
+                    float k = LayerOf(d);
+                    half3 liquid = LayerShaded(k, d, u.x, level);
 
                     // Сглаживаем границу соседних слоёв, иначе при наклоне она идёт лесенкой
-                    float below = d - k * lh;
-                    float above = (k + 1.0) * lh - d;
+                    float below = d - EdgeAt(k);
+                    float above = EdgeAt(k + 1.0) - d;
                     if (above < fw && k + 1.0 < _Fill)
-                        liquid = lerp(liquid, LayerShaded(k + 1.0, d, u.x, lh, level), saturate(0.5 - above / fw));
+                        liquid = lerp(liquid, LayerShaded(k + 1.0, d, u.x, level), saturate(0.5 - above / fw));
                     else if (below < fw && k > 0.0)
-                        liquid = lerp(liquid, LayerShaded(k - 1.0, d, u.x, lh, level), saturate(0.5 - below / fw));
+                        liquid = lerp(liquid, LayerShaded(k - 1.0, d, u.x, level), saturate(0.5 - below / fw));
 
                     float depth = saturate((level - d) / level);
                     liquid = lerp(liquid, 1.0, 0.08 * saturate(1.0 - depth / 0.3));

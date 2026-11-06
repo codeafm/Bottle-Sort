@@ -6,6 +6,8 @@ namespace BottleSort.Gameplay
     public static class BottleShapeIds
     {
         public const string Classic = "classic";
+        public const string RoundFlask = "roundflask";
+        // Мерная колба из макета; старые уровни и сохранения ещё ссылаются на этот id, рисуется круглой колбой
         public const string Cylinder = "cylinder";
         public const string Wine = "wine";
         public const string Jug = "jug";
@@ -15,7 +17,7 @@ namespace BottleSort.Gameplay
         public const string Potion = "potion";
         public const string Jar = "jar";
 
-        public static readonly string[] All = { Classic, Cylinder, Wine, Jug, Teapot, Glass, Flask, Potion, Jar };
+        public static readonly string[] All = { Classic, RoundFlask, Wine, Jug, Teapot, Glass, Flask, Potion, Jar };
 
         // Фигурки спасений, BOTTLE_MODELS §5.2, в порядке появления
         public static readonly string[] Figures = { "hippo", "whale", "owl", "turtle", "elephant", "fish", "fox", "bear", "rabbit", "dragon" };
@@ -40,6 +42,61 @@ namespace BottleSort.Gameplay
         // Где по x лежит жидкость: по этой полосе идёт блик и тёмный край слоя
         public Vector2 liquidSpan = new Vector2(16f, 84f);
         public bool isFigure;
+        // Ширина жидкости через каждую единицу высоты от дна. Пусто — слои равной высоты.
+        public float[] layerWidths;
+        public float layerWidthPower = 0.5f;
+        // Узкое горло над широким шаром: блик и тёмный край слоя идут по горлу (x0, x1) выше y = z,
+        // по liquidSpan ниже y = w, между ними плавно. w <= z — не используется.
+        public Vector4 neckTone;
+
+        // Высоты верхних краёв слоёв от дна жидкости в edges[0..capacity], дальше повторяется последнее значение.
+        // Без профиля слои равные; с профилем каждый слой забирает равную долю ширина^power,
+        // поэтому в широкой части слои ниже, в узкой выше, а на вид одинаково заметны.
+        public static void ComputeEdges(float[] widths, float power, float height, int capacity, float[] edges)
+        {
+            capacity = Math.Max(1, capacity);
+            if (widths == null || widths.Length < 2)
+            {
+                for (int k = 0; k < edges.Length; k++)
+                    edges[k] = height * Math.Min(k, capacity) / capacity;
+                return;
+            }
+
+            float step = height / (widths.Length - 1);
+            var cumulative = new float[widths.Length];
+            for (int i = 1; i < widths.Length; i++)
+            {
+                float a = Mathf.Pow(Mathf.Max(widths[i - 1], 0.1f), power);
+                float b = Mathf.Pow(Mathf.Max(widths[i], 0.1f), power);
+                cumulative[i] = cumulative[i - 1] + (a + b) * 0.5f * step;
+            }
+            float total = cumulative[cumulative.Length - 1];
+            int j = 1;
+            edges[0] = 0f;
+            for (int k = 1; k < edges.Length; k++)
+            {
+                if (k >= capacity)
+                {
+                    edges[k] = height;
+                    continue;
+                }
+                float target = total * k / capacity;
+                while (j < cumulative.Length - 1 && cumulative[j] < target)
+                    j++;
+                float t = Mathf.InverseLerp(cumulative[j - 1], cumulative[j], target);
+                edges[k] = (j - 1 + t) * step;
+            }
+        }
+    }
+
+    [Serializable]
+    public sealed class RescueHeroArt
+    {
+        public string id;
+        public Sprite sprite;
+        public Sprite happySprite;
+        public Sprite pawSprite;
+        public Sprite signSprite;
     }
 
     public static class BottleGeometry
