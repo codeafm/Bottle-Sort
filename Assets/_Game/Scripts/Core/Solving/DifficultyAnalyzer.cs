@@ -44,8 +44,10 @@ namespace BottleSort.Core
             if (move.Kind != MoveKind.Pour)
                 return false;
             var source = state[move.From];
-            if (!state[move.To].IsEmpty)
-                return true;
+            var target = state[move.To];
+            // Слить поверх чужого цвета в большую колбу — не шаг к сборке, а просто отстой.
+            if (!target.IsEmpty)
+                return target.Recipe != null || target.TopColor == source.TopColor;
             return !source.IsUniform && state.PourAmount(move) >= 2;
         }
 
@@ -268,6 +270,8 @@ namespace BottleSort.Core
             var target = state[move.To];
             int amount = state.PourAmount(move);
 
+            if (!target.IsEmpty && target.Recipe == null && target.TopColor != source.TopColor)
+                return 1;
             if (!target.IsEmpty)
             {
                 bool targetKnown = !blind || target.HiddenCount == 0;

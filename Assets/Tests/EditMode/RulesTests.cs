@@ -75,6 +75,60 @@ namespace BottleSort.Tests
             Assert.IsTrue(outcome.Won);
         }
 
+        private static Bottle Filled(int capacity, string layers, string shape = Bottle.DefaultShape)
+        {
+            var bottle = new Bottle(capacity, shape);
+            foreach (char c in layers)
+                bottle.Push(Palette.FromLetter(c));
+            return bottle;
+        }
+
+        [Test]
+        public void BigFlask_TakesAnyColorOnTop()
+        {
+            var state = new LevelState(4, new[] { Filled(4, "RGBB"), Filled(8, "RRY", "cylinder"), Filled(4, "GY") });
+
+            Assert.AreEqual(MoveError.ColorMismatch, state.Check(Move.Pour(0, 2)), "an ordinary bottle keeps the old rule");
+            Assert.AreEqual(MoveError.None, state.Check(Move.Pour(0, 1)));
+
+            var outcome = state.Apply(Move.Pour(0, 1));
+            Assert.AreEqual(2, outcome.Amount);
+            Assert.AreEqual("RRYBB", state[1].ToString());
+        }
+
+        [Test]
+        public void BigFlask_GivesOnlyItsTopRun()
+        {
+            var state = new LevelState(4, new[] { Filled(8, "RRYBB", "cylinder"), new Bottle(4), Filled(4, "RY") });
+
+            Assert.AreEqual(MoveError.ColorMismatch, state.Check(Move.Pour(0, 2)));
+            var outcome = state.Apply(Move.Pour(0, 1));
+            Assert.AreEqual(2, outcome.Amount);
+            Assert.AreEqual("RRY", state[0].ToString());
+            Assert.AreEqual(MoveError.None, state.Check(Move.Pour(0, 2)));
+        }
+
+        [Test]
+        public void BigFlask_HoldsTwoUnits()
+        {
+            var four = new LevelState(4, new[] { Filled(4, "GGGB"), Filled(8, "RRYYRRY", "cylinder") });
+            Assert.AreEqual(1, four.Apply(Move.Pour(0, 1)).Amount, "only one place left in the flask");
+            Assert.AreEqual(MoveError.TargetFull, four.Check(Move.Pour(0, 1)));
+
+            var five = new LevelState(5, new[] { Filled(5, "GGGBB"), Filled(10, "RRYYRRYY", "cylinder") });
+            Assert.AreEqual(2, five.Apply(Move.Pour(0, 1)).Amount);
+            Assert.IsTrue(five[1].IsFull);
+        }
+
+        [Test]
+        public void RescueFigure_IsNotABigFlask()
+        {
+            var figure = new Bottle(8, "hippo", canPourOut: false, recipe: new byte[] { 0, 0, 0, 0, 1, 1, 1, 1 });
+            var state = new LevelState(4, new[] { figure, new Bottle(8, "cylinder") });
+            Assert.IsFalse(state.IsBigFlask(state[0]));
+            Assert.IsTrue(state.IsBigFlask(state[1]));
+        }
+
         [Test]
         public void SelectingCompletedBottle_IsNotAllowed()
         {

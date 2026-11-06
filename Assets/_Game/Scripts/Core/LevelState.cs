@@ -150,7 +150,8 @@ namespace BottleSort.Core
             if (target.IsFull)
                 return MoveError.TargetFull;
             // Фигурке спасения неважно, что сверху: она ждёт следующий цвет рецепта.
-            if (target.Recipe == null && !target.IsEmpty && target.TopColor != source.TopColor)
+            // В большую колбу можно лить любой цвет поверх любого.
+            if (target.Recipe == null && !IsBigFlask(target) && !target.IsEmpty && target.TopColor != source.TopColor)
                 return MoveError.ColorMismatch;
             if (!target.Accepts(source.TopColor))
                 return MoveError.TargetRejectsColor;
@@ -158,6 +159,10 @@ namespace BottleSort.Core
         }
 
         public bool CanApply(Move move) => Check(move) == MoveError.None;
+
+        // Большая колба на 2U — общий отстойник (решение заказчика): наливать в неё можно что угодно,
+        // а забирают из неё, как из обычной бутылки, только верхнюю полоску одного цвета.
+        public bool IsBigFlask(Bottle bottle) => bottle.Recipe == null && bottle.Capacity > Unit;
 
         // Сколько слоёв уйдёт: весь верхний отрезок, но не больше свободного места и лимита пипетки.
         public int PourAmount(Move move)

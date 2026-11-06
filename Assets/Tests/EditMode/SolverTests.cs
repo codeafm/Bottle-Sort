@@ -112,6 +112,30 @@ namespace BottleSort.Tests
         }
 
         [Test]
+        public void MatchesBruteForceWithBigFlask()
+        {
+            foreach (var layout in new[] { "RGB GBR BRG", "RRG GBB BGR -", "GRB BGR RBG" })
+            {
+                var state = LevelState.FromLayout(3, layout);
+                state.AddBottle(new Bottle(6, "cylinder"));
+
+                var result = Solver.Solve(state);
+                Assert.AreEqual(BruteForceLength(state), result.IsSolved ? result.Length : -1, layout);
+                if (result.IsSolved)
+                    AssertSolutionWins(state, result);
+            }
+        }
+
+        [Test]
+        public void BigFlask_MakesTheEmptyBottleOptional()
+        {
+            // Пустых бутылок нет: всё лишнее сливаем в колбу поверх чего угодно.
+            var state = LevelState.FromLayout(3, "RGB GBR BRG");
+            state.AddBottle(new Bottle(6, "cylinder"));
+            Assert.IsTrue(Solver.Solve(state).IsSolved);
+        }
+
+        [Test]
         public void IceCanForceWaitingMoves()
         {
             // Единственная общая пустая заморожена на 2 хода. Зелёные бутылки принимают только зелёный,
