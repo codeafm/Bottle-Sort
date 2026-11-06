@@ -147,6 +147,8 @@ namespace BottleSort.UI
             _generated = generated;
             _session = generated.CreateSession();
             _guide = generated.IsTutorial ? HandmadeLevels.CreateGuide(generated, _session) : null;
+            int number = generated.Spec.Number;
+            RescueCat.CurrentHero = RescueCast.IsRescue(number) ? RescueCast.CharacterOf(number) : RescueCast.Mascot;
             field.Build(_session.State);
             tutorial.SetHandScale(field.Scale / 2.5f);
             _ready = true;

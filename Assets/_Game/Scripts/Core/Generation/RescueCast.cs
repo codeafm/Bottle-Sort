@@ -12,10 +12,11 @@ namespace BottleSort.Core
             "hippo", "whale", "owl", "turtle", "elephant", "fish", "fox", "bear", "rabbit", "dragon"
         };
 
-        // Новый зверёк на каждом втором спасении. Котёнок — талисман игры, он встречается чаще остальных.
+        // Новый зверёк на каждом втором спасении, порядок и id — как у героев vfx-art (RescueHeroes).
+        // Котёнок — талисман игры, он встречается чаще остальных.
         public static readonly string[] Characters =
         {
-            "cat", "puppy", "duckling", "hamster", "bunny", "penguin", "panda", "hedgehog"
+            "cat", "puppy", "chick", "bunny", "penguin", "panda", "fox", "duckling", "hedgehog", "owlet"
         };
 
         public const string Mascot = "cat";
