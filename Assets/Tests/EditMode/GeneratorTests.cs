@@ -282,6 +282,25 @@ namespace BottleSort.Tests
             Assert.Less(easyScore, hardScore);
         }
 
+        // В колбу можно лить что угодно, но случайный игрок делает это редко и потому не застревает
+        // на каждом уровне с колбой: RW там сравним с жадным игроком, а не около нуля.
+        [Test]
+        public void FlaskLevels_RandomPlayerDoesNotDrownInTheFlask()
+        {
+            var options = new AnalyzerOptions { Runs = 40, DeadSamples = 0 };
+            double random = 0, greedy = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                var spec = new LevelSpec { Number = 91000 + i, Colors = 7, EmptyBottles = 1, BigFlask = true, Candidates = 1 };
+                var level = LevelGenerator.Generate(spec);
+                var metrics = DifficultyAnalyzer.Analyze(level.State, Solver.Solve(level.State), 0, options);
+                random += metrics.RandomWinRate / 4;
+                greedy += metrics.GreedyWinRate / 4;
+            }
+            Assert.Greater(random, 0.2, "random player");
+            Assert.Greater(greedy, random - 0.1, "careful play is not worse than random dumping");
+        }
+
         [Test]
         public void Analysis_IsDeterministic()
         {

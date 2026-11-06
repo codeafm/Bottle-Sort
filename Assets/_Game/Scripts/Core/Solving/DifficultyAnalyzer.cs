@@ -11,6 +11,8 @@ namespace BottleSort.Core
         public int DeadSamples = 40;
         public int DeadCheckStates = 3000;
         public int FallbackStepLimit = 300;
+        // Как часто случайный игрок всё-таки сливает в колбу чужой цвет, когда есть другой ход.
+        public double FlaskDumpChance = 0.25;
 
         public static readonly AnalyzerOptions Default = new AnalyzerOptions();
     }
@@ -88,7 +90,7 @@ namespace BottleSort.Core
             for (int run = 0; run < options.Runs; run++)
             {
                 var collect = deadCandidates.Count < options.DeadSamples ? deadCandidates : null;
-                if (Play(start, AgentKind.Random, stepLimit, rng, collect, options.DeadSamples) > 0)
+                if (Play(start, AgentKind.Random, stepLimit, rng, collect, options.DeadSamples, options.FlaskDumpChance) > 0)
                     randomWins++;
 
                 int greedyMoves = Play(start, AgentKind.Greedy, stepLimit, rng, null, 0);
@@ -205,7 +207,7 @@ namespace BottleSort.Core
 
         // Агент не возвращается в уже виденные позиции. Возвращает число ходов до победы или 0.
         private static int Play(LevelState start, AgentKind agent, int stepLimit, Rng rng,
-            List<LevelState> collect, int collectLimit)
+            List<LevelState> collect, int collectLimit, double flaskDumpChance = 0)
         {
             var codec = new StateCodec(start);
             var visited = new HashSet<PositionKey>();
@@ -224,7 +226,11 @@ namespace BottleSort.Core
 
                 foreach (var move in legal)
                 {
-                    int score = agent == AgentKind.Random ? 0 : ScoreMove(state, move, agent == AgentKind.Blind);
+                    // Разумный случайный игрок редко вываливает в колбу чужой цвет, пока есть другой ход.
+                    // Если сливать туда всё подряд, он застревает почти всегда, RW на колбе около нуля, и DS врёт.
+                    int score = agent == AgentKind.Random
+                        ? (IsFlaskDump(state, move) && !rng.Chance(flaskDumpChance) ? -1 : 0)
+                        : ScoreMove(state, move, agent == AgentKind.Blind);
                     if (score < bestScore)
                         continue;
 
@@ -241,7 +247,7 @@ namespace BottleSort.Core
                     }
                     best.Add((next, key));
                     // Случайному игроку годится первый же новый ход из перемешанного списка.
-                    if (agent == AgentKind.Random)
+                    if (agent == AgentKind.Random && score == 0)
                         break;
                 }
 
@@ -257,6 +263,14 @@ namespace BottleSort.Core
                     collect.Add(state.Clone());
             }
             return 0;
+        }
+
+        private static bool IsFlaskDump(LevelState state, Move move)
+        {
+            if (move.Kind != MoveKind.Pour)
+                return false;
+            var target = state[move.To];
+            return !target.IsEmpty && target.Recipe == null && target.TopColor != state[move.From].TopColor;
         }
 
         // «Казуальный» игрок: собрать бутылку > налить на свой цвет > налить в пустую > бессмысленный перелив.
