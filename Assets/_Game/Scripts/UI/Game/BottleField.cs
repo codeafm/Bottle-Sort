@@ -258,6 +258,9 @@ namespace BottleSort.UI
             // Одна бутылка в нижнем ряду смотрится случайной: тогда рядом с фигуркой по одной с каждой стороны, внизу пять
             if (figure && others.Count == BesideFigure + 1)
                 besideCount = BesideFigure / 2;
+            // Фигурка стоит ровно посередине, только если по бокам поровну: при 5–7 бутылках остаток уходит вниз
+            if (figure && besideCount % 4 != 0)
+                besideCount = besideCount / 4 * 4;
 
             int perRow = Mathf.CeilToInt(besideCount / 2f);
             int left = Mathf.CeilToInt(perRow / 2f);

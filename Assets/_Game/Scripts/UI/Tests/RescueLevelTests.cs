@@ -27,7 +27,7 @@ namespace BottleSort.UI.Tests
             _backup = File.Exists(PlayerData.SavePath) ? File.ReadAllText(PlayerData.SavePath) : null;
             PlayerData.DeleteSave();
             var data = PlayerData.Current;
-            data.highestUnlocked = 78;
+            data.highestUnlocked = 8;
             data.tutorialGiftTaken = true;
             data.undoCount = 3;
             data.Save();
@@ -43,11 +43,11 @@ namespace BottleSort.UI.Tests
         }
 
         [UnityTest]
-        public IEnumerator Level78_HippoInTheMiddle_CatJumpsOutAndTheLevelGoesOn()
+        public IEnumerator Level8_HippoInTheMiddle_CatJumpsOutAndTheLevelGoesOn()
         {
             ScreenRouter router = null;
             GameScreen game = null;
-            yield return OpenLevel(78, (r, g) => { router = r; game = g; });
+            yield return OpenLevel(8, (r, g) => { router = r; game = g; });
             using (var capture = new FrameCapture())
             {
                 int figure = FigureIndex(game.Session.State);
@@ -59,9 +59,9 @@ namespace BottleSort.UI.Tests
                 AssertFigureInTheMiddle(game, figure);
 
                 yield return new WaitForSecondsRealtime(0.8f);
-                capture.Save("rescue_78_start");
+                capture.Save("rescue_8_start");
 
-                var solution = Solution(78);
+                var solution = Solution(8);
                 bool rescued = false;
                 for (int i = 0; i < solution.Count; i++)
                 {
@@ -72,12 +72,12 @@ namespace BottleSort.UI.Tests
                     rescued = true;
                     yield return WaitUntil(() => view.IsRescuing, 5f, "the cat jumps out when the recipe is complete");
                     yield return new WaitForSecondsRealtime(0.62f);
-                    capture.Save("rescue_78_jump");
+                    capture.Save("rescue_8_jump");
                     yield return WaitUntil(() => !view.IsRescuing, 3f, "end of the jump");
                     Assert.IsFalse(game.Session.IsWon, "the level goes on after the rescue");
                     Assert.IsFalse(view.IsCatInside, "the cat is gone, only the ring floats");
                     Assert.AreEqual(game, router.Current);
-                    capture.Save("rescue_78_saved");
+                    capture.Save("rescue_8_saved");
 
                     // Отмена возвращает котика в круг, а тот же ход снова его спасает
                     yield return WaitUntil(() => !game.IsAnimating, 5f, "pours");
@@ -95,25 +95,25 @@ namespace BottleSort.UI.Tests
         }
 
         [UnityTest]
-        public IEnumerator Level328_TwoColorRecipe_CountsBothColorsAndWinsAfterTheJump()
+        public IEnumerator Level128_TwoColorRecipe_CountsBothColorsAndWinsAfterTheJump()
         {
             ScreenRouter router = null;
             GameScreen game = null;
-            yield return OpenLevel(328, (r, g) => { router = r; game = g; });
+            yield return OpenLevel(128, (r, g) => { router = r; game = g; });
             using (var capture = new FrameCapture())
             {
                 var state = game.Session.State;
                 int figure = FigureIndex(state);
                 var view = ViewAt(game, figure);
                 Assert.IsTrue(view.IsFigure);
-                Assert.AreEqual("whale", view.Shape);
+                Assert.AreEqual("fox", view.Shape);
                 Assert.AreEqual(8, view.Recipe.Count, "the whole recipe is shown on the glass");
                 AssertFigureInTheMiddle(game, figure);
 
                 yield return new WaitForSecondsRealtime(0.8f);
-                capture.Save("rescue_328_start");
+                capture.Save("rescue_128_start");
 
-                var solution = Solution(328);
+                var solution = Solution(128);
                 bool halfShot = false;
                 int collected = GameScreen.CollectedColors(state);
                 for (int i = 0; i < solution.Count; i++)
@@ -128,7 +128,7 @@ namespace BottleSort.UI.Tests
                         yield return WaitUntil(() => !game.IsAnimating, 5f, "pour");
                         Assert.IsFalse(view.IsRescuing, "half a recipe is not a rescue");
                         yield return new WaitForSecondsRealtime(0.3f);
-                        capture.Save("rescue_328_half");
+                        capture.Save("rescue_128_half");
                     }
                 }
                 Assert.IsTrue(halfShot);

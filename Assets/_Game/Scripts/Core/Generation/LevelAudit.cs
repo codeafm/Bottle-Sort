@@ -149,15 +149,17 @@ namespace BottleSort.Core
             CheckStructure(level, issues);
             CheckFeatures(level, issues);
 
-            if (number <= 30 && level.Metrics != null)
+            if (number <= 30 && level.Metrics != null && !level.IsTutorial)
             {
-                double minRw = expectedType == LevelType.Boss ? 0.6 : 0.8;
-                if (level.Metrics.RandomWinRate < minRw)
-                    issues.Add(Issue(level, "обучение", $"RW {level.Metrics.RandomWinRate:P0} < {minRw:P0}"));
-                if (level.Par > 20)
-                    issues.Add(Issue(level, "обучение", $"OPT {level.Par} > 20"));
-                if (DifficultyAnalyzer.HasEarlyTrap(state, level.Solution))
-                    issues.Add(Issue(level, "обучение", "trap5: тупик в первые 5 ходов"));
+                var limits = LevelParams.EarlyLimits(number, expectedType);
+                bool flask = expectedType == LevelType.BigFlask;
+                double winRate = flask ? level.Metrics.GreedyWinRate : level.Metrics.RandomWinRate;
+                if (winRate < limits.minRandomWinRate)
+                    issues.Add(Issue(level, "начало", $"{(flask ? "GW" : "RW")} {winRate:P0} < {limits.minRandomWinRate:P0}"));
+                if (level.Par > limits.maxPar)
+                    issues.Add(Issue(level, "начало", $"OPT {level.Par} > {limits.maxPar}"));
+                if (limits.noEarlyTrap && DifficultyAnalyzer.HasEarlyTrap(state, level.Solution))
+                    issues.Add(Issue(level, "начало", "trap5: тупик в первые 5 ходов"));
             }
 
             if (level.Metrics != null && HasHidden(state) && level.Metrics.BlindWinRate < 0.6 * level.Metrics.RandomWinRate)
@@ -225,9 +227,9 @@ namespace BottleSort.Core
             switch (type)
             {
                 case LevelType.Special: return level >= LevelParams.IntroLevel[LevelParams.FiveLayers];
-                case LevelType.BigFlask: return level >= 451;
+                case LevelType.BigFlask: return level >= LevelParams.FiveLayerFlasksFrom;
                 case LevelType.Boss:
-                case LevelType.ChapterBoss: return level >= 500;
+                case LevelType.ChapterBoss: return level >= LevelParams.FiveLayerBossesFrom;
                 case LevelType.Normal: return LevelParams.FiveLayersInNormalLevels && level >= 501;
                 default: return false;
             }
@@ -246,19 +248,9 @@ namespace BottleSort.Core
                     issues.Add(Issue(level, "расписание", $"на L{number} должна вводиться {pair.Key}"));
 
             int mechanics = features.Count(f => f != LevelParams.FiveLayers && f != LevelParams.MoveLimit);
-            int max = MaxFeatures(level.Spec.Type, number);
+            int max = LevelParams.MaxFeatures(level.Spec.Type, number);
             if (mechanics > max)
                 issues.Add(Issue(level, "расписание", $"фишек {mechanics} > {max}"));
-        }
-
-        // §3.2: сколько фишек (включая «?») может быть в одном уровне.
-        private static int MaxFeatures(LevelType type, int level)
-        {
-            bool boss = type == LevelType.Boss || type == LevelType.ChapterBoss;
-            if (level == 2000) return 4;
-            if (level <= 100) return 0;
-            if (level <= 300) return boss ? 2 : 1;
-            return boss ? 3 : 2;
         }
 
         public static List<string> FeaturesIn(GeneratedLevel level)

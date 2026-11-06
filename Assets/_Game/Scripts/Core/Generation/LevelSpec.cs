@@ -53,6 +53,8 @@ namespace BottleSort.Core
         public int HiddenLayers;
         // В скольких бутылках со слоями прятать низ; -1 — во всех.
         public int HiddenBottles = -1;
+        // «Лесенка»: у каждой выбранной бутылки своё число скрытых слоёв, от 1 до HiddenLayers.
+        public bool HiddenVaried;
 
         public List<IceFeature> Ice = new List<IceFeature>();
         public List<LockFeature> Locks = new List<LockFeature>();

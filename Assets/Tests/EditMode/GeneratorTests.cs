@@ -315,14 +315,19 @@ namespace BottleSort.Tests
     public class LevelScheduleTests
     {
         [TestCase(1, LevelType.Normal)]
+        [TestCase(5, LevelType.Normal)]
+        [TestCase(8, LevelType.Rescue)]
+        [TestCase(15, LevelType.BigFlask)]
         [TestCase(20, LevelType.Normal)]
         [TestCase(25, LevelType.Boss)]
-        [TestCase(28, LevelType.Normal)]
+        [TestCase(28, LevelType.Rescue)]
         [TestCase(30, LevelType.Special)]
-        [TestCase(35, LevelType.Normal)]
+        [TestCase(35, LevelType.BigFlask)]
         [TestCase(45, LevelType.BigFlask)]
+        [TestCase(48, LevelType.Rescue)]
         [TestCase(50, LevelType.ChapterBoss)]
-        [TestCase(78, LevelType.Rescue)]
+        [TestCase(78, LevelType.Normal)]
+        [TestCase(1988, LevelType.Rescue)]
         [TestCase(100, LevelType.ChapterBoss)]
         [TestCase(500, LevelType.ChapterBoss)]
         [TestCase(550, LevelType.Boss)]
@@ -337,10 +342,10 @@ namespace BottleSort.Tests
         public void TypeCounts_MatchLevelDesign()
         {
             var counts = Enumerable.Range(1, 2000).GroupBy(LevelSchedule.TypeOf).ToDictionary(g => g.Key, g => g.Count());
-            Assert.AreEqual(1566, counts[LevelType.Normal]);
+            Assert.AreEqual(1503, counts[LevelType.Normal]);
             Assert.AreEqual(158, counts[LevelType.Special]);
-            Assert.AreEqual(157, counts[LevelType.BigFlask]);
-            Assert.AreEqual(39, counts[LevelType.Rescue]);
+            Assert.AreEqual(159, counts[LevelType.BigFlask]);
+            Assert.AreEqual(100, counts[LevelType.Rescue]);
             Assert.AreEqual(55, counts[LevelType.Boss]);
             Assert.AreEqual(25, counts[LevelType.ChapterBoss]);
         }

@@ -28,9 +28,14 @@ namespace BottleSort.Core
         public const int ShortChapters = 10;
         private const int ShortChaptersEnd = ShortChapters * ShortChapterLength;
 
+        // Спасения идут каждые 20 уровней с 8-го: остаток 8 не совпадает ни с боссами (кратны 25),
+        // ни с особыми (на 0), ни с колбами (на 5).
+        public const int FirstRescue = 8;
+        public const int FirstBigFlask = 15;
+
         // Позиции 1..50 внутри блока из 50 уровней.
         private const string TierPattern =
-            "EMMHMEMHEM" +
+            "EMHEMMMHEM" +
             "EMHEMMMHEM" +
             "EMMEBEEEMM" +
             "EMHEMMMHEM" +
@@ -62,9 +67,9 @@ namespace BottleSort.Core
                 return IsChapterEnd(level) ? LevelType.ChapterBoss : LevelType.Boss;
             if (level % 10 == 0 && level >= 30)
                 return LevelType.Special;
-            if (level % 10 == 5 && level >= 45)
+            if (level % 10 == 5 && level >= FirstBigFlask)
                 return LevelType.BigFlask;
-            if (level % 50 == 28 && level >= 78)
+            if (level % 20 == FirstRescue)
                 return LevelType.Rescue;
             return LevelType.Normal;
         }

@@ -27,11 +27,28 @@ namespace BottleSort.Core
         public const string Pipette = "pipette";
         public const string Combo = "combo";
 
+        // Разновидности «?», у каждой свой первый уровень (§5.1).
+        public const string HiddenTwo = "hidden_two";
+        public const string HiddenFog = "hidden_fog";
+        public const string HiddenStairs = "hidden_stairs";
+        public static readonly IReadOnlyDictionary<string, int> HiddenStyleDebut = new Dictionary<string, int>
+        {
+            [HiddenTwo] = 10, [HiddenFog] = 21, [HiddenStairs] = 44
+        };
+
+        // С какого уровня 5 слоёв бывают в колбах и у боссов (в особых — с ввода фишки).
+        public const int FiveLayerFlasksFrom = 251;
+        public const int FiveLayerBossesFrom = 301;
+        // «Ловушка» у боссов x50 (замок или лёд на пустой) — не раньше этого уровня.
+        public const int TrapsFrom = 150;
+        public const int TwoColorRecipesFrom = 108;
+        public const int FlaskFeaturesFrom = 101;
+
         // Уровень, на котором фишку вводят (§5). До него её нигде нет.
         public static readonly IReadOnlyDictionary<string, int> IntroLevel = new Dictionary<string, int>
         {
-            [Hidden] = 101, [Lock] = 151, [Ice] = 201, [Tint] = 251, [Combo] = 301, [FiveLayers] = 351,
-            [ColoredLock] = 401, [MoveLimit] = 501, [Hourglass] = 601, [Pipette] = 701
+            [Hidden] = 5, [Ice] = 13, [Lock] = 18, [Tint] = 33, [Combo] = 41, [ColoredLock] = 61,
+            [Pipette] = 81, [Hourglass] = 101, [FiveLayers] = 201, [MoveLimit] = 301
         };
 
         private sealed class Range
@@ -44,17 +61,19 @@ namespace BottleSort.Core
             public double HiddenShare;
         }
 
-        // §3.1. Для 351–500 своей колонки U5 нет: там 5 слоёв только в особых и колбах, берём на цвет меньше M.
+        // §3.1. До 501 своей колонки U5 нет: 5 слоёв только в особых, колбах и у боссов, берём на цвет меньше.
         private static readonly Range[] Ranges =
         {
-            R(4, 4, 4, 5), R(11, 4, 5, 5), R(21, 5, 5, 6), R(31, 5, 6, 6), R(51, 6, 6, 7), R(76, 6, 7, 7),
-            R(101, 6, 7, 8, hidden: (1, 1, 0.40)), R(151, 7, 7, 8, hidden: (1, 2, 0.30)),
-            R(201, 7, 8, 8, hidden: (1, 2, 0.30)), R(251, 7, 8, 8, hidden: (1, 2, 0.25)),
-            R(301, 7, 8, 9, hidden: (2, 2, 0.30)), R(351, 8, 8, 9, (7, 7, 8), 0, (2, 2, 0.30)),
-            R(401, 8, 8, 9, (7, 7, 8), 0, (2, 2, 0.30)), R(451, 8, 9, 9, (7, 8, 8), 0, (2, 2, 0.35)),
-            R(501, 8, 9, 10, (6, 7, 8), 0.25, (2, 2, 0.35)), R(701, 9, 9, 10, (7, 7, 8), 0.30, (2, 2, 0.40)),
-            R(1001, 9, 10, 10, (7, 8, 8), 0.35, (2, 3, 0.40)), R(1101, 9, 10, 11, (7, 8, 9), 0.40, (2, 3, 0.40)),
-            R(1501, 10, 10, 11, (8, 8, 9), 0.40, (2, 3, 0.45)), R(1801, 10, 11, 12, (8, 9, 10), 0.45, (3, 3, 0.45))
+            R(4, 5, 6, 6, hidden: (1, 1, 0.50)), R(11, 5, 6, 6, hidden: (1, 2, 0.50)),
+            R(21, 6, 6, 7, hidden: (1, 2, 0.50)), R(31, 6, 7, 7, hidden: (1, 2, 0.45)),
+            R(51, 6, 7, 8, hidden: (1, 2, 0.45)), R(76, 7, 7, 8, hidden: (1, 2, 0.45)),
+            R(101, 7, 7, 8, hidden: (1, 2, 0.45)), R(151, 7, 8, 8, hidden: (1, 2, 0.45)),
+            R(201, 7, 8, 9, hidden: (1, 2, 0.45)), R(251, 8, 8, 9, hidden: (2, 2, 0.45)),
+            R(301, 8, 8, 9, hidden: (2, 2, 0.45)), R(351, 8, 9, 9, hidden: (2, 2, 0.45)),
+            R(451, 8, 9, 10, hidden: (2, 2, 0.45)),
+            R(501, 8, 9, 10, (6, 7, 8), 0.25, (2, 2, 0.45)), R(701, 9, 9, 10, (7, 7, 8), 0.30, (2, 2, 0.45)),
+            R(1001, 9, 10, 10, (7, 8, 8), 0.35, (2, 3, 0.50)), R(1101, 9, 10, 11, (7, 8, 9), 0.40, (2, 3, 0.50)),
+            R(1501, 10, 10, 11, (8, 8, 9), 0.40, (2, 3, 0.50)), R(1801, 10, 11, 12, (8, 9, 10), 0.45, (3, 3, 0.50))
         };
 
         private static Range R(int from, int easy, int medium, int hard, (int e, int m, int h)? five = null,
@@ -75,19 +94,12 @@ namespace BottleSort.Core
             (Lock, 0.25), (Ice, 0.30), (Tint, 0.25), (ColoredLock, 0.25), (Hourglass, 0.20), (Pipette, 0.20)
         };
 
-        // §2.4, BOTTLE_MODELS §5.2: фигурки спасений по порядку появления.
-        private static readonly (int from, string id)[] RescueFigures =
-        {
-            (78, "hippo"), (178, "whale"), (278, "owl"), (378, "turtle"), (478, "elephant"),
-            (628, "fish"), (828, "fox"), (1028, "bear"), (1328, "rabbit"), (1628, "dragon")
-        };
-
         // BOTTLE_MODELS §4: какие формы бывают в особых уровнях.
         private static readonly (int from, string shape, bool fiveLayers)[] SpecialShapes =
         {
             (30, "wine", false), (30, "glass", false), (30, "flask", false), (60, "jug", false), (80, "jar", false),
             (110, "teapot", false), (140, "potion", false), (210, "heart", false), (360, "tube", false),
-            (360, "wine", true), (360, "glass", true), (360, "flask", true), (360, "jug", true), (360, "jar", true),
+            (201, "wine", true), (201, "glass", true), (201, "flask", true), (201, "jug", true), (201, "jar", true),
             (360, "tube", true), (410, "amphora", false), (410, "amphora", true), (410, "heart", true),
             (610, "crystal", false), (610, "crystal", true), (610, "teapot", true), (910, "lamp", false), (910, "lamp", true)
         };
@@ -120,6 +132,9 @@ namespace BottleSort.Core
                 Type = LevelSchedule.TypeOf(level),
                 Tier = LevelSchedule.TierOf(level)
             };
+            // Спасение — уровень-награда: средний, где бы он ни выпал на пиле.
+            if (spec.Type == LevelType.Rescue)
+                spec.Tier = LevelTier.Medium;
 
             if (!ApplyIntro(spec, level, range))
             {
@@ -137,11 +152,14 @@ namespace BottleSort.Core
             spec.Colors = Math.Min(spec.Colors, Palette.MaxColors);
             FitOnScreen(spec);
             spec.PaletteSize = PaletteFor(spec);
-            ApplyTutorialStretch(spec);
+            ApplyEarlyLimits(spec);
 
             if (forDatabase)
             {
-                spec.Candidates = spec.HourglassFlips > 0 ? 64 : spec.HasMoveLimit ? 32 : DatabaseCandidates;
+                // Больше кандидатов там, где фильтры строже (часы, лимит, босс главы), и в начале игры,
+                // где пила должна быть ровной.
+                bool picky = spec.HasMoveLimit || spec.Type == LevelType.ChapterBoss || level <= 100;
+                spec.Candidates = spec.HourglassFlips > 0 ? 64 : picky ? 32 : DatabaseCandidates;
                 spec.TargetPercentile = level == 2000 ? 0.40 : PercentileOf(spec.Tier);
                 spec.Analyzer = new AnalyzerOptions { Runs = 48, DeadSamples = 12, DeadCheckStates = 3000 };
             }
@@ -186,13 +204,16 @@ namespace BottleSort.Core
                     feature = pair.Key;
                     step = level - pair.Value;
                 }
-            if (feature == null || spec.Type != LevelType.Normal)
+            if (spec.Type != LevelType.Normal)
                 return false;
+            if (feature == null)
+                return ApplyHiddenDebut(spec, level, range);
             // 5 слоёв в обычных уровнях закреплять нельзя, пока заказчик их не разрешил; лимит ходов закрепляют боссы.
             if (step > 0 && (feature == FiveLayers || feature == MoveLimit || feature == Combo))
                 return false;
 
-            spec.Colors = step == 0 ? 6 : 6 + (step - 1);
+            // Уровень ввода на цвет проще лёгкого уровня диапазона (кроме самого начала), закрепление — как средний.
+            spec.Colors = step == 0 ? Math.Max(4, range.Easy - (level > 30 ? 1 : 0)) : range.Medium;
             if (step == 0)
                 spec.Introduces = feature;
 
@@ -200,7 +221,7 @@ namespace BottleSort.Core
             {
                 case Hidden:
                     spec.HiddenLayers = 1;
-                    spec.HiddenBottles = step == 0 ? 3 : spec.Colors / 2;
+                    spec.HiddenBottles = step == 0 ? 3 : spec.Colors / 2 + 1;
                     break;
                 case Lock:
                     if (step == 0)
@@ -215,13 +236,14 @@ namespace BottleSort.Core
                     spec.Ice.Add(new IceFeature { Placement = FeaturePlacement.Full, Turns = 3 });
                     break;
                 case Tint:
-                    spec.EmptyBottles = 3;
+                    // Ввод — тонированная третья пустая, закрепление — одна из двух.
+                    spec.EmptyBottles = step == 0 ? 3 : 2;
                     spec.Tints.Add(new TintFeature { Placement = FeaturePlacement.Empty });
                     break;
                 case Combo:
                     spec.Colors = range.Easy;
                     spec.HiddenLayers = 1;
-                    spec.HiddenBottles = spec.Colors / 2;
+                    spec.HiddenBottles = -1;
                     spec.Ice.Add(new IceFeature { Placement = FeaturePlacement.Full, Turns = 3 });
                     break;
                 case FiveLayers:
@@ -245,6 +267,35 @@ namespace BottleSort.Core
             return true;
         }
 
+        // Первые уровни разновидностей «?»: две скрытых, «туман» (виден только верх), «лесенка».
+        private static bool ApplyHiddenDebut(LevelSpec spec, int level, Range range)
+        {
+            string style = null;
+            foreach (var pair in HiddenStyleDebut)
+                if (pair.Value == level)
+                    style = pair.Key;
+            if (style == null)
+                return false;
+
+            spec.Introduces = style;
+            spec.Colors = range.Easy;
+            switch (style)
+            {
+                case HiddenTwo:
+                    spec.HiddenLayers = 2;
+                    spec.HiddenBottles = spec.Colors / 2;
+                    break;
+                case HiddenFog:
+                    spec.HiddenLayers = spec.Unit - 1;
+                    break;
+                default:
+                    spec.HiddenLayers = spec.Unit - 1;
+                    spec.HiddenVaried = true;
+                    break;
+            }
+            return true;
+        }
+
         private static void BuildNormal(LevelSpec spec, Range range, Rng rng)
         {
             int level = spec.Number;
@@ -252,8 +303,8 @@ namespace BottleSort.Core
             spec.Unit = five ? 5 : 4;
             spec.Colors = ColorsFor(range, spec.Tier, five);
 
-            double clean = level <= 150 ? 1 - range.HiddenShare : CleanShare(level);
-            if (level <= 100 || rng.Chance(clean))
+            double clean = CleanShare(level);
+            if (level < IntroLevel[Hidden] || rng.Chance(clean))
                 return;
 
             int count = MaxNormalFeatures(level) >= 2 && rng.Chance(ComboShare(level)) ? 2 : 1;
@@ -262,7 +313,9 @@ namespace BottleSort.Core
             var features = new List<string>();
             if (rng.Chance(hiddenChance))
                 features.Add(Hidden);
-            features.AddRange(PickFeatures(level, range, count - features.Count, rng, includeHidden: false));
+            // Часы держатся на единственной пустой бутылке и с «?» почти не решаются — только поодиночке.
+            features.AddRange(PickFeatures(level, range, count - features.Count, rng, includeHidden: false,
+                allowHourglass: features.Count == 0));
             if (features.Count == 0)
                 features.Add(Hidden);
             foreach (var feature in features)
@@ -277,37 +330,66 @@ namespace BottleSort.Core
             spec.ShapePool = ShapesFor(spec.Number, five, spec.Colors + spec.EmptyBottles);
         }
 
-        // §2.2: колба 2U и ровно одна пустая, цветов на один больше, чем у M.
+        // §2.2: колба 2U — склад, куда можно лить что угодно, и ровно одна пустая. С таким складом уровень
+        // заметно легче обычного, поэтому цветов больше: до 54-го на один, дальше на два (но не новые цвета раньше срока).
         private static void BuildFlask(LevelSpec spec, Range range, Rng rng)
         {
-            bool five = spec.Number >= 451 && rng.Chance(0.5);
+            int level = spec.Number;
+            bool five = level >= FiveLayerFlasksFrom && rng.Chance(0.5);
             spec.Unit = five ? 5 : 4;
-            spec.Colors = (five ? FiveLayerColors(range, LevelTier.Medium) : range.Medium) + 1;
+            int extra = level < 55 ? 1 : 2;
+            spec.Colors = Math.Min((five ? FiveLayerColors(range, LevelTier.Medium) : range.Medium) + extra, MediumPaletteLimit(level));
             spec.BigFlask = true;
             spec.EmptyBottles = 1;
+
+            // С 10 цветами дальше расти некуда, и без фишек колба к 300-му отставала от среднего уровня на 15 пунктов DS.
+            // Тонировка и часы забрали бы единственную пустую, их здесь нет.
+            if (level < FlaskFeaturesFrom)
+                return;
+            int count = level >= IntroLevel[MoveLimit] && rng.Chance(0.4) ? 2 : 1;
+            var features = new List<string>();
+            if (rng.Chance(0.6))
+                features.Add(Hidden);
+            features.AddRange(PickFeatures(level, range, count - features.Count, rng, includeHidden: false,
+                allowHourglass: false, allowTint: false));
+            foreach (var feature in features)
+                AddFeature(spec, feature, range, rng);
         }
 
-        // §2.4: C полных, две пустые и фигурка; рецепт из двух цветов — с L328.
+        // W и D в средних уровнях — только с 1801 (§3.1), колба — средний уровень.
+        private static int MediumPaletteLimit(int level) => level >= 1801 ? 12 : 10;
+
+        // §2.4: C полных, одна пустая и фигурка; с L108 через раз рецепт из двух цветов, иногда «?».
         private static void BuildRescue(LevelSpec spec, Range range, Rng rng)
         {
+            int level = spec.Number;
             spec.Unit = 4;
+            // С двумя пустыми фигурка работает как третья пустая, и уровень проходится сам (RW 90–98 %).
+            // С одной пустой и цветами лёгкого уровня спасение чуть легче среднего — уровень-награда.
             spec.Colors = range.Easy;
-            spec.RescueRecipeColors = spec.Number >= 328 ? 2 : 1;
-            spec.RescueShape = RescueFigureFor(spec.Number, rng);
+            spec.EmptyBottles = 1;
+            spec.RescueRecipeColors = level >= TwoColorRecipesFrom && rng.Chance(0.5) ? 2 : 1;
+            spec.RescueShape = RescueCast.FigureOf(level);
+            if (level > HiddenStyleDebut[HiddenTwo] && rng.Chance(0.5))
+                AddHidden(spec, range, rng);
         }
 
         // §2.2: босс — пик пилы плюс особенность по L mod 100.
         private static void BuildBoss(LevelSpec spec, Range range, Rng rng)
         {
             int level = spec.Number;
-            bool five = level >= 501 && rng.Chance(range.FiveShare);
+            bool five = level >= FiveLayerBossesFrom && rng.Chance(BossFiveShare(range));
             spec.Unit = five ? 5 : 4;
             spec.Colors = five ? FiveLayerColors(range, LevelTier.Hard) : range.Hard;
 
             switch (level % 100)
             {
                 case 25:
-                    spec.Colors++;
+                    // Первому боссу хватит «?» вместо лишнего цвета: +1 цвет на 25-м уровне — это сразу RW 29 %.
+                    if (level == 25)
+                        AddHidden(spec, range, rng);
+                    else
+                        spec.Colors++;
                     break;
                 case 75:
                     if (level >= IntroLevel[MoveLimit])
@@ -322,12 +404,15 @@ namespace BottleSort.Core
                         spec.Colors++;
                     break;
                 case 50:
-                    AddTrap(spec, rng);
+                    if (level >= TrapsFrom)
+                        AddTrap(spec, rng);
+                    else
+                        AddHidden(spec, range, rng);
                     break;
             }
         }
 
-        // Босс главы: смесь форм и фишки главы (2, с L301 — 3); в коротких главах он же «Ловушка».
+        // Босс главы: смесь форм и фишки главы (2, с L301 — 3); в коротких главах с L150 он же «Ловушка».
         private static void BuildChapterBoss(LevelSpec spec, Range range, Rng rng)
         {
             int level = spec.Number;
@@ -337,14 +422,15 @@ namespace BottleSort.Core
                 return;
             }
 
-            bool five = level >= 501 && rng.Chance(range.FiveShare);
+            bool five = level >= FiveLayerBossesFrom && rng.Chance(BossFiveShare(range));
             spec.Unit = five ? 5 : 4;
             spec.Colors = five ? FiveLayerColors(range, LevelTier.Hard) : range.Hard;
             spec.ShapePool = ShapesFor(level, five, spec.Colors + spec.EmptyBottles);
 
-            bool trap = level <= 500 && level % 100 == 50 && level >= IntroLevel[Lock];
+            bool trap = level <= 500 && level % 100 == 50 && level >= TrapsFrom;
             int count = (level < 301 ? 2 : 3) - (trap ? 1 : 0);
-            foreach (var feature in PickFeatures(level, range, count, rng))
+            // «Ловушка» занимает пустую бутылку: тонированной и часам (у них пустая одна) места уже нет.
+            foreach (var feature in PickFeatures(level, range, count, rng, allowHourglass: !trap, allowTint: !trap))
                 AddFeature(spec, feature, range, rng);
             if (trap)
                 AddTrap(spec, rng);
@@ -369,14 +455,16 @@ namespace BottleSort.Core
                 spec.Ice.Add(new IceFeature { Placement = FeaturePlacement.Empty, Turns = 3 + rng.NextInt(3) });
         }
 
-        private static List<string> PickFeatures(int level, Range range, int count, Rng rng, bool includeHidden = true)
+        private static List<string> PickFeatures(int level, Range range, int count, Rng rng, bool includeHidden = true,
+            bool allowHourglass = true, bool allowTint = true)
         {
             var options = new List<(string feature, double weight)>();
             if (includeHidden && level >= IntroLevel[Hidden])
                 options.Add((Hidden, Math.Max(range.HiddenShare, 0.25)));
             foreach (var (feature, weight) in MechanicWeights)
                 // Часы держатся на единственной пустой бутылке, в комбо с другими фишками уровень почти не решается.
-                if (level >= IntroLevel[feature] && !(feature == Hourglass && count > 1))
+                if (level >= IntroLevel[feature] && !(feature == Hourglass && (count > 1 || !allowHourglass))
+                    && (feature != Tint || allowTint))
                     options.Add((feature, weight));
 
             var picked = new List<string>();
@@ -408,11 +496,7 @@ namespace BottleSort.Core
             switch (feature)
             {
                 case Hidden:
-                    int layers = range.HiddenMin + rng.NextInt(range.HiddenMax - range.HiddenMin + 1);
-                    // H3 — только в 5-слойных: из пяти видно хотя бы два (§5.1).
-                    if (layers >= 3 && spec.Unit < 5)
-                        layers = 2;
-                    spec.HiddenLayers = Math.Max(1, layers);
+                    AddHidden(spec, range, rng);
                     break;
                 case Lock:
                     spec.Locks.Add(new LockFeature { Placement = FeaturePlacement.Full });
@@ -438,6 +522,45 @@ namespace BottleSort.Core
             }
         }
 
+        // «?» по-разному (§5.1): в части бутылок, во всех по две, «туман» (виден только верхний слой)
+        // и «лесенка» (у каждой бутылки своя глубина). Разновидность открывается на своём первом уровне.
+        private static void AddHidden(LevelSpec spec, Range range, Rng rng)
+        {
+            int level = spec.Number;
+            var styles = new List<string> { Hidden, Hidden };
+            foreach (var pair in HiddenStyleDebut)
+                if (level > pair.Value)
+                    styles.Add(pair.Key);
+            string style = rng.Pick(styles);
+
+            int layers = range.HiddenMin + rng.NextInt(range.HiddenMax - range.HiddenMin + 1);
+            // H3 в обычной разновидности — только в 5-слойных: из пяти видно хотя бы два.
+            if (layers >= 3 && spec.Unit < 5)
+                layers = 2;
+            layers = Math.Max(1, layers);
+
+            switch (style)
+            {
+                case HiddenTwo:
+                    spec.HiddenLayers = Math.Max(2, layers);
+                    spec.HiddenBottles = -1;
+                    break;
+                case HiddenFog:
+                    spec.HiddenLayers = spec.Unit - 1;
+                    spec.HiddenBottles = -1;
+                    break;
+                case HiddenStairs:
+                    spec.HiddenLayers = spec.Unit - 1;
+                    spec.HiddenVaried = true;
+                    spec.HiddenBottles = -1;
+                    break;
+                default:
+                    spec.HiddenLayers = layers;
+                    spec.HiddenBottles = Math.Max(2, spec.Colors / 2 + rng.NextInt(2));
+                    break;
+            }
+        }
+
         // При двух пустых переворот ни разу не сократил решение (240 раскладок), так что часы ставим с одной пустой.
         // Одна пустая при 8+ цветах почти не решается даже с переворотом, поэтому не больше 7 цветов и больше кандидатов.
         private static void UseHourglass(LevelSpec spec)
@@ -450,9 +573,23 @@ namespace BottleSort.Core
         private static int FiveLayerColors(Range range, LevelTier tier) =>
             range.From >= 501 ? ColorsFor(range, tier, true) : ColorsFor(range, tier, false) - 1;
 
-        private static double CleanShare(int level) => level <= 300 ? 0.55 : level <= 1000 ? 0.40 : 0.35;
-        private static double ComboShare(int level) => level <= 700 ? 0.20 : level <= 1100 ? 0.25 : 0.30;
-        private static int MaxNormalFeatures(int level) => level <= 100 ? 0 : level <= 300 ? 1 : 2;
+        // Доля обычных уровней без фишек и «?»: классика остаётся, но уже не большинство.
+        private static double CleanShare(int level) => level <= 1000 ? 0.35 : 0.30;
+        private static double ComboShare(int level) => level <= 300 ? 0.20 : level <= 1100 ? 0.25 : 0.30;
+        private static int MaxNormalFeatures(int level) => level < IntroLevel[Combo] ? 1 : 2;
+
+        // §3.2: сколько фишек (включая «?») может быть в одном уровне.
+        public static int MaxFeatures(LevelType type, int level)
+        {
+            bool boss = type == LevelType.Boss || type == LevelType.ChapterBoss;
+            if (level == 2000) return 4;
+            if (level < IntroLevel[Hidden]) return 0;
+            if (level < IntroLevel[Combo]) return boss ? 2 : 1;
+            return boss ? 3 : 2;
+        }
+
+        // До 501 доли 5-слойных боссов в таблице нет — берём как у особых уровней.
+        private static double BossFiveShare(Range range) => range.FiveShare > 0 ? range.FiveShare : 0.3;
 
         private static List<string> ShapesFor(int level, bool fiveLayers, int bottles)
         {
@@ -467,19 +604,6 @@ namespace BottleSort.Core
                 shapes.Add(shape);
             }
             return shapes;
-        }
-
-        private static string RescueFigureFor(int level, Rng rng)
-        {
-            var introduced = new List<string>();
-            foreach (var (from, id) in RescueFigures)
-            {
-                if (from == level)
-                    return id;
-                if (from < level)
-                    introduced.Add(id);
-            }
-            return rng.Pick(introduced);
         }
 
         // ≤ 14 бутылок на старте (§3.1): лишние цвета снимаем, а не бутылки-фишки.
@@ -500,14 +624,23 @@ namespace BottleSort.Core
             return Math.Max(spec.Colors, late ? allowed : 10);
         }
 
-        // §3.3: на 1–30 без фрустрации — RW ≥ 80 % (босс 25 — 60 %), OPT ≤ 20, без ловушек в первые ходы.
-        private static void ApplyTutorialStretch(LevelSpec spec)
+        // §3.3: на 4–30 уже настоящие уровни, но без стены — нижняя граница RW, предел OPT, без тупика в первые 5 ходов.
+        public static (double minRandomWinRate, int maxPar, bool noEarlyTrap) EarlyLimits(int level, LevelType type)
         {
-            if (spec.Number > 30)
-                return;
-            spec.MinRandomWinRate = spec.Type == LevelType.Boss ? 0.6 : 0.8;
-            spec.MaxPar = 20;
-            spec.NoEarlyTrap = true;
+            if (level > 30)
+                return (0, 0, false);
+            bool boss = type == LevelType.Boss || type == LevelType.ChapterBoss;
+            if (level <= 10)
+                return (0.5, 22, true);
+            return (boss ? 0.25 : 0.35, 26, true);
+        }
+
+        private static void ApplyEarlyLimits(LevelSpec spec)
+        {
+            var limits = EarlyLimits(spec.Number, spec.Type);
+            spec.MinRandomWinRate = limits.minRandomWinRate;
+            spec.MaxPar = limits.maxPar;
+            spec.NoEarlyTrap = limits.noEarlyTrap;
         }
 
         // Какие фишки реально стоят в описании уровня — для отчёта и проверки расписания.

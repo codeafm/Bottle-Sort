@@ -43,7 +43,7 @@ namespace BottleSort.Tests
         [Test]
         public void SampleLevels_ArePlayable()
         {
-            var sample = new HashSet<int> { 1, 2, 3, 4, 25, 45, 78, 101, 151, 201, 251, 351, 401, 501, 601, 701, 2000 };
+            var sample = new HashSet<int> { 1, 2, 3, 4, 5, 8, 10, 13, 15, 18, 21, 25, 33, 41, 42, 61, 81, 101, 108, 201, 301, 2000 };
             for (int level = 7; level <= 2000; level += 37)
                 sample.Add(level);
 
@@ -72,7 +72,7 @@ namespace BottleSort.Tests
         [Test]
         public void EncodeDecode_RoundTrips()
         {
-            foreach (int number in new[] { 3, 45, 78, 328, 501, 650, 1500 })
+            foreach (int number in new[] { 3, 8, 21, 45, 108, 328, 501, 650, 1500 })
             {
                 var level = Database.Get(number);
                 var again = LevelDatabase.Decode(LevelDatabase.Encode(level));

@@ -103,7 +103,7 @@ namespace BottleSort.Tests
         [Test]
         public void GeneratedRescueLevels_AreSolvable()
         {
-            foreach (int level in new[] { 78, 128, 328, 378 })
+            foreach (int level in new[] { 8, 28, 108, 128, 328 })
             {
                 var generated = LevelGenerator.Generate(LevelParams.SpecFor(level));
                 Assert.AreEqual(LevelType.Rescue, generated.Spec.Type);
@@ -113,6 +113,47 @@ namespace BottleSort.Tests
                     state.Apply(move);
                 Assert.IsTrue(state.IsWon, $"L{level}");
             }
+        }
+
+        [Test]
+        public void RescueEveryTwentyLevels_FromTheEighth()
+        {
+            for (int level = 1; level <= 2000; level++)
+                Assert.AreEqual(level % 20 == 8, RescueCast.IsRescue(level), $"L{level}");
+        }
+
+        [Test]
+        public void FirstTenRescues_ShowEveryFigureOnce()
+        {
+            for (int i = 0; i < RescueCast.Figures.Length; i++)
+                Assert.AreEqual(RescueCast.Figures[i], RescueCast.FigureOf(RescueCast.LevelOf(i)));
+        }
+
+        [Test]
+        public void FiguresAndFriends_DontRepeatBackToBack()
+        {
+            for (int i = 1; i < 150; i++)
+            {
+                int level = RescueCast.LevelOf(i), previous = RescueCast.LevelOf(i - 1);
+                Assert.AreNotEqual(RescueCast.FigureOf(previous), RescueCast.FigureOf(level), $"L{level}");
+                // Первые два спасения — оба с котёнком: других зверьков ещё нет.
+                if (i >= 2)
+                    Assert.AreNotEqual(RescueCast.CharacterOf(previous), RescueCast.CharacterOf(level), $"L{level}");
+            }
+        }
+
+        [Test]
+        public void NewFriend_OnEverySecondRescue()
+        {
+            for (int i = 0; i < RescueCast.Characters.Length; i++)
+                Assert.AreEqual(RescueCast.Characters[i], RescueCast.CharacterOf(RescueCast.LevelOf(i * 2)));
+        }
+
+        [Test]
+        public void RescueLevels_UseTheirFigure()
+        {
+            foreach (int level in new[] { 8, 28, 208, 1988 })
+                Assert.AreEqual(RescueCast.FigureOf(level), LevelParams.SpecFor(level).RescueShape, $"L{level}");
         }
     }
 }

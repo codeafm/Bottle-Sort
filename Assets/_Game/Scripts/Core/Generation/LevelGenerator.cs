@@ -31,7 +31,7 @@ namespace BottleSort.Core
     public static class LevelGenerator
     {
         // Любое изменение, влияющее на раскладки, — новая версия. Иначе у игроков поменяются уже выпущенные уровни.
-        public const int CurrentGenVersion = 2;
+        public const int CurrentGenVersion = 3;
 
         public const string ClassicShape = Bottle.DefaultShape;
         public const string FlaskShape = "roundflask";
@@ -330,7 +330,10 @@ namespace BottleSort.Core
                 rng.Shuffle(full);
                 int count = spec.HiddenBottles < 0 ? full.Count : Math.Min(spec.HiddenBottles, full.Count);
                 for (int i = 0; i < count; i++)
-                    full[i].Hidden = Math.Min(spec.HiddenLayers, full[i].Layers.Count - 1);
+                {
+                    int layers = spec.HiddenVaried ? 1 + rng.NextInt(spec.HiddenLayers) : spec.HiddenLayers;
+                    full[i].Hidden = Math.Min(layers, full[i].Layers.Count - 1);
+                }
             }
         }
 
@@ -422,7 +425,9 @@ namespace BottleSort.Core
                 return false;
             if (spec.HasMoveLimit && metrics.GreedyWinRateWithinLimit < 0.4)
                 return false;
-            if (metrics.RandomWinRate < spec.MinRandomWinRate)
+            // Случайный игрок сливает в колбу всё подряд и почти всегда застревает; для колбы мерило — жадный игрок.
+            double winRate = spec.BigFlask ? metrics.GreedyWinRate : metrics.RandomWinRate;
+            if (winRate < spec.MinRandomWinRate)
                 return false;
             return true;
         }

@@ -60,9 +60,9 @@ namespace BottleSort.Tests
                 if (spec.Unit != 5)
                     continue;
                 bool allowed = spec.Introduces == LevelParams.FiveLayers
-                    || (spec.Type == LevelType.Special && level >= 351)
-                    || (spec.Type == LevelType.BigFlask && level >= 451)
-                    || ((spec.Type == LevelType.Boss || spec.Type == LevelType.ChapterBoss) && level >= 500);
+                    || (spec.Type == LevelType.Special && level >= LevelParams.IntroLevel[LevelParams.FiveLayers])
+                    || (spec.Type == LevelType.BigFlask && level >= LevelParams.FiveLayerFlasksFrom)
+                    || ((spec.Type == LevelType.Boss || spec.Type == LevelType.ChapterBoss) && level >= LevelParams.FiveLayerBossesFrom);
                 Assert.IsTrue(allowed, $"L{level} {spec.Type}");
             }
         }
@@ -75,7 +75,8 @@ namespace BottleSort.Tests
                 var spec = LevelParams.SpecFor(level);
                 if (!spec.HasMoveLimit)
                     continue;
-                Assert.IsTrue(level == 501 || (spec.Type == LevelType.Boss && level % 100 == 75), $"L{level}");
+                Assert.IsTrue(level == LevelParams.IntroLevel[LevelParams.MoveLimit]
+                    || (spec.Type == LevelType.Boss && level % 100 == 75), $"L{level}");
             }
         }
 
