@@ -307,7 +307,7 @@ namespace BottleSort.UI
             else if (_session.IsOutOfMoves)
                 OnOutOfMoves();
             else
-                CheckDeadEnd();
+                CheckNoMoves();
 
             if (!StartPour(move, outcome, changes))
             {
@@ -573,9 +573,11 @@ namespace BottleSort.UI
             _hintPending = false;
             if (session != _session || IsBusy)
                 return;
+            // Солвер не нашёл решения (позиция уже не решается или не хватило бюджета) — покажем хотя бы разумный ход.
+            hint = hint ?? FallbackHint(_session.State);
             if (!hint.HasValue)
             {
-                toast.ShowKey("toast_no_moves", 1.5f);
+                CheckNoMoves();
                 return;
             }
 
@@ -588,6 +590,17 @@ namespace BottleSort.UI
             GameEvents.RaiseHintShown(hint.Value);
             _hintTarget = hint.Value.To;
             field.SlotAt(_hintTarget).View.SetGlow(BottleGlow.Hint);
+        }
+
+        static Move? FallbackHint(LevelState state)
+        {
+            var moves = new List<Move>();
+            state.GetLegalMoves(moves);
+            moves.RemoveAll(move => move.Kind != MoveKind.Pour);
+            foreach (var move in moves)
+                if (DifficultyAnalyzer.IsGoodMove(state, move))
+                    return move;
+            return moves.Count > 0 ? moves[0] : (Move?)null;
         }
 
         void AddBottle()

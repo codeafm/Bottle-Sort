@@ -1,23 +1,20 @@
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using BottleSort.Core;
 using BottleSort.Gameplay;
 using BottleSort.Services;
 
 namespace BottleSort.UI
 {
-    // Проигрыш: кончились ходы на уровне с лимитом или позиция точно тупиковая (LEVEL_DESIGN §7.3).
-    // Игроку — карточка с выбором: продолжить за рекламу (+5 ходов / +1 бутылка) или «Заново».
+    // Проигрыш: кончились ходы на уровне с лимитом или перелить больше нечего.
+    // Игроку — карточка с выбором: продолжить (+5 ходов за рекламу, +1 бутылка, отмена хода) или «Заново».
     // Проигрыш считается для межстраничной рекламы один раз за попытку, ролик — только на «Заново».
     public sealed partial class GameScreen
     {
         const int ExtraMovesForAd = 5;
         // Карточка выходит, когда налив доиграл и игрок увидел последний ход.
         const float LossCardDelay = 0.9f;
-        // Как в §7.3: проверка в фоне, бюджет небольшой; не успели доказать тупик — молчим.
-        const int DeadEndBudget = 20_000;
 
         bool _lossCounted;
-        int _deadEndCheck;
         // Какая по счёту попытка этого уровня: 1 — первый заход, дальше «Заново».
         int _attempt;
 
@@ -25,7 +22,6 @@ namespace BottleSort.UI
         void OnAttemptStarted(bool newLevel)
         {
             _lossCounted = false;
-            _deadEndCheck++;
             _attempt = newLevel ? 1 : _attempt + 1;
             Tweens.Kill(this, "loss");
             Analytics.LevelStarted(_level, LevelPlan.TypeOf(_level), _attempt);
@@ -101,44 +97,69 @@ namespace BottleSort.UI
                 Restart();
         });
 
-        async void CheckDeadEnd()
+        // «Ходов нет» — только когда перелить действительно нечего (решение заказчика). Солвер тут не спрашиваем:
+        // карточку «уровень уже не решить» при живых ходах игроки принимали за ошибку.
+        void CheckNoMoves()
         {
-            if (_guide != null || _session == null || _session.IsWon || _session.IsOutOfMoves)
+            if (_guide != null || _session == null || _session.IsWon || _session.IsOutOfMoves || HasPour(_session.State))
                 return;
-            int check = ++_deadEndCheck;
-            var session = _session;
-            int moves = session.MovesMade;
-            int bottles = session.State.BottleCount;
-            var snapshot = session.State.Clone();
-            bool deadEnd = await Task.Run(() => Solver.IsDeadEnd(snapshot, DeadEndBudget));
-            // Пока считали, игрок мог походить, отменить ход или взять бутылку — тогда ответ уже не про эту позицию.
-            if (!deadEnd || check != _deadEndCheck || session != _session || !IsOpen || _finished
-                || session.MovesMade != moves || session.State.BottleCount != bottles)
-                return;
-            CountLoss("Тупик");
-            Tweens.Delay(this, "loss", LossCardDelay, () => ShowDeadEnd(moves));
+            CountLoss("Нет ходов");
+            int moves = _session.MovesMade;
+            Tweens.Delay(this, "loss", LossCardDelay, () => ShowNoMoves(moves));
         }
 
-        void ShowDeadEnd(int moves)
+        // Переворота песочных часов в интерфейсе пока нет, поэтому считаем только переливы.
+        static bool HasPour(LevelState state)
         {
-            if (!IsOpen || _finished || _session == null || _session.MovesMade != moves)
+            var moves = new List<Move>();
+            state.GetLegalMoves(moves);
+            return moves.Exists(m => m.Kind == MoveKind.Pour);
+        }
+
+        void ShowNoMoves(int moves)
+        {
+            // Пока ждали, игрок мог отменить ход или взять бутылку — тогда карточка уже не нужна.
+            if (!IsOpen || _finished || _session == null || _session.MovesMade != moves || HasPour(_session.State))
                 return;
             // Карточка не всплывает посреди налива.
             if (IsAnimating)
             {
-                Tweens.Delay(this, "loss", 0.3f, () => ShowDeadEnd(moves));
+                Tweens.Delay(this, "loss", 0.3f, () => ShowNoMoves(moves));
                 return;
             }
             var card = Router.Get<RewardPopup>();
             if (card == null)
+            {
+                toast.ShowKey("toast_no_moves", 2.5f);
                 return;
+            }
+
+            var data = PlayerData.Current;
             if (_session.CanAddBottle && !_generated.Spec.BigFlask)
-                card.SetupChoice("deadend_title", "deadend_text", new RewardBundle(0, bottles: 1), "deadend_bottle_ad",
-                    WatchAdForBottle, "lose_restart", RestartAfterLoss);
+            {
+                var bottle = new RewardBundle(0, bottles: 1);
+                if (data.extraBottleCount > 0)
+                    card.SetupPlainChoice("deadend_title", "deadend_text", bottle, "deadend_bottle_ad", UseStoredBottle,
+                        "lose_restart", RestartAfterLoss);
+                else
+                    card.SetupChoice("deadend_title", "deadend_text", bottle, "deadend_bottle_ad", WatchAdForBottle,
+                        "lose_restart", RestartAfterLoss);
+            }
+            else if (data.undoCount > 0)
+                card.SetupPlainChoice("deadend_title", "deadend_text_restart", default, "deadend_undo", Undo,
+                    "lose_restart", RestartAfterLoss);
             else
-                card.Setup("deadend_title", "deadend_text_restart", default, "lose_restart", RestartAfterLoss);
+                card.SetupChoice("deadend_title", "deadend_text_restart", default, "deadend_undo", WatchAdForUndo,
+                    "lose_restart", RestartAfterLoss);
             card.AllowDismiss();
             Router.ShowPopup(ScreenId.Reward);
+        }
+
+        // Бутылка из запаса — тот же бустер «+Бутылка», что на панели внизу.
+        void UseStoredBottle()
+        {
+            if (IsOpen && _session != null)
+                AddBottle();
         }
 
         // Бутылка за рекламу не тратит запас бустеров «+Бутылка».
@@ -147,11 +168,11 @@ namespace BottleSort.UI
             if (!AdLoadingHint.Check(toast))
             {
                 int moves = _session.MovesMade;
-                Tweens.Delay(this, "loss", 2f, () => ShowDeadEnd(moves));
+                Tweens.Delay(this, "loss", 2f, () => ShowNoMoves(moves));
                 return;
             }
             var session = _session;
-            RewardedAds.Show("+бутылка в тупике", watched =>
+            RewardedAds.Show("+бутылка без ходов", watched =>
             {
                 if (session != _session || !IsOpen)
                     return;
@@ -169,6 +190,34 @@ namespace BottleSort.UI
                 field.Build(_session.State);
                 RefreshHud();
                 RefreshBoosters();
+                UiFeedback.Play(UiSound.Reward);
+            });
+        }
+
+        // Отмен в запасе нет: за ролик даём одну и сразу её тратим, так что запас не меняется.
+        void WatchAdForUndo()
+        {
+            if (!AdLoadingHint.Check(toast))
+            {
+                int moves = _session.MovesMade;
+                Tweens.Delay(this, "loss", 2f, () => ShowNoMoves(moves));
+                return;
+            }
+            var session = _session;
+            RewardedAds.Show("Отмена хода без ходов", watched =>
+            {
+                if (session != _session || !IsOpen)
+                    return;
+                if (!watched)
+                {
+                    toast.ShowKey("toast_reward_ad_failed", 2.2f);
+                    return;
+                }
+                var data = PlayerData.Current;
+                data.undoCount++;
+                data.Save();
+                _lossCounted = false;
+                Undo();
                 UiFeedback.Play(UiSound.Reward);
             });
         }

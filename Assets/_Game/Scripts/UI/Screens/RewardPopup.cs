@@ -113,13 +113,27 @@ namespace BottleSort.UI
         public void SetupChoice(string titleKey, string subtitleKey, RewardBundle reward, string adKey, Action onWatchAd,
             string secondaryKey, Action onSecondary, params object[] titleArgs)
         {
-            Setup(titleKey, subtitleKey, reward, adKey, onWatchAd, titleArgs);
+            SetupPair(titleKey, subtitleKey, reward, adKey, onWatchAd, secondaryKey, onSecondary, true, titleArgs);
+        }
+
+        // Те же две кнопки, но зелёная без рекламы: «+1 бутылка» из запаса, «Отменить ход».
+        // Крупная иконка берётся из highlights по ключу зелёной кнопки, как у рекламных предложений.
+        public void SetupPlainChoice(string titleKey, string subtitleKey, RewardBundle reward, string primaryKey, Action onPrimary,
+            string secondaryKey, Action onSecondary, params object[] titleArgs)
+        {
+            SetupPair(titleKey, subtitleKey, reward, primaryKey, onPrimary, secondaryKey, onSecondary, false, titleArgs);
+        }
+
+        void SetupPair(string titleKey, string subtitleKey, RewardBundle reward, string primaryKey, Action onPrimary,
+            string secondaryKey, Action onSecondary, bool withVideo, object[] titleArgs)
+        {
+            Setup(titleKey, subtitleKey, reward, primaryKey, onPrimary, titleArgs);
             _onSecondary = onSecondary;
-            bool highlighted = ShowHighlight(adKey);
+            bool highlighted = ShowHighlight(primaryKey);
             if (adChoice != null)
-                adChoice.ShowPair(secondaryKey, Secondary, highlighted ? highlightTrim : 0f);
+                adChoice.ShowPair(secondaryKey, Secondary, highlighted ? highlightTrim : 0f, withVideo);
             else
-                Debug.LogWarning("[RewardPopup] No AdChoiceButtons in the card, only the ad button is shown");
+                Debug.LogWarning("[RewardPopup] No AdChoiceButtons in the card, only the main button is shown");
         }
 
         bool ShowHighlight(string adKey)

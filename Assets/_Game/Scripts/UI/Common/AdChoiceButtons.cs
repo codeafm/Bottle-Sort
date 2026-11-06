@@ -46,14 +46,15 @@ namespace BottleSort.UI
         }
 
         // trim — на сколько единиц Canvas карточка ниже обычной (например, когда вместо ряда наград одна крупная иконка).
-        public void ShowPair(string secondaryKey, Action onSecondary, float trim = 0f)
+        // withVideo = false — та же пара, но зелёная кнопка без рекламы (бутылка из запаса, отмена хода).
+        public void ShowPair(string secondaryKey, Action onSecondary, float trim = 0f, bool withVideo = true)
         {
             Prepare();
             _onSecondary = onSecondary;
             secondaryLabel.SetKey(secondaryKey);
             secondary.gameObject.SetActive(true);
             secondary.interactable = true;
-            videoIcon.SetActive(true);
+            videoIcon.SetActive(withVideo);
             Place(_primaryMax.y - _primaryMin.y + gap, trim);
         }
 
