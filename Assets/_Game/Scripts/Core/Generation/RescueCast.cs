@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace BottleSort.Core
@@ -48,34 +49,52 @@ namespace BottleSort.Core
         {
             int index = IndexOf(level);
             string previous = null, current = Mascot;
+            int introduced = 0;
             for (int i = 0; i <= index; i++)
             {
-                current = CharacterAt(i, previous);
+                string figure = FigureOf(LevelOf(i));
+                // Новый герой положен на каждом втором спасении; если он не подходит к фигуре, выйдет на следующем.
+                bool due = introduced < Characters.Length && i >= introduced * 2;
+                if (due && Fits(Characters[introduced], figure, previous))
+                    current = Characters[introduced++];
+                else
+                    current = PickIntroduced(i, Math.Max(introduced, 1), figure, previous);
                 previous = current;
             }
             return current;
         }
 
-        public static int CharactersIntroducedBy(int rescueIndex) =>
-            System.Math.Min(Characters.Length, rescueIndex / 2 + 1);
-
-        private static string CharacterAt(int index, string previous)
+        // Один и тот же зверь в звере смотрится странно, а цыплёнок и утёнок подряд почти не отличаются.
+        private static readonly (string figure, string hero)[] SameAnimal =
         {
-            if (index % 2 == 0 && index / 2 < Characters.Length)
-                return Characters[index / 2];
+            ("fox", "fox"), ("owl", "owlet"), ("rabbit", "bunny")
+        };
 
-            int introduced = CharactersIntroducedBy(index);
-            if (introduced == 1)
-                return Mascot;
+        private static bool Fits(string hero, string figure, string previous)
+        {
+            if (hero == previous)
+                return false;
+            foreach (var (sameFigure, sameHero) in SameAnimal)
+                if (figure == sameFigure && hero == sameHero)
+                    return false;
+            return !(IsYellowBird(hero) && IsYellowBird(previous));
+        }
 
+        private static bool IsYellowBird(string hero) => hero == "chick" || hero == "duckling";
+
+        private static string PickIntroduced(int index, int introduced, string figure, string previous)
+        {
             var rng = new Rng(Seeds.Combine(Seeds.FromText("rescue-character"), index));
-            if (previous != Mascot && rng.Chance(MascotShare))
+            if (Fits(Mascot, figure, previous) && rng.Chance(MascotShare))
                 return Mascot;
             var others = new List<string>();
             for (int i = 1; i < introduced; i++)
-                if (Characters[i] != previous)
+                if (Fits(Characters[i], figure, previous))
                     others.Add(Characters[i]);
-            return others.Count > 0 ? rng.Pick(others) : Mascot;
+            if (others.Count > 0)
+                return rng.Pick(others);
+            // Пока введён один котёнок, повтор неизбежен.
+            return Mascot;
         }
 
         private static List<string> ShuffledRound(int round)

@@ -143,10 +143,44 @@ namespace BottleSort.Tests
         }
 
         [Test]
-        public void NewFriend_OnEverySecondRescue()
+        public void NewFriends_ArriveInOrder_RoughlyEverySecondRescue()
         {
-            for (int i = 0; i < RescueCast.Characters.Length; i++)
-                Assert.AreEqual(RescueCast.Characters[i], RescueCast.CharacterOf(RescueCast.LevelOf(i * 2)));
+            var firstSeen = new System.Collections.Generic.Dictionary<string, int>();
+            for (int i = 0; i < 100; i++)
+            {
+                string hero = RescueCast.CharacterOf(RescueCast.LevelOf(i));
+                if (!firstSeen.ContainsKey(hero))
+                    firstSeen[hero] = i;
+            }
+            int last = -1;
+            for (int k = 0; k < RescueCast.Characters.Length; k++)
+            {
+                string hero = RescueCast.Characters[k];
+                Assert.IsTrue(firstSeen.ContainsKey(hero), hero);
+                Assert.Greater(firstSeen[hero], last, hero + " comes after the previous friend");
+                Assert.LessOrEqual(firstSeen[hero], k * 2 + 2, hero + " is not late");
+                last = firstSeen[hero];
+            }
+        }
+
+        [Test]
+        public void SameAnimalNeverSitsInItself_AndYellowBirdsDontFollowEachOther()
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                int level = RescueCast.LevelOf(i);
+                string figure = RescueCast.FigureOf(level), hero = RescueCast.CharacterOf(level);
+                Assert.IsFalse(figure == "fox" && hero == "fox", $"L{level}");
+                Assert.IsFalse(figure == "owl" && hero == "owlet", $"L{level}");
+                Assert.IsFalse(figure == "rabbit" && hero == "bunny", $"L{level}");
+                if (i > 0)
+                {
+                    string previous = RescueCast.CharacterOf(RescueCast.LevelOf(i - 1));
+                    bool bird = hero == "chick" || hero == "duckling";
+                    bool previousBird = previous == "chick" || previous == "duckling";
+                    Assert.IsFalse(bird && previousBird, $"L{level}");
+                }
+            }
         }
 
         [Test]

@@ -44,12 +44,24 @@ namespace BottleSort.Core
         public const int TwoColorRecipesFrom = 108;
         public const int FlaskFeaturesFrom = 101;
 
+        // Переворот песочных часов есть в правилах и солвере, но в игре его не сделать: ни кнопки, ни жеста.
+        // Пока ui и vfx-art его не сделают, часов в уровнях нет, иначе такие уровни не пройти (§5.9).
+        public const bool HourglassInLevels = false;
+
         // Уровень, на котором фишку вводят (§5). До него её нигде нет.
-        public static readonly IReadOnlyDictionary<string, int> IntroLevel = new Dictionary<string, int>
+        public static readonly IReadOnlyDictionary<string, int> IntroLevel = IntroLevels();
+
+        private static Dictionary<string, int> IntroLevels()
         {
-            [Hidden] = 5, [Ice] = 13, [Lock] = 18, [Tint] = 33, [Combo] = 41, [ColoredLock] = 61,
-            [Pipette] = 81, [Hourglass] = 101, [FiveLayers] = 201, [MoveLimit] = 301
-        };
+            var levels = new Dictionary<string, int>
+            {
+                [Hidden] = 5, [Ice] = 13, [Lock] = 18, [Tint] = 33, [Combo] = 41, [ColoredLock] = 61,
+                [Pipette] = 81, [FiveLayers] = 201, [MoveLimit] = 301
+            };
+            if (HourglassInLevels)
+                levels[Hourglass] = 101;
+            return levels;
+        }
 
         private sealed class Range
         {
@@ -463,7 +475,8 @@ namespace BottleSort.Core
                 options.Add((Hidden, Math.Max(range.HiddenShare, 0.25)));
             foreach (var (feature, weight) in MechanicWeights)
                 // Часы держатся на единственной пустой бутылке, в комбо с другими фишками уровень почти не решается.
-                if (level >= IntroLevel[feature] && !(feature == Hourglass && (count > 1 || !allowHourglass))
+                if (IntroLevel.TryGetValue(feature, out int intro) && level >= intro
+                    && !(feature == Hourglass && (count > 1 || !allowHourglass))
                     && (feature != Tint || allowTint))
                     options.Add((feature, weight));
 
