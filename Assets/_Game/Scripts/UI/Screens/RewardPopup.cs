@@ -149,12 +149,20 @@ namespace BottleSort.UI
                 foreach (var count in counts)
                     count.gameObject.SetActive(false);
                 highlightIcon.sprite = entry.icon;
-                highlightCaption.text = entry.caption;
-                highlightCaption.gameObject.SetActive(!string.IsNullOrEmpty(entry.caption));
+                SetHighlightCaption(entry.caption);
                 highlight.SetActive(true);
                 return true;
             }
             return false;
+        }
+
+        // Плашка под крупной иконкой: «+1» за рекламу или «×3» — сколько в запасе. Пустая строка прячет плашку.
+        public void SetHighlightCaption(string caption)
+        {
+            if (highlightCaption == null)
+                return;
+            highlightCaption.text = caption;
+            highlightCaption.transform.parent.gameObject.SetActive(!string.IsNullOrEmpty(caption));
         }
 
         void Secondary()

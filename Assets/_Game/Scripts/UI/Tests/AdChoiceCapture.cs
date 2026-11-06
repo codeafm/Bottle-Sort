@@ -107,16 +107,44 @@ namespace BottleSort.UI.Tests
             yield return Settle(0.8f);
             CheckPair(card);
             Shot("deadend");
+            router.ClosePopup(card);
+            yield return Settle(0.4f);
+
+            // «Ходов нет» без рекламы: бутылка или отмена из запаса, на плашке — сколько их осталось.
+            card.SetupPlainChoice("deadend_title", "deadend_text", new RewardBundle(0, bottles: 1), "deadend_bottle_ad", null,
+                "lose_restart", null);
+            card.SetHighlightCaption("×2");
+            router.ShowPopup(ScreenId.Reward);
+            yield return Settle(0.8f);
+            CheckPair(card, false);
+            Shot("deadend_stock");
+            router.ClosePopup(card);
+            yield return Settle(0.4f);
+
+            card.SetupPlainChoice("deadend_title", "deadend_text_restart", default, "deadend_undo", null, "lose_restart", null);
+            card.SetHighlightCaption("×3");
+            router.ShowPopup(ScreenId.Reward);
+            yield return Settle(0.8f);
+            CheckPair(card, false);
+            Shot("deadend_undo");
+            router.ClosePopup(card);
+            yield return Settle(0.4f);
+
+            card.SetupChoice("deadend_title", "deadend_text_restart", default, "deadend_undo", null, "lose_restart", null);
+            router.ShowPopup(ScreenId.Reward);
+            yield return Settle(0.8f);
+            CheckPair(card);
+            Shot("deadend_undo_ad");
         }
 
-        static void CheckPair(UiScreen popup)
+        static void CheckPair(UiScreen popup, bool withVideo = true)
         {
             var panel = (RectTransform)popup.transform.Find("Content/Panel");
             var primary = (RectTransform)panel.Find("Claim");
             var secondary = (RectTransform)panel.Find("SecondaryButton");
             Assert.IsNotNull(secondary, popup.name + ": no SecondaryButton in the prefab");
             Assert.IsTrue(secondary.gameObject.activeSelf, popup.name + ": second button is hidden");
-            Assert.IsTrue(primary.Find("Face/VideoIcon").gameObject.activeSelf, popup.name + ": no video icon");
+            Assert.AreEqual(withVideo, primary.Find("Face/VideoIcon").gameObject.activeSelf, popup.name + ": video icon");
             Assert.AreEqual(2, panel.GetComponentsInChildren<UnityEngine.UI.Button>().Length - CountOtherButtons(panel),
                 popup.name + ": buttons were cloned at runtime");
             Assert.Greater(primary.offsetMin.y, secondary.offsetMax.y, popup.name + ": buttons overlap");

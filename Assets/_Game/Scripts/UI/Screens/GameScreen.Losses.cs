@@ -139,15 +139,21 @@ namespace BottleSort.UI
             {
                 var bottle = new RewardBundle(0, bottles: 1);
                 if (data.extraBottleCount > 0)
+                {
                     card.SetupPlainChoice("deadend_title", "deadend_text", bottle, "deadend_bottle_ad", UseStoredBottle,
                         "lose_restart", RestartAfterLoss);
+                    card.SetHighlightCaption("×" + Loc.Number(data.extraBottleCount));
+                }
                 else
                     card.SetupChoice("deadend_title", "deadend_text", bottle, "deadend_bottle_ad", WatchAdForBottle,
                         "lose_restart", RestartAfterLoss);
             }
             else if (data.undoCount > 0)
+            {
                 card.SetupPlainChoice("deadend_title", "deadend_text_restart", default, "deadend_undo", Undo,
                     "lose_restart", RestartAfterLoss);
+                card.SetHighlightCaption("×" + Loc.Number(data.undoCount));
+            }
             else
                 card.SetupChoice("deadend_title", "deadend_text_restart", default, "deadend_undo", WatchAdForUndo,
                     "lose_restart", RestartAfterLoss);

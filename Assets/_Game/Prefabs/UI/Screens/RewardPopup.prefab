@@ -3913,6 +3913,9 @@ MonoBehaviour:
   - adKey: deadend_bottle_ad
     icon: {fileID: 21300000, guid: 21c96831dba200646ae9fcc36caaa938, type: 3}
     caption: +1
+  - adKey: deadend_undo
+    icon: {fileID: 21300000, guid: fafb1be2308aa59408fc2d72185dc0f1, type: 3}
+    caption: 
   highlightTrim: 40
 --- !u!114 &7160256699684483494
 MonoBehaviour:

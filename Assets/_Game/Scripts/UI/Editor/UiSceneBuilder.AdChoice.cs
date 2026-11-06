@@ -17,6 +17,14 @@ namespace BottleSort.UI.Editor
             "Assets/_Game/Prefabs/UI/Screens/CalendarPopup.prefab"
         };
 
+        // Ключ зелёной кнопки → крупная иконка и плашка под ней (пустая — без плашки).
+        static readonly (string key, string icon, string caption)[] HighlightEntries =
+        {
+            ("lose_moves_ad", "icon_hourglass", "+5"),
+            ("deadend_bottle_ad", "icon_add_bottle", "+1"),
+            ("deadend_undo", "icon_undo", "")
+        };
+
         public static void ApplyAdChoiceToPrefabs()
         {
             LoadFonts();
@@ -43,6 +51,34 @@ namespace BottleSort.UI.Editor
             PrefabUtility.UnloadPrefabContents(root);
             AssetDatabase.SaveAssets();
             Debug.Log("[UiSceneBuilder] highlight icon added to RewardPopup");
+        }
+
+        // Новые предложения в список крупных иконок, не трогая остального префаба:
+        // -executeMethod BottleSort.UI.Editor.UiSceneBuilder.ApplyHighlightEntriesToPrefab
+        public static void ApplyHighlightEntriesToPrefab()
+        {
+            string path = AdChoicePrefabs[0];
+            var root = PrefabUtility.LoadPrefabContents(path);
+            var so = new SerializedObject(root.GetComponent<RewardPopup>());
+            var list = so.FindProperty("highlights");
+            foreach (var entry in HighlightEntries)
+            {
+                bool present = false;
+                for (int i = 0; i < list.arraySize; i++)
+                    present |= list.GetArrayElementAtIndex(i).FindPropertyRelative("adKey").stringValue == entry.key;
+                if (present)
+                    continue;
+                list.arraySize++;
+                var item = list.GetArrayElementAtIndex(list.arraySize - 1);
+                item.FindPropertyRelative("adKey").stringValue = entry.key;
+                item.FindPropertyRelative("icon").objectReferenceValue = Sprite(entry.icon);
+                item.FindPropertyRelative("caption").stringValue = entry.caption;
+                Debug.Log($"[UiSceneBuilder] highlight for {entry.key} added to RewardPopup");
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            PrefabUtility.UnloadPrefabContents(root);
+            AssetDatabase.SaveAssets();
         }
 
         static void AddCardHighlight(RewardPopup popup)
@@ -83,18 +119,13 @@ namespace BottleSort.UI.Editor
             Set(popup, "highlightTrim", M(16f));
             var so = new SerializedObject(popup);
             var list = so.FindProperty("highlights");
-            var entries = new (string key, string icon, string caption)[]
-            {
-                ("lose_moves_ad", "icon_hourglass", "+5"),
-                ("deadend_bottle_ad", "icon_add_bottle", "+1")
-            };
-            list.arraySize = entries.Length;
-            for (int i = 0; i < entries.Length; i++)
+            list.arraySize = HighlightEntries.Length;
+            for (int i = 0; i < HighlightEntries.Length; i++)
             {
                 var item = list.GetArrayElementAtIndex(i);
-                item.FindPropertyRelative("adKey").stringValue = entries[i].key;
-                item.FindPropertyRelative("icon").objectReferenceValue = Sprite(entries[i].icon);
-                item.FindPropertyRelative("caption").stringValue = entries[i].caption;
+                item.FindPropertyRelative("adKey").stringValue = HighlightEntries[i].key;
+                item.FindPropertyRelative("icon").objectReferenceValue = Sprite(HighlightEntries[i].icon);
+                item.FindPropertyRelative("caption").stringValue = HighlightEntries[i].caption;
             }
             so.ApplyModifiedPropertiesWithoutUndo();
         }
