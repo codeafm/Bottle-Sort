@@ -19,7 +19,8 @@ namespace BottleSort.UI
                 return;
             var area = ((RectTransform)transform).rect.size;
             var size = content.rect.size;
-            if (size.x <= 0f || size.y <= 0f)
+            // В префабе без канваса у области нет размера — масштаб не трогаем.
+            if (size.x <= 0f || size.y <= 0f || area.x <= 0f || area.y <= 0f)
                 return;
             float scale = Mathf.Min(1f, area.x / size.x, area.y / size.y);
             content.localScale = new Vector3(scale, scale, 1f);

@@ -88,6 +88,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "grid", grid);
             Set(screen, "cards", cards);
             Set(screen, "toast", toast);
+            BannerClearance.PadShop(screen.transform);
             return screen;
         }
 

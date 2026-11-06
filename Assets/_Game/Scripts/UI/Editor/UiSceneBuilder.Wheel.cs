@@ -257,6 +257,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "hintIcon", Sprite("icon_hint"));
             Set(screen, "bottleIcon", Sprite("icon_add_bottle"));
             Set(screen, "spinIcon", Sprite("icon_wheel"));
+            BannerClearance.FitWheel(screen.transform);
             return screen;
         }
 

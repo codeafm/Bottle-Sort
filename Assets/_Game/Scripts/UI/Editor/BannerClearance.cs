@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BottleSort.UI.Editor
 {
@@ -17,7 +18,22 @@ namespace BottleSort.UI.Editor
         const float BannerSpace = 71f;
         const float AreaGap = 8f;
 
-        const string MenuPrefab = "Assets/_Game/Prefabs/UI/Screens/MainMenuScreen.prefab";
+        const string ScreensDir = "Assets/_Game/Prefabs/UI/Screens";
+        const string MenuPrefab = ScreensDir + "/MainMenuScreen.prefab";
+
+        // Победа: ссылка «В главное меню» стоит так, чтобы её текст был на высоте нижних кнопок меню (71 pt).
+        const float WinMenuBottom = 60f;
+        const float WinHeadGap = 10f;
+        static readonly string[] WinLifted = { "Menu", "Next", "Next Shadow" };
+        static readonly string[] WinHead = { "Rays", "Glow", "Confetti", "Ribbon", "Stars", "LevelDone", "Chips", "Reward" };
+        static readonly string[] WinHeadBounds = { "Ribbon", "Stars", "LevelDone", "Chips", "Reward" };
+
+        // Колесо: всё от крестика до кнопки «Крутить» — между верхом safe area и баннером.
+        const float WheelBannerSpace = 56f;
+        const float WheelMargin = 6f;
+        static readonly string[] WheelBounds = { "Close", "Ribbon", "Wheel", "Spins", "SpinButton", "AdButton" };
+
+        const float BannerHeight = 50f;
 
         [MenuItem("BottleSort/UI/Lift Bottom Buttons Above Banner")]
         public static void Apply()
@@ -25,6 +41,142 @@ namespace BottleSort.UI.Editor
             AddHeroFit();
             Lift("Assets/_Game/Scenes/Menu.unity", "MainMenuScreen/Content", new[] { "Levels", "Shop", "Play", "RoundButtons" }, "Hero", "Logo");
             Lift("Assets/_Game/Scenes/Game.unity", "GameScreen/Content", new[] { "Boosters" }, "Field", null);
+        }
+
+        // Баннер виден и поверх победы, колеса и магазина. Точечно по префабам, повторный запуск ничего не меняет.
+        // Из batchmode: -executeMethod BottleSort.UI.Editor.BannerClearance.ApplyToScreens
+        [MenuItem("BottleSort/UI/Fit Win, Wheel and Shop Above Banner")]
+        public static void ApplyToScreens()
+        {
+            PatchPrefab("WinScreen", FitWin);
+            PatchPrefab("WheelPopup", FitWheel);
+            PatchPrefab("ShopScreen", PadShop);
+            AssetDatabase.SaveAssets();
+        }
+
+        static void PatchPrefab(string name, System.Action<Transform> apply)
+        {
+            string path = $"{ScreensDir}/{name}.prefab";
+            var root = PrefabUtility.LoadPrefabContents(path);
+            apply(root.transform);
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            PrefabUtility.UnloadPrefabContents(root);
+        }
+
+        // «Дальше» и «В главное меню» поднимаются над баннером. Всё, что выше (лента, звёзды, панель награды),
+        // переезжает в Head/Block: на коротких экранах вроде iPhone 8 блок равномерно уменьшается, чтобы панель
+        // награды не легла на «Дальше»; на длинных он остаётся как был.
+        public static void FitWin(Transform screen)
+        {
+            var content = (RectTransform)screen.Find("Content");
+            if (content.Find("Head") != null)
+                return;
+            var menu = (RectTransform)content.Find("Menu");
+            float lift = WinMenuBottom * Pt - Bottom(menu);
+            foreach (string name in WinLifted)
+                if (content.Find(name) is RectTransform item)
+                    item.anchoredPosition += new Vector2(0f, lift);
+
+            float headBottom = Top((RectTransform)content.Find("Next")) + WinHeadGap * Pt;
+            var head = UiKit.Node("Head", content);
+            head.anchorMin = Vector2.zero;
+            head.anchorMax = Vector2.one;
+            head.offsetMin = new Vector2(0f, headBottom);
+            head.offsetMax = Vector2.zero;
+            head.SetSiblingIndex(content.Find(WinHead[0]).GetSiblingIndex());
+
+            // Блок — та же верхняя полоса экрана, поэтому привязанные к верху элементы встают на прежние места.
+            var block = UiKit.Node("Block", head);
+            block.anchorMin = new Vector2(0f, 1f);
+            block.anchorMax = Vector2.one;
+            block.pivot = new Vector2(0.5f, 1f);
+            block.anchoredPosition = Vector2.zero;
+            float height = 0f;
+            foreach (string name in WinHeadBounds)
+            {
+                var item = (RectTransform)content.Find(name);
+                height = Mathf.Max(height, item.rect.height * item.pivot.y * item.localScale.y - item.anchoredPosition.y);
+            }
+            block.sizeDelta = new Vector2(0f, height);
+            foreach (string name in WinHead)
+                content.Find(name).SetParent(block, false);
+            AddFit(head, block);
+            Debug.Log($"[BannerClearance] win: buttons lifted by {lift / Pt:0.0} pt, head {height / Pt:0.0} pt above {headBottom / Pt:0.0} pt");
+        }
+
+        // Сцена колеса 390×844 pt из макета не помещается на короткий экран: её часть от крестика до кнопки «Крутить»
+        // ставится по центру между верхом safe area и баннером и уменьшается, если там тесно (Fit/Frame).
+        public static void FitWheel(Transform screen)
+        {
+            var content = (RectTransform)screen.Find("Content");
+            if (content.Find("Fit") != null)
+                return;
+            var stage = (RectTransform)content.Find("Stage");
+            var band = VisibleBounds(stage, WheelBounds);
+            float top = band.yMax + WheelMargin * Pt;
+            float bottom = band.yMin - WheelMargin * Pt;
+
+            var fit = UiKit.Node("Fit", content);
+            fit.anchorMin = Vector2.zero;
+            fit.anchorMax = Vector2.one;
+            fit.offsetMin = new Vector2(0f, WheelBannerSpace * Pt);
+            fit.offsetMax = Vector2.zero;
+            fit.SetSiblingIndex(stage.GetSiblingIndex());
+            var frame = UiKit.Node("Frame", fit);
+            frame.anchorMin = frame.anchorMax = new Vector2(0.5f, 0.5f);
+            frame.sizeDelta = new Vector2(stage.rect.width, top - bottom);
+            frame.anchoredPosition = Vector2.zero;
+            stage.SetParent(frame, false);
+            stage.anchorMin = stage.anchorMax = new Vector2(0.5f, 0.5f);
+            stage.anchoredPosition = new Vector2(0f, -(top + bottom) / 2f);
+            AddFit(fit, frame);
+            Debug.Log($"[BannerClearance] wheel: {(top - bottom) / Pt:0.0} pt of the stage fitted above {WheelBannerSpace} pt");
+        }
+
+        // Последний ряд карточек докручивается выше баннера.
+        public static void PadShop(Transform screen)
+        {
+            var grid = screen.GetComponentInChildren<GridLayoutGroup>(true);
+            int bottom = grid.padding.top + Mathf.RoundToInt(BannerHeight * Pt);
+            if (grid.padding.bottom < bottom)
+                grid.padding.bottom = bottom;
+            EditorUtility.SetDirty(grid);
+        }
+
+        static void AddFit(RectTransform area, RectTransform content)
+        {
+            var fit = area.gameObject.AddComponent<FitInParent>();
+            var so = new SerializedObject(fit);
+            so.FindProperty("content").objectReferenceValue = content;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            content.localScale = Vector3.one;
+        }
+
+        // Границы видимой графики в координатах parent, без мягких теней и ореолов (как в BannerCoverageCapture).
+        static Rect VisibleBounds(RectTransform parent, string[] names)
+        {
+            var corners = new Vector3[4];
+            var bounds = new Rect();
+            bool any = false;
+            foreach (string name in names)
+            {
+                var item = parent.Find(name);
+                if (item == null)
+                    continue;
+                foreach (var graphic in item.GetComponentsInChildren<Graphic>(true))
+                {
+                    if (graphic.name.EndsWith("Shadow") || graphic.name == "Pulse" || graphic.name.StartsWith("Glow"))
+                        continue;
+                    graphic.rectTransform.GetWorldCorners(corners);
+                    Vector2 min = parent.InverseTransformPoint(corners[0]);
+                    Vector2 max = parent.InverseTransformPoint(corners[2]);
+                    var rect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+                    bounds = any ? Rect.MinMaxRect(Mathf.Min(bounds.xMin, rect.xMin), Mathf.Min(bounds.yMin, rect.yMin),
+                        Mathf.Max(bounds.xMax, rect.xMax), Mathf.Max(bounds.yMax, rect.yMax)) : rect;
+                    any = true;
+                }
+            }
+            return bounds;
         }
 
         static void AddHeroFit()

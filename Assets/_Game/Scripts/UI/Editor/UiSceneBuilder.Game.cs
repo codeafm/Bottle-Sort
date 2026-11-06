@@ -464,6 +464,7 @@ namespace BottleSort.UI.Editor
             Set(screen, "nextButton", next);
             Set(screen, "menuButton", menu);
             Set(screen, "confetti", confetti);
+            BannerClearance.FitWin(screen.transform);
             return screen;
         }
 
